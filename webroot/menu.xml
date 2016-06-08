@@ -817,6 +817,34 @@ and need to add the iconClass tag wherever we need to show some icons
                         </item>
                     </items>
                 </item>
+                
+                <item>
+                    <name>configBrowser</name>
+                    <label>Config Browser</label>
+                    <hash>config_browser</hash>
+                    <iconClass>icon-code</iconClass>
+                    <resources>
+                        <resource>
+                            <rootDir>/config/configBrowser/ui</rootDir>
+                            <js>configBrowser.main.js</js>
+                            <class>configBrowserLoader</class>
+                        </resource>
+                    </resources>
+                    <items>
+                        <item>
+                            <hash>config_config_browser</hash>
+                            <label>Root link</label>
+                            <resources>
+                                <resource>
+                                    <rootDir>/config/configBrowser/ui</rootDir>
+                                    <class>configBrowserLoader</class>
+                                    <function>renderConfig</function>
+                                </resource>
+                            </resources>
+                            <searchStrings>Config Browser</searchStrings>
+                        </item>
+                    </items>
+                </item>
                 <!--
                 <item>
                     <label>IPAM</label>

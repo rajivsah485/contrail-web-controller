@@ -3,7 +3,9 @@
  */
 
 define([
-    'underscore'
+    'underscore',
+    'core-bundle',
+    'nonamd-libs'
 ], function (_) {
     var CTConstants = function () {
 
@@ -750,7 +752,8 @@ define([
         this.ROUTE_AGGREGATE_PREFIX_ID = "route_aggregate";
         this.URL_CREATE_ROUTE_AGGREGATE = "/route-aggregates";
         this.URL_UPDATE_ROUTE_AGGREGATE = "/route-aggregate/";
-
+         /* Config Browser Constants */
+        this.CONFIG_HEADER_TEXT = "Root Level";
         this.DEFAULT_COMMUNITIES = [
             {text:"no-export",id:"no-export"},
             {text:"accept-own",id:"accept-own"},
