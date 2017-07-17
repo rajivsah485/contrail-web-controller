@@ -221,11 +221,11 @@ define([
                                 templateGeneratorConfig: [{
                                         keyClass:'col-xs-3',
                                         valueClass:'col-xs-9',
-                                        key: 'fq_name[1]',
+                                        key: 'fq_name',
                                         templateGenerator: 'TextGenerator',
                                         label: 'DNS Server'
 
-                                    }, {
+                                    },{
                                         keyClass:'col-xs-3',
                                         valueClass:'col-xs-9',
                                         key: 'display_name',

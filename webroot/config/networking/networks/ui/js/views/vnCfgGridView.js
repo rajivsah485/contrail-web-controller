@@ -24,12 +24,12 @@ define([
             vnCfgEditView.selectedProjId =
                 viewConfig.selectedProjId;
             this.renderView4Config(self.$el, self.model,
-                                   getVNCfgGridViewConfig());
+                                   getVNCfgGridViewConfig(viewConfig, self));
         }
     });
 
 
-    var getVNCfgGridViewConfig = function () {
+    var getVNCfgGridViewConfig = function (viewConfig, self) {
         return {
             elementId: cowu.formatElementId([ctwl.CFG_VN_LIST_VIEW_ID]),
             view: "SectionView",
@@ -42,7 +42,7 @@ define([
                                 title: ctwl.CFG_VN_TITLE,
                                 view: "GridView",
                                 viewConfig: {
-                                    elementConfig: getConfiguration()
+                                    elementConfig: getConfiguration(viewConfig, self)
                                 }
                             }
                         ]
@@ -53,13 +53,13 @@ define([
     };
 
 
-    var getConfiguration = function () {
+    var getConfiguration = function (viewConfig, self) {
         var gridElementConfig = {
             header: {
                 title: {
                     text: ctwl.CFG_VN_TITLE
                 },
-                advanceControls: getHeaderActionConfig(),
+                advanceControls: getHeaderActionConfig(viewConfig, self),
             },
             body: {
                 options: {
@@ -86,12 +86,12 @@ define([
                              fqName[0] != domain)) && isShared) {
                             return [];
                         } else {
-                            return rowActionConfig;
+                            return getRowActionConfig(viewConfig, self);
                         }
                     },
                     detail: {
                         template: cowu.generateDetailTemplateHTML(
-                                       getVNCfgDetailsTemplateConfig(),
+                                       getVNCfgDetailsTemplateConfig(viewConfig),
                                        cowc.APP_CONTRAIL_CONTROLLER)
                     }
                 },
@@ -176,7 +176,7 @@ define([
     };
 
 
-    function getHeaderActionConfig() {
+    function getHeaderActionConfig(viewConfig, self) {
         var headerActionConfig = [
             {
                 "type": "link",
@@ -198,6 +198,24 @@ define([
             },
             {
                 "type": "link",
+                "title": 'Create Network By Schema',
+                "iconClass": "fa fa-wpforms",
+                "onClick": function () {
+                    self.renderView4Config(null, null,{
+                        elementId: 'config_edit_network_add_modal_view',
+                        view: "ConfigEditorModalView",
+                        viewPathPrefix: ctwc.CONFIG_EDITOR_PATH,
+                        viewConfig: {
+                            schema: viewConfig.schema,
+                            onSaveCB : function(){
+                                 $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                            }
+                        }
+                    });
+                }
+            },
+            {
+                "type": "link",
                 "title": ctwl.CFG_VN_TITLE_CREATE,
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
@@ -211,62 +229,60 @@ define([
                     }});
                 }
             }
-
         ];
         return headerActionConfig;
     }
 
-    var rowActionConfig = [
-        ctwgc.getEditConfig('Edit', function(rowIndex) {
-            dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-            var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
-            vnCfgEditView.model = vnModel;
-            subscribeModelChangeEvents(vnModel);
-            vnCfgEditView.renderEditVNCfg({
-                                  "title": ctwl.EDIT,
-                                  callback: function () {
-                                      dataView.refreshData();
-            }});
-        }),
-        ctwgc.getDeleteConfig('Delete', function(rowIndex) {
-            dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-            vnCfgEditView.model = new VNCfgModel();
-            vnCfgEditView.renderMultiDeleteVNCfg({
-                                  "title": ctwl.CFG_VN_TITLE_DELETE,
-                                  checkedRows: [dataView.getItem(rowIndex)],
-                                  callback: function () {
-                                      dataView.refreshData();
-            }});
-        })
-    ];
-
-
-    function getSubnetExpandDetailsTmpl() {
-        return {
-            title: "Subnets",
-            templateGenerator: 'BlockListTemplateGenerator',
-            templateGeneratorConfig: [
-                {
-                    label: 'Allocation Mode',
-                    key: 'uuid',
-                    templateGenerator: 'TextGenerator',
-                    templateGeneratorConfig: {
-                        formatter: 'allocationModeExpFormatter'
+    function getRowActionConfig(viewConfig, self){
+        var rowActionConfig = [
+            ctwgc.getEditConfig('Edit', function(rowIndex) {
+                dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
+                var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
+                vnCfgEditView.model = vnModel;
+                subscribeModelChangeEvents(vnModel);
+                vnCfgEditView.renderEditVNCfg({
+                                      "title": ctwl.EDIT,
+                                      callback: function () {
+                                          dataView.refreshData();
+                }});
+            }),
+            ctwgc.getEditConfig('Edit By Schema', function(rowIndex) {
+                dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
+                var vnModel = dataView.getItem(rowIndex);
+                delete vnModel.cgrid;
+                var schema = viewConfig.schema;
+                var model = {};
+                model[Object.keys(schema.properties)[0]] = vnModel;
+                self.renderView4Config(null, null,{
+                    elementId: 'config_edit_network_edit_modal_view',
+                    view: "ConfigEditorModalView",
+                    viewPathPrefix: ctwc.CONFIG_EDITOR_PATH,
+                    viewConfig: {
+                        schema: schema,
+                        json: model,
+                        onSaveCB : function(){
+                            dataView.refreshData();
+                        }
                     }
-                },
-                {
-                    label: 'Subnet(s)',
-                    key: 'uuid',
-                    templateGenerator: 'TextGenerator',
-                    templateGeneratorConfig: {
-                        formatter: 'subnetTmplFormatter'
-                    }
-                }
-            ]
-        }
+                });
+            }),
+            ctwgc.getDeleteConfig('Delete', function(rowIndex) {
+                dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
+                vnCfgEditView.model = new VNCfgModel();
+                vnCfgEditView.renderMultiDeleteVNCfg({
+                                      "title": ctwl.CFG_VN_TITLE_DELETE,
+                                      checkedRows: [dataView.getItem(rowIndex)],
+                                      callback: function () {
+                                          dataView.refreshData();
+                }});
+            })
+        ];
+        return rowActionConfig;
     };
 
-    function getVNCfgDetailsTemplateConfig() {
+    function getVNCfgDetailsTemplateConfig(viewConfig) {
+        var schema = getValueByJsonPath(viewConfig.schema,'properties;'+Object.keys(viewConfig.schema.properties)[0]+';properties');
+        var template = ctwu.getSchemaGeneratedTemplate(schema, ctwc.VIRTUAL_NETWORK_TEMP_MAPPING);
         return {
             templateGenerator: 'RowSectionTemplateGenerator',
             templateGeneratorConfig: {
@@ -278,312 +294,13 @@ define([
                             columns: [
                                 {
                                     class: 'col-xs-12',
-                                    rows: [
-                                          getSubnetExpandDetailsTmpl(),
-                                          {
+                                    rows: [{
                                             title: ctwl.CFG_VN_TITLE_DETAILS,
                                             templateGenerator: 'BlockListTemplateGenerator',
-                                            templateGeneratorConfig: [
-                                                {
-                                                    label: 'Name',
-                                                    key: 'name',
-                                                    templateGenerator: 'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'Display Name',
-                                                    key: 'display_name',
-                                                    templateGenerator: 'TextGenerator'
-                                                },
-                                                {
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'Admin State',
-                                                    key: 'id_perms.enable',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'adminStateFormatter'
-                                                    },
-                                                    templateGenerator: 'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'Static IP Addressing',
-                                                    key: 'external_ipam',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'staticIPAddressingFormatter'
-                                                    },
-                                                    templateGenerator: 'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'Shared',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'sharedFormatter'
-                                                    }
-                                                },
-                                                
-                                                {
-                                                    label: 'External',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'rtrExternalFormatter'
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Attached Network Policies',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'polColFormatter',
-                                                    }
-                                                },
-
-                                                {
-                                                    label: 'Forwarding Mode',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'fwdModeFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'VxLAN Identifier',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'vxLanIdFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Allow Transit',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'allowTransitFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Mirroring',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'mirrorDestinationFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Reverse Path Forwarding',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'rpfFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Flood Unknown Unicast',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'floodUnUcastFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Multiple Service Chains',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'multiSvcChainFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Host Route(s)',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'subnetHostRouteFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'DNS Server(s)',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'subnetDNSFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Ecmp Hashing Fields',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'ecmpHashFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Provider Network',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'sriovFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Extended to Physical Router(s)',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'phyRouterFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Attached Static Route(s)',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'staticRouteFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Floating IP Pool(s)',
-                                                    key: 'uuid',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'fipPoolTmplFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Route Target(s)',
-                                                    key: 'route_target_list',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'routeTargetFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Export Route Target(s)',
-                                                    key: 'export_route_target_list',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'exportRouteTargetFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Import Route Target(s)',
-                                                    key: 'import_route_target_list',
-                                                    templateGenerator: 'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter: 'importRouteTargetFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'QoS',
-                                                    key: 'qos_config_refs',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'QoSFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'PBB Encapsulation',
-                                                    key: 'pbb_evpn_enable',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'PBBEvpnFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'PBB ETree',
-                                                    key: 'pbb_etree_enable',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'PBBETreeFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Layer2 Control Word',
-                                                    key: 'layer2_control_word',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'Layer2CWFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'MAC Learning',
-                                                    key: 'mac_learning_enabled',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'MACLearningFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'MAC Limit',
-                                                    key: 'mac_limit_control.mac_limit',
-                                                    templateGenerator:
-                                                        'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'MAC Limit Action',
-                                                    key: 'mac_limit_control.mac_limit_action',
-                                                    templateGenerator:
-                                                        'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'MAC Move Limit',
-                                                    key: 'mac_move_control.mac_move_limit',
-                                                    templateGenerator:
-                                                        'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'MAC Move Limit Action',
-                                                    key: 'mac_move_control.mac_move_limit_action',
-                                                    templateGenerator:
-                                                        'TextGenerator'
-                                                },
-                                                {
-                                                    label: 'MAC Move Time Window',
-                                                    key: 'mac_move_control.mac_move_time_window',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'MACMoveTimeWindowFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'MAC Aging Time',
-                                                    key: 'mac_aging_time',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'MACAgingTimeFormatter',
-                                                    }
-                                                },
-                                                {
-                                                    label: 'Bride Domains',
-                                                    key: 'bridge_domains',
-                                                    templateGenerator:
-                                                        'TextGenerator',
-                                                    templateGeneratorConfig: {
-                                                        formatter:
-                                                            'BridgeDomainFormatter',
-                                                    }
-                                                }
-                                            ].concat(ctwu.getTagsExpandDetails())
-                                        },
-                                        //permissions
-                                        ctwu.getRBACPermissionExpandDetails()
+                                            templateGeneratorConfig : template
+                                           },
+                                           //permissions
+                                           ctwu.getRBACPermissionExpandDetails()
                                     ]
                                 }
                             ]
@@ -596,6 +313,10 @@ define([
 
     this.showName = function (r, c, v, cd, dc) {
         return ctwu.getDisplayNameOrName(dc);
+    }
+    this.objectKeyFormatter = function (v, dc, keyClass, key){
+        return ctwu.objectKeyFormatter(null, 
+                null, null, null, dc, keyClass, key);
     }
     this.allocationModeExpFormatter = function (v, dc) {
         return formatVNCfg.allocationModeExpFormatter(null,

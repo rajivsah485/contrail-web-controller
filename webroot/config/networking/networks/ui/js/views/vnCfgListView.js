@@ -68,9 +68,17 @@ define([
                 } // vlRemoteCOnfig
             };
 
-            var contrailListModel = new ContrailListModel(listModelConfig);
-            this.renderView4Config(this.$el,
-                     contrailListModel, getVNCfgListViewConfig(viewConfig));
+            var schemaAjaxConfig = {
+                    url: '/api/tenants/config/get-json-schema/virtual-network',
+                    type:'GET'
+            };
+            contrail.ajaxHandler(schemaAjaxConfig, null, function(schema){
+                var contrailListModel = new ContrailListModel(listModelConfig);
+                self.renderView4Config(self.$el,
+                         contrailListModel, getVNCfgListViewConfig(viewConfig, schema));
+            },function(error){
+                contrail.showErrorMsg(error.responseText);
+            });
         }
     });
 
@@ -106,7 +114,7 @@ define([
         });
     };
 
-    var getVNCfgListViewConfig = function (viewConfig) {
+    var getVNCfgListViewConfig = function (viewConfig, schema) {
         return {
             elementId: cowu.formatElementId([ctwl.CFG_VN_LIST_ID]),
             view: "SectionView",
@@ -123,7 +131,8 @@ define([
                                 app: cowc.APP_CONTRAIL_CONTROLLER,
                                 viewConfig: {
                                     selectedProjId:
-                                      viewConfig.projectSelectedValueData.value
+                                      viewConfig.projectSelectedValueData.value,
+                                      schema: schema
                                 }
                             }
                         ]

@@ -30,10 +30,17 @@ define([
                     dataParser: self.fetchPortData
                 }
             };
-
-            self.contrailListModel = new ContrailListModel(listModelConfig);
-            self.renderView4Config(this.$el, self.contrailListModel,
-                                   getportListViewConfig(viewConfig));
+            var schemaAjaxConfig = {
+                    url: '/api/tenants/config/get-json-schema/virtual-machine-interface',
+                    type:'GET'
+            };
+            contrail.ajaxHandler(schemaAjaxConfig, null, function(schema){
+                self.contrailListModel = new ContrailListModel(listModelConfig);
+                self.renderView4Config(self.$el, self.contrailListModel,
+                                       getportListViewConfig(viewConfig, schema));
+            },function(error){
+                contrail.showErrorMsg(error.responseText);
+            });
         },
 
     fetchPortData : function (result) {
@@ -97,7 +104,7 @@ define([
 
     });
 
-    var getportListViewConfig = function (viewConfig) {
+    var getportListViewConfig = function (viewConfig, schema) {
         return {
             elementId:
               cowu.formatElementId([ctwc.CONFIG_PORT_FORMAT_ID]),
@@ -121,7 +128,8 @@ define([
                                          pageSizeSelect: [10, 50, 100, 500]
                                          }
                                     },
-                                    selectedProjectId : viewConfig.selectedProjectId
+                                    selectedProjectId : viewConfig.selectedProjectId,
+                                    schema: schema
                                 }
                             }
                         ]

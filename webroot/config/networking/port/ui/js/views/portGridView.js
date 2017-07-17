@@ -11,7 +11,7 @@ define([
     'contrail-view'
 ], function (_, Backbone, PortModel, PortEditView,
              PortFormatters, ContrailView) {
-    var portEditView = new PortEditView(),
+    var portEditView = new PortEditView(), self, schema, 
         portFormatters = new PortFormatters(),
         gridElId = "#" + ctwc.PORT_GRID_ID;
 
@@ -19,16 +19,17 @@ define([
         el: $(contentContainer),
 
         render: function () {
-            var self = this,
-                viewConfig = this.attributes.viewConfig,
+            self = this;
+            var viewConfig = this.attributes.viewConfig,
                 pagerOptions = viewConfig['pagerOptions'];
+            schema = viewConfig.schema;
             portEditView.selectedProjectId = viewConfig.selectedProjectId;
             self.renderView4Config(self.$el, self.model,
-                                  getPortGridViewConfig(viewConfig));
+                                  getPortGridViewConfig(viewConfig, self));
         }
     });
 
-    var getPortGridViewConfig = function (viewConfig) {
+    var getPortGridViewConfig = function (viewConfig, self) {
         return {
             elementId: cowu.formatElementId
                             ([ctwc.CONFIG_PORT_LIST_VIEW_ID]),
@@ -42,7 +43,7 @@ define([
                                 title: ctwl.CONFIG_PORT_TITLE,
                                 view: "GridView",
                                 viewConfig: {
-                                   elementConfig: getConfiguration(viewConfig)
+                                   elementConfig: getConfiguration(viewConfig, self)
                                 }
                             }
                         ]
@@ -74,6 +75,25 @@ define([
                     $(gridElId).data("contrailGrid")._dataView;
                 dataView.refreshData();
             }});
+        }));
+        rowActionConfig.push(ctwgc.getEditConfig('Edit By Schema', function(rowIndex) {
+                var dataView = $(gridElId).data("contrailGrid")._dataView;
+                var portModel = dataView.getItem(rowIndex);
+                delete portModel.cgrid;
+                var model = {};
+                model[Object.keys(schema.properties)[0]] = portModel;
+                self.renderView4Config(null, null,{
+                    elementId: 'config_edit_port_edit_modal_view',
+                    view: "ConfigEditorModalView",
+                    viewPathPrefix: ctwc.CONFIG_EDITOR_PATH,
+                    viewConfig: {
+                        schema: schema,
+                        json: model,
+                        onSaveCB : function(){
+                            dataView.refreshData();
+                        }
+                    }
+                });
         }));
         if(!portFormatters.isSubInterface(dc)) {
         rowActionConfig.push(ctwgc.getEditConfig('Add SubInterface',
@@ -130,14 +150,14 @@ define([
         }));
         return rowActionConfig;
     }
-    var getConfiguration = function (viewConfig) {
+    var getConfiguration = function (viewConfig, self) {
         var gridElementConfig = {
             header: {
                 title: {
                     text: ctwl.CONFIG_PORT_TITLE
                 },
                 advanceControls : getHeaderActionConfig(
-                                     "#" + ctwc.PORT_GRID_ID, viewConfig)
+                                     "#" + ctwc.PORT_GRID_ID, viewConfig, self)
             },
             body: {
                 options: {
@@ -155,7 +175,7 @@ define([
                     actionCell: getRowActionConfig,
                     detail: {
                         template: cowu.generateDetailTemplateHTML(
-                                            getPortDetailsTemplateConfig(),
+                                            getPortDetailsTemplateConfig(viewConfig),
                                             cowc.APP_CONTRAIL_CONTROLLER)
                     }
                 },
@@ -247,7 +267,7 @@ define([
         }
     ];
 
-    function getHeaderActionConfig(gridElId, viewConfig) {
+    function getHeaderActionConfig(gridElId, viewConfig, self) {
         var dropdownActions;
         dropdownActions = [
             {
@@ -305,6 +325,26 @@ define([
             },
             {
                 "type": "link",
+                "title": 'Create Port By Schema',
+                "iconClass": "fa fa-wpforms",
+                "onClick": function () {
+                    self.renderView4Config(null, null,{
+                        elementId: 'config_edit_port_add_modal_view',
+                        view: "ConfigEditorModalView",
+                        viewPathPrefix: ctwc.CONFIG_EDITOR_PATH,
+                        viewConfig: {
+                            schema: viewConfig.schema,
+                            onSaveCB : function(){
+                                var dataView =
+                                    $(gridElId).data("contrailGrid")._dataView;
+                                dataView.refreshData();
+                            }
+                        }
+                    });
+                }
+            },
+            {
+                "type": "link",
                 "title": ctwl.TITLE_ADD_PORT,
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
@@ -349,268 +389,10 @@ define([
             return (this.deviceOwnerValue().toLowerCase() === "router");
         }), portModel);
     };
-    function getBlockListTemplateGeneratorCfg() {
-        var blockList = [{
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_network_refs',
-            name: 'virtual_network_refs',
-            label:'Network',
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "networkFormater"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'uuid',
-            name: 'uuid',
-            templateGenerator: 'TextGenerator'
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'name',
-            name:"name",
-            label:"Name",
-            templateGenerator: 'TextGenerator'
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'display_name',
-            name:"display_name",
-            label:"Display Name",
-            templateGenerator: 'TextGenerator'
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'id_perms',
-            name:"id_perms",
-            label: 'Admin State',
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "AdminStateFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_mac_addresses',
-            label: 'MAC Address',
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "MACAddressFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'instance_ip_back_refs',
-            name:"Fixed IPs",
-            label:"Fixed IPs",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "fixedIPFormaterExpand"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'floating_ip_back_refs',
-            name:"floating_ip_back_refs",
-            label:"Floating IPs",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "floatingIPFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'uuid',
-            name:"security_group_refs",
-            label:"Security Groups",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "sgFormater"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_dhcp_option_list',
-            name:"virtual_machine_interface_dhcp_option_list",
-            label:"DHCP Options",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "DHCPFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'interface_route_table_refs',
-            name:"interface_route_table_refs",
-            label:"Static Routes",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "staticRoutFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'service_health_check_refs',
-            name:"service_health_check_refs",
-            label:"Service Health Check",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "serviceHealthCheckFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            label: 'QoS',
-            key: 'qos_config_refs',
-            templateGenerator:
-                'TextGenerator',
-            templateGeneratorConfig: {
-                formatter:
-                    'QoSFormatter',
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_properties',
-            name:"virtual_machine_interface_properties",
-            label:"Local Preference",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "localPrefFormater"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'bridge_domain_refs',
-            label:"Bridge Domain",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "BridgeDomainFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'ecmp_hashing_include_fields',
-            name:"ecmp_hashing_include_fields",
-            label:"ECMP Hashing Fields",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "ECMPHashingFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_fat_flow_protocols',
-            name:"virtual_machine_interface_fat_flow_protocols",
-            label:"FatFlow",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "FatFlowFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-5',
-            key: 'virtual_machine_interface_bindings',
-            name:"virtual_machine_interface_bindings",
-            label:"Bindings",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "PortBindingFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-5',
-            key: 'virtual_machine_interface_allowed_address_pairs',
-            name:"virtual_machine_interface_allowed_address_pairs",
-            label:"Allowed address pairs",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "AAPFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'uuid',
-            label:"Mirroring",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "mirrorFormatter"
-            }
-        },  {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_refs',
-            name:"virtual_machine_interface_refs",
-            label:"Sub Interfaces",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "childrensUUID"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_properties',
-            name:"virtual_machine_interface_properties",
-            label:"Sub Interface VLAN",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "subInterfaceVXLANUUID"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_properties.sub_interface_vlan_tag',
-            name:"virtual_machine_interface_refs.sub_interface_vlan_tag",
-            label:"Parent Port",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "parentUUIDFormatter"
-            }
-        }, {
-            keyClass:'col-xs-3',
-            valueClass:'col-xs-9',
-            key: 'virtual_machine_interface_disable_policy',
-            name:"virtual_machine_interface_disable_policy",
-            label:"Disable Policy",
-            templateGenerator: 'TextGenerator',
-            templateGeneratorConfig:{
-                formatter: "disablePolicyFormatter"
-            }
-        }],
 
-        deviceOwnerTemplate = {
-                keyClass:'col-xs-3',
-                valueClass:'col-xs-9',
-                key: 'virtual_machine_interface_device_owner',
-                name:"virtual_machine_interface_device_owner",
-                label:"Device",
-                templateGenerator: 'TextGenerator',
-                templateGeneratorConfig:{
-                    formatter: "deviceOwnerFormatter"
-                }
-        },
-
-        deviceOwnerUUIDTemplate = {
-                keyClass:'col-xs-3',
-                valueClass:'col-xs-9',
-                key: 'virtual_machine_interface_device_owner',
-                name:"virtual_machine_interface_device_owner",
-                label:"Device ID",
-                templateGenerator: 'TextGenerator',
-                templateGeneratorConfig:{
-                    formatter: "deviceUUIDFormatter"
-                }
-        };
-
-        if(!isVCenter()){
-            blockList.splice(10, 0,
-                    deviceOwnerTemplate, deviceOwnerUUIDTemplate);
-        }
-        return blockList;
-    };
-    function getPortDetailsTemplateConfig() {
+    function getPortDetailsTemplateConfig(viewConfig) {
+        var schema = getValueByJsonPath(viewConfig.schema,'properties;'+Object.keys(viewConfig.schema.properties)[0]+';properties');
+        var template = ctwu.getSchemaGeneratedTemplate(schema, ctwc.PORT_TEMP_MAPPING);
         return {
             templateGenerator: 'RowSectionTemplateGenerator',
             templateGeneratorConfig: {
@@ -620,10 +402,10 @@ define([
                         columns: [{
                             class: 'col-xs-12',
                             rows: [{
-                                title: ctwl.TITLE_PORT_DETAILS,
+                                title: ctwl.CFG_VN_TITLE_DETAILS,
                                 templateGenerator: 'BlockListTemplateGenerator',
-                                templateGeneratorConfig:
-                                    getBlockListTemplateGeneratorCfg().concat(ctwu.getTagsExpandDetails())
+                                templateGeneratorConfig: template
+                                    //getBlockListTemplateGeneratorCfg().concat(ctwu.getTagsExpandDetails())
                             },
                             //permissions
                             ctwu.getRBACPermissionExpandDetails('col-xs-3')]
@@ -644,6 +426,10 @@ define([
     this.networkFormater = function (v, dc) {
         return portFormatters.networkFormater("", "", v, "", dc);
     };
+    this.objectKeyFormatter = function (v, dc, keyClass, key){
+        return ctwu.objectKeyFormatter(null, 
+                null, null, null, dc, keyClass, key);
+    }
     this.fqNameFormater = function(v, dc) {
         return portFormatters.fqNameFormater("", "", v, "", dc);
     };
