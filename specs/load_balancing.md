@@ -96,20 +96,26 @@ Navigate to **Configure** workspace and under **Networking** section, you see **
   * Native Load Balancer has a single pool, shared among multiple listeners
 
 **Step2 - Listenser Details:** A listener represents a listening endpoint for a load balancer. A single load balancer can have multiple listeners.
-1. Name: optional
+1. Name: optional The default value for this attribute will be an empty string.
 2. Description: optional
 3. Protocol: Drop Down  required (HTTP, TCP, TERMINATED_HTTPS)
-4. Port: required (When user select TERMINATED_HTTPS need to have select SSL Certificates)
+4. Port: required The port in which the frontend will be listening. Must be an integer in the range of 1-65535
+    (When user select TERMINATED_HTTPS need to have select SSL Certificates)
     1. List of Allocated Certificates
     2. Certificate Name , Expiration Date.
     3. List of Available Certificates
     4. Certificate Name, Expiration Date.
+5. Admin State (UP/DOWN): The default value for this attribute is true.
+6. connection_limit: The default value for this attribute will be -1, indicating an infinite limit.
 NOTE: The TERMINATED_HTTPS protocol is only available if the key-manager service is enabled and you have authority to list certificate containers and secrets.
 
 **Step2 - Pool Details:**	 A pool represents a group of members over which the load balancing will be applied.
 1. Name: Optional
 2. Description: optional
 3. Method: Drop Down  Required (LEAST_CONNECTIONS, ROUND_ROBIN, SOURCE_IP)
+4. Protocol: Required The protocol this pool and its members will be listening for. Must be one of TCP, HTTP, or HTTPS
+5. admin_state_up: The default value for this attribute is true.
+6. session_persistence: optional The default value for this is an empty dictionary.
 
 **Step2 - Pool Members:**  The Available Instances table contains existing instances that can be added as members of the pool. Use the "Add external member" button to add a member not found in the Available Instances table. Each member must have a unique combination of IP address and port.
 There are two ways user can add Members
@@ -117,15 +123,26 @@ There are two ways user can add Members
     *	Enter IPAddress, Subnet, Port, Weight
 2.	Available Instance (List): Optional
 
+1. address: The IP Address of the member to receive traffic from the load balancer.
+2. protocol_port: The port that the member is listening to receive traffic..
+3. subnet_id: The subnet in which to access the member
+   Some attributes will receive default values if not specified in the request:
+4. admin_state_up: The default value for this attribute is true.
+5. weight: The default value for this attribute will be 1.
+
 **Step2 - Monitor Details:**
-1. Monitor type: Drop Down required (HTTP, PING, TCP)
-2. Health check interval(sec): required
-3. Retry count before markdown: required
-3. Timeout(sec): required
-  * When user select HTTP: need additional inputs
+1. Monitor type: Drop Down required (HTTP,HTTPS, PING, TCP)
+    * When user select HTTP: need additional inputs
 	* HTTP method: Drop Down GET,HEAD Default(GET)
 	* Expected HTTP Status code :  Default(200)
     * URL Path: default (/)
+2. Health check interval(sec): required
+3. Retry count before markdown: required
+3. Timeout(sec): required
+
+4. delay: The interval in seconds between health checks.
+5. max_retries: Number of failed health checks before marked as OFFLINE.
+5. admin_state_up: The default is true.
 
 ![image](images/LBaaS_Create_Final.png)
 
@@ -134,19 +151,39 @@ Note: Custom attributes need to be added to this wizard.
 ####4.2.2 Edit a Load Balancer
 
 1. Load Balancer Details:
-    * User can edit only Name and Description
+    * User can edit only
+	* name
+	* description
+	* admin_state_up
     * Before deleting the Load Balancer first we need delete the Listener
 2. Listener Details:
-    * User can add new Listener
-    * User can edit only Name and Description
+    * User can edit only
+    * name
+	* description
+	* admin_state_up
+	* connection_limitName and Description
     * Before deleting the Listener first we need delete the Pool
 3. Pool Details:
-    * User can edit only Name and Description
+    * User can edit only
+    * name
+	* description
+	* admin_state_up
+	* Method
+	* session_persistence
     * Before deleting the Listener first we need delete the Pool Members
 4. Pool Members Details:  
     * User can add or Delete the existing members
+    * weight
+	* admin_state_up
 5. Monitor Details
     * User can Delete the Monitor
+    * delay
+	* timeout
+	* max_retries
+	* http_method
+	* url_path
+	* expected_codes
+	* admin_state_up
 
 ####4.2.4 Operations:
 Additional Operations
