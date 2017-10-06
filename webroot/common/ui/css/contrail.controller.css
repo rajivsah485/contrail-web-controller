@@ -3,6 +3,12 @@
  * All rights reserved.
  */
 
+/* Load Balancer Page*/
+ #configure-Loadbalancer .modal-footer{
+ 	display:none;
+ }
+
+
 /* Service Instances page*/
 .padingTop6{
     padding-top:6px;
@@ -579,7 +585,7 @@ table td[class*="col-xs-"], table th[class*="col-xs-"], .row-fluid table td[clas
 #configure-dns_record-form #record_name input[type="text"], #configure-dns_record-form #record_data input[type="text"]{
 width:100%;}
 
-#is_global input.ace-input[type=checkbox] + .ace-lbl::before, input.ace-input[type=radio] + .ace-lbl::before 
+#is_global input.ace-input[type=checkbox] + .ace-lbl::before, input.ace-input[type=radio] + .ace-lbl::before
 { margin-right:10px;}
 #fwrule-policy-tab-id ul.ui-tabs-nav, #fwrule-global-policy-tab-id ul.ui-tabs-nav, #fwrule-project-policy-tab-id ul.ui-tabs-nav {
     margin: 10px;
