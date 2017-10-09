@@ -324,6 +324,14 @@ define([
                             isBinding = true;
                             if(params.model.onNext()){
                                if(params.model.policy_name() !== ''){
+                                   var modalHeader;
+                                   if(Object.keys(newApplicationSet).length > 0){
+                                     modalHeader = ctwc.APS_MODAL_HEADER + ' > '+ newApplicationSet.name + ' > ' + params.model.policy_name();
+                                   }else{
+                                     modalHeader = ctwc.APS_MODAL_HEADER + ' > '+ params.model.policy_name();
+                                   }
+                                   $('.modal-header-title').text('');
+                                   $('.modal-header-title').text(modalHeader);
                                    $('#applicationpolicyset_policy_wizard .alert-error span').text('');
                                    $('#applicationpolicyset_policy_wizard .alert-error').hide();
                                    return true;
@@ -357,6 +365,8 @@ define([
                                                           'apsName':apsName
                                 });
                             }
+                            $('.modal-header-title').text('');
+                            $('.modal-header-title').text(ctwc.APS_MODAL_HEADER);
                             return true;
                         }
                     }
@@ -405,6 +415,17 @@ define([
                                     $('#applicationpolicyset_policy_wizard .alert-error').show();
                                 }
                             }, options, false, allData.serviceGrpList);
+                        },
+                        onPrevious: function(params) {
+                            var modalHeader;
+                            if(Object.keys(newApplicationSet).length > 0){
+                              modalHeader = ctwc.APS_MODAL_HEADER + ' > '+ newApplicationSet.name;
+                            }else{
+                              modalHeader = ctwc.APS_MODAL_HEADER;
+                            }
+                            $('.modal-header-title').text('');
+                            $('.modal-header-title').text(modalHeader);
+                            return true;
                         }
                     }
                 ]

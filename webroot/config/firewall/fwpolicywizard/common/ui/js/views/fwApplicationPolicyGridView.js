@@ -204,6 +204,9 @@ define([
                         $('#aps-overlay-container').hide();
                         Knockback.ko.cleanNode($("#aps-gird-container")[0]);
                         $('#applicationpolicyset_policy_wizard .actions').css("display", "block");
+                        var modelHeader = ctwc.APS_MODAL_HEADER+ ' > '+ newApplicationSet.name;
+                        $('.modal-header-title').text('');
+                        $('.modal-header-title').text(modelHeader);
                         $('#applicationpolicyset_policy_wizard a.btn-primary').trigger("click");
                     }else{
                         $("#grid-details-error-container").text('');

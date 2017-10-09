@@ -1015,6 +1015,7 @@ define([
         this.NEW_APPLICATION_POLICY_SET_SECTION_ID = 'new-application-policy-set-section';
         this.NEW_APPLICATION_POLICY_SET = 'new-application-policy-set';
         this.NEW_APPLICATION_POLICY_SET_GRID_ID = "new-application-policy-set-grid";
+        this.APS_MODAL_HEADER = 'Firewall Policy Wizard';
         
         
         this.RULE_DATA_TAGS = 'rule-data-tags';

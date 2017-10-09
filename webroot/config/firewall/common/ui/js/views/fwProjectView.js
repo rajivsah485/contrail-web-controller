@@ -40,7 +40,7 @@ define([
                     fwPolicyWizardEditView = new FWPolicyWizardEditView();
                 fwPolicyWizardEditView.model = fwPolicyWizardModel;
                 fwPolicyWizardEditView.renderFwWizard({
-                                "title": 'Add new firewall policy',
+                                "title": ctwc.APS_MODAL_HEADER,
                                 'viewConfig': $.extend(self.newViewConfig.viewConfig, { isGlobal: false , isWizard: true }),
                                  callback: function () {
                                  }
