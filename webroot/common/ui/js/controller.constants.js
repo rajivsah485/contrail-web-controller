@@ -1172,6 +1172,32 @@ define([
         this.TEXT_AREA_PLACEHOLDER = 'Copy / Paste JSON data for ';
         this.MODAL_CONFIG_EDITOR_CONTAINER = 'json-editor-form-view';
         this.CONFIG_EDITOR_PATH = '/js/views/configEditor/';
+
+        // Load Balancer constants
+        this.CONFIG_LB_LISTENER_SECTION_ID = "config-lb-listener-section";
+        this.CONFIG_LB_LISTENER_ID = "config-lb-listener";
+        this.CONFIG_LB_LISTENER_LIST_VIEW_ID = 'config-lb-listener-list-view';
+        this.CONFIG_LB_LISTENER_GRID_ID = 'config-lb-listener-grid';
+        this.CONFIG_LB_LISTENER_TITLE = 'Listeners';
+
+        this.CONFIG_LB_POOL_SECTION_ID = "config-lb-pool-section";
+        this.CONFIG_LB_POOL_ID = "config-lb-pool";
+        this.CONFIG_LB_POOL_LIST_VIEW_ID = 'config-lb-pool-list-view';
+        this.CONFIG_LB_POOL_GRID_ID = 'config-lb-pool-grid';
+        this.CONFIG_LB_POOL_TITLE = 'Pools';
+
+        this.CONFIG_LB_POOL_MEMBER_SECTION_ID = "config-lb-pool-member-section";
+        this.CONFIG_LB_POOL_MEMBER_ID = "config-lb-pool-member";
+        this.CONFIG_LB_POOL_MEMBER_LIST_VIEW_ID = 'config-lb-pool-member-list-view';
+        this.CONFIG_LB_POOL_MEMBER_GRID_ID = 'config-lb-pool-member-grid';
+        this.CONFIG_LB_POOL_MEMBER_TITLE = 'Pool Members';
+
+        this.CONFIG_LB_MONITOR_SECTION_ID = "config-lb-monitor-section";
+        this.CONFIG_LB_MONITOR_MEMBER_ID = "config-lb-monitor";
+        this.CONFIG_LB_MONITOR_LIST_VIEW_ID = 'config-lb-monitor-list-view';
+        this.CONFIG_LB_MONITOR_GRID_ID = 'config-lb-monitor-grid';
+        this.CONFIG_LB_MONITOR_TITLE = 'Monitors';
+
         //Gohan Constants
         this.GOHAN_HASH_LIST = ['config_gc_serviceTemplates','config_gc_serviceInstance','config_gc_securityGroup','config_gc_networkPolicy','config_gc_network',
                                 'config_gc_server','config_gc_idPool','config_gc_association','config_gc_flavor','config_gc_image','config_gc_location'];

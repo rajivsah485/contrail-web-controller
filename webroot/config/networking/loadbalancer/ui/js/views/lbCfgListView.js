@@ -24,9 +24,9 @@ define([
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: ctwc.URL_GET_CONFIG_DETAILS,
-                            type: "POST",
-                            data: lbCfgFormatter.setPostUrlData(options)
+                            url: '/api/tenants/config/lbaas/load-balancers-details',//ctwc.URL_GET_CONFIG_DETAILS,
+                            type: "GET"//,
+                            //data: lbCfgFormatter.setPostUrlData(options)
                         },
                         dataParser: self.parseLoadbalancersData,
                     }
@@ -36,14 +36,14 @@ define([
                        contrailListModel, getLbCfgListViewConfig(viewConfig));
         },
         parseLoadbalancersData : function(response){
-            var dataItems = [],
-                tagData = getValueByJsonPath(response, "0;loadbalancers", []);
-                _.each(tagData, function(val){
+            //var dataItems = [],
+               var lbList = getValueByJsonPath(response, "loadbalancers", []);
+               /* _.each(tagData, function(val){
                         if("loadbalancer" in val) {
                             dataItems.push(val["loadbalancer"]);
                         }
-                }); 
-            return dataItems;
+                }); */
+            return lbList;
         }
     });
     var getLbCfgListViewConfig = function (viewConfig) {

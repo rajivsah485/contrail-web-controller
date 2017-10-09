@@ -36,6 +36,22 @@ define([
                     }
                     break;
 
+                case 'renderLoadBalancers':
+                    if (hashParams.type == "loadbalancers") {
+                        //if (hashParams.view == "details") {
+                           // this.mnView.renderProject({hashParams: hashParams});
+                        //} else {
+                            this.mnView.renderLoadBalancerList({hashParams: hashParams});
+                        //}
+                    } else if (hashParams.type == "flow"){
+                        /*if (hashParams.view == "list") {
+                            this.mnView.renderFlowList({hashParams: hashParams});
+                        } else if (hashParams.view == "details") {
+                            this.mnView.renderFlow({hashParams: hashParams});
+                        }*/
+                    }
+                    break;
+
                 case 'renderNetworks':
                     if (hashParams.type == "network") {
                         if (hashParams.view == "details") {

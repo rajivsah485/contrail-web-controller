@@ -5,9 +5,16 @@
 
 /* Load Balancer Page*/
  #configure-Loadbalancer .modal-footer{
+ 	margin-top: -45px;
+    float: left;
+    padding-left: 7px;
+ }
+ #configure-Loadbalancer .modal-footer .btnSave{
  	display:none;
  }
-
+#laod-balancer-childs-tab-id{
+	margin-top: 15px;
+}
 
 /* Service Instances page*/
 .padingTop6{
@@ -593,7 +600,7 @@ width:100%;}
 #content-container h5{
     padding: 5px 0px 0px 15px!important;
     margin: 0px !important;
-    font-size: 15px;
+    font-size: 14px;
     color: #478fca;
     text-transform: capitalize;
 }
@@ -644,4 +651,12 @@ form h5.margin-0-0-10~.section-content {
 }
 #origin_override {
 	margin-top: 17px;
+}
+#config-lb-list .value th{
+    font-weight:600;
+    border-bottom:#777 solid 1px;
+    padding-bottom:2px;
+    word-break:break-word;}
+#config-lb-list .value {
+	width: 75% !important;
 }
