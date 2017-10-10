@@ -283,7 +283,7 @@ and need to add the iconClass tag wherever we need to show some icons
                         </item>
                         <item>
                             <label>Load Balancers</label>
-                            <hash>mon_load_balancer</hash>
+                            <hash>mon_networking_loadbalancer</hash>
                             <access>
                                 <roles>
                                     <role>cloudAdmin</role>

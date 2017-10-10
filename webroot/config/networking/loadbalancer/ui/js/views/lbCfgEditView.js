@@ -50,8 +50,18 @@ define([
                         kbValidation.bind(self);
                     }
              });
+             $("#wizard_cancel").off('click').on('click', function(){
+                 Knockback.release(self.model,
+                         document.getElementById(modalId));
+                 kbValidation.unbind(self);
+                 $("#" + modalId).find(".contrailWizard").data("contrailWizard").destroy();
+                 $("#" + modalId).modal("hide");
+             });
         }
     });
+    function subnetFormatter(model){
+        console.log(model);
+    }
     function getLoadBalancerControl(options){
         return {
                 rows: [
@@ -97,20 +107,140 @@ define([
                                           dataBindValue :
                                               'lb_subnet',
                                           elementConfig : {
+                                              placeholder : 'Select Subnet',
                                               dataTextField : "text",
                                               dataValueField : "id",
-                                              placeholder : 'Select Subnet',
-                                              data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb'},
-                                                      {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'d800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5'}]
+                                              //defaultValueId : 0,
+                                              data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'testOne'},
+                                                  {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'test22'}]
+                                              /*dataSource : {
+                                                  type: 'remote',
+                                                  requestType: 'POST',
+                                                  postData: JSON.stringify({data: [{type: "subnets"}]}),
+                                                  url: ctwc.URL_GET_CONFIG_DETAILS,
+                                                  parse: subnetFormatter
+                                              }*/
                                           }
                                       }
                                   }
                               ]
-                      }
+                      },
+                      {
+                          columns: [{
+                                        elementId: 'lb_provider',
+                                        view: "FormDropdownView",
+                                        viewConfig: {
+                                            label: 'Loadbalancer Provider',
+                                            path : 'lb_provider',
+                                            class: 'col-xs-6',
+                                            dataBindValue :
+                                                'lb_provider',
+                                            elementConfig : {
+                                                placeholder : 'Select Loadbalancer Provider',
+                                                dataTextField : "text",
+                                                dataValueField : "id",
+                                                data : [{id: 'b87d85e1-5789-4b9c-a484-1b36e8c0600d', text:'native'},
+                                                    {id: '11ebe43e-13cc-4667-a50c-86cb184a38dc', text:'opencontrail'}]
+                                            }
+                                        }
+                                    }
+                                ]
+                     },
+                     {
+                         columns: [
+                             {
+                             elementId: 'loadbalancer_properties11',
+                             view: "AccordianView",
+                             viewConfig: [
+                                 {
+                                 elementId: 'advanced',
+                                 title: 'Loadbalancer Properties',
+                                 view: "SectionView",
+                                 active:false,
+                                 viewConfig: {
+                                         rows: [{
+                                             columns: [
+                                                 {
+                                                     elementId: "lb_status",
+                                                     view: "FormInputView",
+                                                     viewConfig: {
+                                                         path: "lb_status",
+                                                         label: 'Status',
+                                                         dataBindValue: "lb_status",
+                                                         class: "col-xs-6"
+                                                     }
+                                                 },
+                                                 {
+                                                     elementId: "lb_provisioning_status",
+                                                     view: "FormInputView",
+                                                     viewConfig: {
+                                                         path: "lb_provisioning_status",
+                                                         label: 'Provisioning Status',
+                                                         dataBindValue: "lb_provisioning_status",
+                                                         class: "col-xs-6"
+                                                     }
+                                                 }
+                                             ]
+                                         },
+                                         {
+                                             columns: [
+                                                 {
+                                                     elementId: "lb_vipaddress",
+                                                     view: "FormInputView",
+                                                     viewConfig: {
+                                                         path: "lb_vipaddress",
+                                                         label: 'Vip Address',
+                                                         dataBindValue: "lb_vipaddress",
+                                                         class: "col-xs-6"
+                                                     }
+                                                 },
+                                                 {
+                                                     elementId: "lb_vipsubnetid",
+                                                     view: "FormInputView",
+                                                     viewConfig: {
+                                                         path: "lb_vipsubnetid",
+                                                         label: 'Vip Subnet Id',
+                                                         dataBindValue: "lb_vipsubnetid",
+                                                         class: "col-xs-6"
+                                                     }
+                                                 }
+                                             ]
+                                         },
+                                         {
+                                             columns: [
+                                                 {
+                                                     elementId: "lb_operating_status",
+                                                     view: "FormInputView",
+                                                     viewConfig: {
+                                                         path: "lb_operating_status",
+                                                         label: 'Operating Status',
+                                                         dataBindValue: "lb_operating_status",
+                                                         class: "col-xs-6"
+                                                     }
+                                                 },
+                                                 {
+                                                     elementId: 'lb_admin_state',
+                                                     view: "FormCheckboxView",
+                                                     viewConfig : {
+                                                         path : 'lb_admin_state',
+                                                         class : "col-xs-6",
+                                                         label:'Admin State',
+                                                         dataBindValue : 'lb_admin_state',
+                                                         elementConfig : {
+                                                             isChecked:false
+                                                         }
+                                                     }
+                                                 }
+                                             ]
+                                         }]
+                                     }
+                                 }]
+                             }]
+                         }
                 ]
             }
     }
-    
+
     function getListenerControl(options){
        return {
                 rows: [
@@ -151,9 +281,12 @@ define([
                                         elementConfig : {
                                             dataTextField : "text",
                                             dataValueField : "id",
-                                            placeholder : 'Select Subnet',
+                                            placeholder : 'Select Protocol',
                                             data : [{id: 'HTTP', text:'HTTP'},
-                                                    {id: 'TCP', text:'TCP'}]
+                                                    {id: 'HTTPS', text:'HTTPS'},
+                                                    {id: 'TCP', text:'TCP'},
+                                                    {id: 'UDP', text:'UDP'},
+                                                    {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
                                         }
                                     }
                                 },
@@ -168,7 +301,24 @@ define([
                                     }
                                 }
                               ]
-                      }
+                      },
+                      {
+                          columns: [
+                              {
+                                  elementId: 'listener_admin_state',
+                                  view: "FormCheckboxView",
+                                  viewConfig : {
+                                      path : 'listener_admin_state',
+                                      class : "col-xs-6",
+                                      label:'Admin State',
+                                      dataBindValue : 'listener_admin_state',
+                                      elementConfig : {
+                                          isChecked:false
+                                      }
+                                  }
+                              }
+                           ]
+                       }
                 ]
             }
     }
@@ -217,9 +367,90 @@ define([
                                                      {id: 'ROUND_ROBIN', text:'ROUND_ROBIN'},{id: 'SOURCE_IP', text:'SOURCE_IP'}]
                                          }
                                      }
+                                 },
+                                 {
+                                     elementId: "pool_status",
+                                     view: "FormInputView",
+                                     viewConfig: {
+                                         path: "pool_status",
+                                         label: 'Status',
+                                         dataBindValue: "pool_status",
+                                         class: "col-xs-6"
+                                     }
                                  }
                                ]
-                       }
+                       },
+                       {
+                           columns: [
+                                   {
+                                       elementId: 'pool_protocol',
+                                       view: "FormDropdownView",
+                                       viewConfig: {
+                                           label: 'Protocol',
+                                           path : 'pool_protocol',
+                                           class: 'col-xs-6',
+                                           dataBindValue :
+                                               'pool_protocol',
+                                           elementConfig : {
+                                               dataTextField : "text",
+                                               dataValueField : "id",
+                                               placeholder : 'Select Protocol',
+                                               data : [{id: 'HTTP', text:'HTTP'},
+                                                       {id: 'HTTPS', text:'HTTPS'},
+                                                       {id: 'TCP', text:'TCP'},
+                                                       {id: 'UDP', text:'UDP'},
+                                                       {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
+                                           }
+                                       }
+                                   },
+                                   {
+                                       elementId: 'pool_session_persistence',
+                                       view: "FormDropdownView",
+                                       viewConfig: {
+                                           label: 'Session Persistence',
+                                           path : 'pool_session_persistence',
+                                           class: 'col-xs-6',
+                                           dataBindValue :
+                                               'pool_session_persistence',
+                                           elementConfig : {
+                                               dataTextField : "text",
+                                               dataValueField : "id",
+                                               placeholder : 'Select Session Persistence',
+                                               data : [{id: 'SOURCE_IP', text:'SOURCE_IP'},
+                                                       {id: 'HTTP_COOKIE', text:'HTTP_COOKIE'},
+                                                       {id: 'APP_COOKIE', text:'APP_COOKIE'}]
+                                           }
+                                       }
+                                   }
+                                 ]
+                         },
+                         {
+                             columns: [
+                                 {
+                                     elementId: "pool_subnet_id",
+                                     view: "FormInputView",
+                                     viewConfig: {
+                                         path: "pool_subnet_id",
+                                         label: 'subnet Id',
+                                         dataBindValue: "pool_subnet_id",
+                                         class: "col-xs-6"
+                                     }
+                                 },
+                                 {
+                                     elementId: 'pool_admin_state',
+                                     view: "FormCheckboxView",
+                                     viewConfig : {
+                                         path : 'pool_admin_state',
+                                         class : "col-xs-6",
+                                         label:'Admin State',
+                                         dataBindValue : 'pool_admin_state',
+                                         elementConfig : {
+                                             isChecked:false
+                                         }
+                                     }
+                                 }
+                              ]
+                          }
                  ]
              }
      }
@@ -240,8 +471,8 @@ define([
                                      elementConfig : {
                                          dataTextField : "text",
                                          dataValueField : "id",
-                                         placeholder : 'Select Method',
-                                         data : [{id: 'HTTP', text:'HTTP'},
+                                         placeholder : 'Select Monitor Type',
+                                         data : [{id: 'HTTP', text:'HTTP'},{id: 'HTTPS', text:'HTTPS'},
                                                  {id: 'PING', text:'PING'},{id: 'TCP', text:'TCP'}]
                                      }
                                  }
@@ -334,8 +565,8 @@ define([
                                             dataTextField : "text",
                                             dataValueField : "id",
                                             placeholder : 'Select Subnet',
-                                            data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb'},
-                                                    {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'d800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5'}]
+                                            data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'testOne'},
+                                                {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'test22'}]
                                         }
                                     }
                                 },
@@ -388,12 +619,19 @@ define([
                         stepType: "step",
                         onInitRender: true,
                         buttons: {
-                            previous: {
+                            next: {
                                 visible: false
+                            },
+                            previous: {
+                                visible: false,
                             }
                         },
                         onNext: function(params) {
+                            $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
                             return true;
+                        },
+                        onPrevious: function(params) {
+                            return false;
                         }
                     }
                 ]
@@ -486,6 +724,7 @@ define([
                             }
                         },
                         onNext: function(params) {
+                            $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').text('Create Load Balancer');
                             return true;
                         },
                         onPrevious: function(params) {
@@ -533,7 +772,8 @@ define([
                 elementId: cowu.formatElementId([prefixId, 'loadbalancer_wizard']),
                 view: "WizardView",
                 viewConfig: {
-                    steps: []
+                    steps: [],
+                    privousHidden: true
                 }
             },
             steps = [],

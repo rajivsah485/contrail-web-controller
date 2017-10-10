@@ -43,6 +43,9 @@ define([
 
         renderFlow: function (viewConfig) {
             this.renderView4Config(this.$el, null, getFlowConfig(viewConfig));
+        },
+        renderLoadBalancerList: function (viewConfig) {
+            this.renderView4Config(this.$el, null, getLoadBalancerListConfig(viewConfig));
         }
     });
 
@@ -112,6 +115,31 @@ define([
                 includeDefaultProject: true,
                 childView: {
                     init: getNetworkListViewConfig(viewConfig)
+                }/*,
+                allDropdownOption: ctwc.ALL_PROJECT_DROPDOWN_OPTION*/
+            },
+            customDomainDropdownOptions = {
+                childView: {
+                    init: ctwvc.getProjectBreadcrumbDropdownViewConfig(hashParams, customProjectDropdownOptions)
+                }
+            };
+            var currentCookie =  contrail.getCookie('region');
+            if (currentCookie != cowc.GLOBAL_CONTROLLER_ALL_REGIONS){
+                customProjectDropdownOptions['allDropdownOption']
+                    = ctwc.ALL_PROJECT_DROPDOWN_OPTION;
+                customProjectDropdownOptions['defaultValueIndex'] = 1;
+            }
+        return ctwvc.getDomainBreadcrumbDropdownViewConfig(hashParams, customDomainDropdownOptions)
+    };
+
+    function getLoadBalancerListConfig(viewConfig) {
+        var hashParams = viewConfig.hashParams,
+            customProjectDropdownOptions = {
+                getProjectsFromIdentity: true,
+                defaultValueIndex: 1,
+                includeDefaultProject: true,
+                childView: {
+                    init: getLoadBalancerListViewConfig(viewConfig)
                 }/*,
                 allDropdownOption: ctwc.ALL_PROJECT_DROPDOWN_OPTION*/
             },
@@ -286,6 +314,18 @@ define([
             return {
                 elementId: cowu.formatElementId([ctwl.MONITOR_NETWORK_LIST_PAGE_ID]),
                 view: "NetworkListView",
+                viewPathPrefix: "monitor/networking/ui/js/views/",
+                app: cowc.APP_CONTRAIL_CONTROLLER,
+                viewConfig: $.extend(true, {}, viewConfig, {projectSelectedValueData: projectSelectedValueData})
+            }
+        };
+    };
+
+    function getLoadBalancerListViewConfig(viewConfig) {
+        return function (projectSelectedValueData) {
+            return {
+                elementId: cowu.formatElementId([ctwl.MONITOR_NETWORK_LIST_PAGE_ID]),
+                view: "LoadBalancerListView",
                 viewPathPrefix: "monitor/networking/ui/js/views/",
                 app: cowc.APP_CONTRAIL_CONTROLLER,
                 viewConfig: $.extend(true, {}, viewConfig, {projectSelectedValueData: projectSelectedValueData})

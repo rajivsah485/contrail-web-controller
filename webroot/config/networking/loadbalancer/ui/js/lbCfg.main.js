@@ -23,7 +23,11 @@ function configlBaaSLoader() {
     }
     this.renderView = function (renderFn, hashParams) {
         $(contentContainer).html("");
-        this.lbCfgView[renderFn]({hashParams: hashParams});
+        if(hashParams.view === 'config_loadbalancer_details'){
+           this.lbCfgView.renderLBDetails({hashParams: hashParams});
+        }else{
+           this.lbCfgView.renderLoadBalancer({hashParams: hashParams}); 
+        }
     };
 
     this.updateViewByHash = function (hashObj, lastHashObj) {
