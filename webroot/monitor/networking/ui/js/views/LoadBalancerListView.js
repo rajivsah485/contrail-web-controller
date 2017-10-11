@@ -87,7 +87,7 @@ define([
                             projectUUID,null));
                      self.renderView4Config(self.$el, contrailListModel,
                             getNetworkListViewConfig(projectFQN, projectUUID));
-                            ctwu.setProject4NetworkListURLHashParams(projectFQN);
+                            //ctwu.setProject4NetworkListURLHashParams(projectFQN);
                 }
         }
     });
@@ -208,8 +208,8 @@ define([
                                 viewConfig: {
                                     loadChartInChunks: true,
                                     chartOptions: {
-                                        xLabel: 'Interfaces',
-                                        yLabel: 'Connected Networks',
+                                        xLabel: 'Backends',
+                                        yLabel: 'Frontends',
                                         forceX: [0, 10],
                                         forceY: [0, 10],
                                         xLabelFormat: d3.format(".01f"),
@@ -224,7 +224,7 @@ define([
                                 }
                             },
                         ]
-                    },
+                    }/*,
                     {
                         columns: [
                             {
@@ -237,7 +237,7 @@ define([
                                     pagerOptions: { options: { pageSize: 8, pageSizeSelect: [8, 50, 100] } }}
                             }
                         ]
-                    }
+                    }*/
                 ]
             }
         }

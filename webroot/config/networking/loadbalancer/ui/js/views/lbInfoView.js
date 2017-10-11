@@ -7,18 +7,16 @@ define([
     'contrail-view',
     'contrail-list-model'
 ], function (_, ContrailView, ContrailListModel) {
-    var listenerListView = ContrailView.extend({
+    var lbInfoView = ContrailView.extend({
         el: $(contentContainer),
         render: function () {
             var self = this,
-                viewConfig = this.attributes.viewConfig,
-                currentHashParams = layoutHandler.getURLHashParams(),
-                loadBalancer = currentHashParams.focusedElement.loadBalancer,
-                loadBalancerId = currentHashParams.focusedElement.uuid;
-                viewConfig.lbName = loadBalancer;
-                viewConfig.listenerRef = window.location.href;
-            var breadcrumbCount = $('#breadcrumb').children().length;
-            if(breadcrumbCount === 3){
+            viewConfig = this.attributes.viewConfig,
+            currentHashParams = layoutHandler.getURLHashParams(),
+            loadBalancer = currentHashParams.focusedElement.loadBalancer,
+            loadBalancerId = currentHashParams.focusedElement.uuid;
+            viewConfig.lbId =currentHashParams.focusedElement.uuid;
+            if($('#breadcrumb').children().length === 3){
                 pushBreadcrumb([loadBalancer]); 
             }
             var listModelConfig = {
@@ -27,33 +25,37 @@ define([
                             url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
                             type: "GET"
                         },
-                        dataParser: self.parseLoadbalancersData,
+                        dataParser: self.parseLoadbalancersInfoData,
                     }
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getListenerGridViewConfig(viewConfig));
+                    contrailListModel, getLbInfoViewConfig(viewConfig));
         },
 
-        parseLoadbalancersData : function(response) {
-           var listenerList = getValueByJsonPath(response,
-                        "loadbalancer;loadbalancer-listener", [], false);
-           return listenerList;
-        }
+        parseLoadbalancersInfoData : function(response) {
+            var loadbalancer = getValueByJsonPath(response,
+                         "loadbalancer", [], false), dataItems = [];
+            _.each(ctwc.LOAD_BALANCER_INFO_OPTIONS_MAP, function(lbOption){
+                dataItems.push({ name: lbOption.name,
+                    value: loadbalancer[lbOption.key], key: lbOption.key});
+            });
+            return dataItems;
+         }
     });
 
-    var getListenerGridViewConfig = function (viewConfig) {
+    var getLbInfoViewConfig = function (viewConfig) {
         return {
-            elementId: cowu.formatElementId([ctwc.CONFIG_LB_LISTENER_SECTION_ID]),
+            elementId: cowu.formatElementId([ctwc.CONFIG_LB_INFO_SECTION_ID]),
             view: "SectionView",
             viewConfig: {
                 rows: [
                     {
                         columns: [
                             {
-                                elementId: ctwc.CONFIG_LB_LISTENER_ID,
-                                view: "listenerGridView",
-                                viewPathPrefix: "config/networking/loadbalancer/ui/js/views/listener/",
+                                elementId: ctwc.CONFIG_LB_INFO_ID,
+                                view: "lbInfoGridView",
+                                viewPathPrefix: "config/networking/loadbalancer/ui/js/views/",
                                 app: cowc.APP_CONTRAIL_CONTROLLER,
                                 viewConfig: {
                                     pagerOptions: {
@@ -62,10 +64,7 @@ define([
                                             pageSizeSelect: [10, 50, 100]
                                         }
                                     },
-                                    lbId: viewConfig.lbId,
-                                    lbName: viewConfig.lbName,
-                                    listenerRef: viewConfig.listenerRef//,
-                                    //isGlobal: false
+                                    lbId: viewConfig.lbId
                                 }
                             }
                         ]
@@ -75,6 +74,6 @@ define([
         }
     };
 
-    return listenerListView;
+    return lbInfoView;
 });
 

@@ -25,8 +25,12 @@ function configlBaaSLoader() {
         $(contentContainer).html("");
         if(hashParams.view === 'config_loadbalancer_details'){
            this.lbCfgView.renderLBDetails({hashParams: hashParams});
+        }else if(hashParams.view === 'config_listener_details'){
+           this.lbCfgView.renderListenerDetails({hashParams: hashParams}); 
+        }else if(hashParams.view === 'config_pool_details'){
+            this.lbCfgView.renderPoolDetails({hashParams: hashParams});  
         }else{
-           this.lbCfgView.renderLoadBalancer({hashParams: hashParams}); 
+            this.lbCfgView.renderLoadBalancer({hashParams: hashParams});  
         }
     };
 

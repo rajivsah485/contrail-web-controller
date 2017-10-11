@@ -13,11 +13,17 @@ define([
             var self = this,
                 viewConfig = this.attributes.viewConfig,
                 currentHashParams = layoutHandler.getURLHashParams(),
-                loadBalancer = currentHashParams.focusedElement.loadBalancer,
-                loadBalancerId = currentHashParams.focusedElement.uuid;
-            var breadcrumbCount = $('#breadcrumb').children().length;
-            if(breadcrumbCount === 3){
-                pushBreadcrumb([loadBalancer]); 
+                poolName = currentHashParams.focusedElement.pool,
+                loadBalancerId = currentHashParams.focusedElement.uuid,
+                lbName = currentHashParams.focusedElement.lbName,
+                listenerRef = currentHashParams.focusedElement.listenerRef,
+                poolRef = currentHashParams.focusedElement.poolRef,
+                listenerName = currentHashParams.focusedElement.listenerName;
+            if($('#breadcrumb').children().length === 4){
+                $('#breadcrumb li').last().remove();
+            }
+            if($('#breadcrumb').children().length === 3){
+                pushBreadcrumb([{label: lbName, href: listenerRef},{label: listenerName, href: poolRef},{label: poolName, href: ''}]);
             }
             var listModelConfig = {
                     remote: {

@@ -516,6 +516,15 @@ define([
             }
         };
         
+        this.healthMonitorCountFormatter = function(d, c, v, cd, dc){
+            var healthMonitorCount = getValueByJsonPath(dc, 'loadbalancer-healthmonitor', []);
+            if(healthMonitorCount.length > 0){
+                return healthMonitorCount.length;
+            }else{
+                return '0';
+            }
+        };
+        
         this.poolAdminStateFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_pool_properties;admin_state', false);
             if(adminStatus){
@@ -620,6 +629,224 @@ define([
                 'Down');
             }
         };
+
+        this.valueFormatter = function(row, col, val, d, rowData) {
+               if ('name' == rowData['key']) {
+                   return val;
+               }
+               if('display_name' === rowData['key']) {
+                   if(val == '' || val == null){
+                       return '-';
+                   }else{
+                       return val; 
+                   }
+               }
+               if('loadbalancer_provider' === rowData['key']) {
+                   if(val == '' || val == null){
+                       return '-';
+                   }else{
+                       return val; 
+                   }
+               }
+               if('loadbalancer_properties' === rowData['key']){
+                  if(rowData['name'] === 'Provisioning Status'){
+                      if(val.provisioning_status == '' || val.provisioning_status == null){
+                          return '-';
+                      }else{
+                          return val.provisioning_status;
+                      }
+                  }
+                  if(rowData['name'] === 'Admin State'){
+                      if(val.admin_state == '' || val.admin_state == null){
+                          return '-';
+                      }else{
+                          if(val.admin_state == true){
+                              return 'Active';
+                          }else{
+                              return 'Down';
+                          }
+                      }
+                  }
+                  if(rowData['name'] === 'Fixed IPs'){
+                      if(val.vip_address == '' || val.vip_address == null){
+                          return '-';
+                      }else{
+                          return val.vip_address;
+                      }
+                  }
+                  if(rowData['name'] === 'Operating Status'){
+                      if(val.operating_status == '' || val.operating_status == null){
+                          return '-';
+                      }else{
+                          return val.operating_status;
+                      }
+                  }
+              }
+              if('loadbalancer-listener' === rowData['key']) {
+                   if(val.length == 0 || val == null || val == undefined){
+                       return '-';
+                   }else{
+                       return val.length; 
+                   }
+              }
+              if('service_instance_refs' === rowData['key']) {
+                  var toList = [];
+                  if(val.length == 0 || val == null || val == undefined){
+                      return '-';
+                  }else{
+                      for(var i = 0; i < val.length; i++){
+                          var to = val[i].to;
+                          toList.push(to[to.length -1]);
+                      } 
+                      return toList.join(',');
+                  }
+             }
+              if('virtual_machine_interface_refs' === rowData['key']) {
+                  var toList = [];
+                  if(val.length == 0 || val == null || val == undefined){
+                      return '-';
+                  }else{
+                      for(var i = 0; i < val.length; i++){
+                          var to = val[i].to;
+                          toList.push(to[to.length -1]);
+                      } 
+                      return toList.join(',');
+                  }
+             }
+              return val;
+         };
+         
+         this.listenerValueFormatter = function(row, col, val, d, rowData) {
+             if ('name' == rowData['key']) {
+                 return val;
+             }
+             if('display_name' === rowData['key']) {
+                 if(val == '' || val == null){
+                     return '-';
+                 }else{
+                     return val; 
+                 }
+             }
+             if('loadbalancer_listener_properties' === rowData['key']){
+                if(rowData['name'] === 'Protocol'){
+                    if(val.protocol == '' || val.protocol == null){
+                        return '-';
+                    }else{
+                        return val.protocol;
+                    }
+                }
+                if(rowData['name'] === 'Admin State'){
+                    if(val.admin_state == '' || val.admin_state == null){
+                        return '-';
+                    }else{
+                        if(val.admin_state == true){
+                            return 'Active';
+                        }else{
+                            return 'Down';
+                        }
+                    }
+                }
+                if(rowData['name'] === 'Connection Limit'){
+                    if(val.connection_limit == '' || val.connection_limit == null){
+                        return '-';
+                    }else{
+                        return val.connection_limit;
+                    }
+                }
+                if(rowData['name'] === 'Protocol Port'){
+                    if(val.protocol_port == '' || val.protocol_port == null){
+                        return '-';
+                    }else{
+                        return val.protocol_port;
+                    }
+                }
+            }
+            if('loadbalancer-pool' === rowData['key']) {
+                 if(val.length == 0 || val == null || val == undefined){
+                     return '-';
+                 }else{
+                     return val.length; 
+                 }
+            }
+            return val;
+       };
+       
+       this.poolValueFormatter = function(row, col, val, d, rowData) {
+           if ('name' == rowData['key']) {
+               return val;
+           }
+           if('display_name' === rowData['key']) {
+               if(val == '' || val == null){
+                   return '-';
+               }else{
+                   return val; 
+               }
+           }
+           if('loadbalancer_pool_properties' === rowData['key']){
+              if(rowData['name'] === 'Protocol'){
+                  if(val.protocol == '' || val.protocol == null){
+                      return '-';
+                  }else{
+                      return val.protocol;
+                  }
+              }
+              if(rowData['name'] === 'Admin State'){
+                  if(val.admin_state == '' || val.admin_state == null){
+                      return '-';
+                  }else{
+                      if(val.admin_state == true){
+                          return 'Active';
+                      }else{
+                          return 'Down';
+                      }
+                  }
+              }
+              if(rowData['name'] === 'Session Persistence'){
+                  if(val.session_persistence == '' || val.session_persistence == null){
+                      return '-';
+                  }else{
+                      return val.session_persistence;
+                  }
+              }
+              
+              if(rowData['name'] === 'Persistence Cookie Name'){
+                  if(val.persistence_cookie_name == '' || val.persistence_cookie_name == null){
+                      return '-';
+                  }else{
+                      return val.persistence_cookie_name;
+                  }
+              }
+              if(rowData['name'] === 'Status Description'){
+                  if(val.status_description == '' || val.status_description == null){
+                      return '-';
+                  }else{
+                      return val.status_description;
+                  }
+              }
+              if(rowData['name'] === 'Loadbalancer Method'){
+                  if(val.loadbalancer_method == '' || val.loadbalancer_method == null){
+                      return '-';
+                  }else{
+                      return val.loadbalancer_method;
+                  }
+              }
+          }
+          if('loadbalancer-healthmonitor' === rowData['key']) {
+               if(val.length == 0 || val == null || val == undefined){
+                   return '-';
+               }else{
+                   return val.length; 
+               }
+          }
+          if('loadbalancer-members' === rowData['key']) {
+              if(val.length == 0 || val == null || val == undefined){
+                  return '-';
+              }else{
+                  return val.length; 
+              }
+         }
+          return val;
+     };
     }
     return lbCfgFormatters;
 });

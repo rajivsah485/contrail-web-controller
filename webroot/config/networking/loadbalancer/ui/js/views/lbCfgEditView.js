@@ -20,7 +20,7 @@ define([
             var editLayout = editTemplate({prefixId: prefixId}),
                 self = this;
 
-            cowu.createModal({'modalId': modalId, 'className': 'modal-980',
+            cowu.createModal({'modalId': modalId, 'className': 'modal-700',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
                                  var wizardId = cowu.formatElementId([prefixId, ctwl.TITLE_CREATE_FW_POLICY]),
@@ -285,7 +285,6 @@ define([
                                             data : [{id: 'HTTP', text:'HTTP'},
                                                     {id: 'HTTPS', text:'HTTPS'},
                                                     {id: 'TCP', text:'TCP'},
-                                                    {id: 'UDP', text:'UDP'},
                                                     {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
                                         }
                                     }
@@ -398,7 +397,6 @@ define([
                                                data : [{id: 'HTTP', text:'HTTP'},
                                                        {id: 'HTTPS', text:'HTTPS'},
                                                        {id: 'TCP', text:'TCP'},
-                                                       {id: 'UDP', text:'UDP'},
                                                        {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
                                            }
                                        }
@@ -482,6 +480,7 @@ define([
                                  view: "FormInputView",
                                  viewConfig: {
                                      path: "health_check_interval",
+                                     type:'number',
                                      label: 'Health check interval (sec)',
                                      dataBindValue: "health_check_interval",
                                      class: "col-xs-6"
@@ -496,6 +495,7 @@ define([
                                  view: "FormInputView",
                                  viewConfig: {
                                      path: "retry_count",
+                                     type:'number',
                                      label: 'Retry count before markdown',
                                      dataBindValue: "retry_count",
                                      class: "col-xs-6"
@@ -506,6 +506,7 @@ define([
                                  view: "FormInputView",
                                  viewConfig: {
                                      path: "timeout",
+                                     type:'number',
                                      label: 'Timeout (sec)',
                                      dataBindValue: "timeout",
                                      class: "col-xs-6"
@@ -589,6 +590,7 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_weight",
+                                        type:'number',
                                         label: '',
                                         dataBindValue: "pool_member_weight()",
                                         width: 200
