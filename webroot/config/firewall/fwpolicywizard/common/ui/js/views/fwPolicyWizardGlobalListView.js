@@ -34,7 +34,7 @@ define([
             };
             contrailListModel = new ContrailListModel(listModelConfig);
             self.renderView4Config(self.$el,
-                    contrailListModel, self.getFWPolicyGlobalGridViewConfig());
+                    contrailListModel, self.getFWPolicyGlobalGridViewConfig(self.mode));
         },
         parseFWPolicyGlobalData: function(result, mode) {
             var fwPolicies = getValueByJsonPath(result,
@@ -58,18 +58,18 @@ define([
             return fwPolicyList;
         },
 
-        getFWPolicyGlobalGridViewConfig: function() {
+        getFWPolicyGlobalGridViewConfig: function(mode) {
             return {
-                elementId:"fw-policy-wizard-global-section",
+                elementId: cowu.formatElementId([ctwc.FW_STANDALONE_ALL_POLICY_SECTION_ID]),
                 view: "SectionView",
                 viewConfig: {
                     rows: [{
                         columns: [
                             {
-                                elementId:"fw-policy-wizard-global-grid-id",
-                                view: "fwPolicyGridView",
+                                elementId: ctwc.FW_STANDALONE_ALL_POLICY_ID,
+                                view: "fwStandalonsAndAllPolicyGridView",
                                 viewPathPrefix:
-                                    "config/firewall/common/fwpolicy/ui/js/views/",
+                                    "config/firewall/fwpolicywizard/common/ui/js/views/",
                                 app: cowc.APP_CONTRAIL_CONTROLLER,
                                 viewConfig: {
                                     pagerOptions: {
@@ -80,7 +80,8 @@ define([
                                     },
                                     isProject: false,
                                     isGlobal: true,
-                                    isWizard:true
+                                    isWizard: true,
+                                    mode: mode
                                 }
                             }
                         ]

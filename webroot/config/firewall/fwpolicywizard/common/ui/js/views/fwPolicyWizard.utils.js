@@ -147,7 +147,7 @@ define([
                                      viewConfig: {
                                          templateId: cowc.TMPL_EDITABLE_GRID_DROPDOWN_VIEW,
                                          path: "simple_action",
-                                         disabled: "showService()",
+                                         //disabled: "showService()",
                                          dataBindValue: "simple_action()",
                                          elementConfig:{
                                              data:['pass','deny']
@@ -254,7 +254,7 @@ define([
                                          templateId: cowc.TMPL_EDITABLE_GRID_DROPDOWN_VIEW,
                                          path: "direction",
                                          dataBindValue: "direction()",
-                                         disabled: "showService()",
+                                         //disabled: "showService()",
                                          elementConfig:{
                                              data:['<>', '>', '<']
                                          }}

@@ -117,7 +117,7 @@ define([
                     if(viewConfig.isGlobal === true){
                     self.renderView4Config($('#gird-details-container'),
                             this.model,
-                            getAllfwPoliciesStandAlonePoliciesViewConfig(viewConfig,mode),
+                            getAllfwPoliciesStandAlonePoliciesViewConfig(viewConfig, mode),
                             "applicationPolicyValidation",
                             null, null, function() {
                         //self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
@@ -129,7 +129,7 @@ define([
                  if(viewConfig.isGlobal === false){
                      self.renderView4Config($('#gird-details-container'),
                              this.model,
-                             getAllfwPoliciesStandAloneProjectPoliciesViewConfig(viewConfig,mode),
+                             getAllfwPoliciesStandAloneProjectPoliciesViewConfig(viewConfig, mode),
                              "applicationPolicyValidation",
                              null, null, function() {
                          //self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
@@ -171,8 +171,8 @@ define([
         });
         return uuidList;
     };
-    var getAllfwPoliciesStandAlonePoliciesViewConfig = function (viewConfig,mode) {
-        var policyParam = {data: [{type: 'firewall-policys'}]};
+    var getAllfwPoliciesStandAlonePoliciesViewConfig = function (viewConfig, mode) {
+        //var policyParam = {data: [{type: 'firewall-policys'}]};
         return {
             elementId: "create_application_policy_prefixid",
             view: 'SectionView',
@@ -196,8 +196,8 @@ define([
             }
         }
     }
-    var getAllfwPoliciesStandAloneProjectPoliciesViewConfig = function (viewConfig,mode) {
-        var policyParam = {data: [{type: 'firewall-policys'}]};
+    var getAllfwPoliciesStandAloneProjectPoliciesViewConfig = function (viewConfig, mode) {
+        //var policyParam = {data: [{type: 'firewall-policys'}]};
         return {
             elementId: "fw-policies-wizard-project-section",
             view: 'SectionView',

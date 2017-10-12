@@ -249,6 +249,7 @@ define([
                 "linkElementId": 'btnAddPolicy-firewall-policy',
                 "onClick" : function() {
                     newApplicationSet = {};
+                    policyEditSet = {};
                     $('#applicationpolicyset_policy_wizard .actions').css("display", "block");
                     $('#aps-main-back-button').hide();
                     $('#applicationpolicyset_policy_wizard a.btn-primary').trigger("click");

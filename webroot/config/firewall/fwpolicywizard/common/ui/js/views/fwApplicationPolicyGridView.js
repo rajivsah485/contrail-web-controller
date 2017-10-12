@@ -200,6 +200,7 @@ define([
                 "title": "Create new firewall policy",
                 "onClick": function () {
                     if(ko.contextFor($('#name').get(0)).$data.name() !== ''){
+                        policyEditSet = {};
                         $('#aps-main-back-button').hide();
                         $("#overlay-background-id").removeClass("overlay-background");
                         newApplicationSet = {

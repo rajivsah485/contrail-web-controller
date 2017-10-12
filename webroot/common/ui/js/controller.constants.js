@@ -1024,7 +1024,10 @@ define([
         this.NEW_APPLICATION_POLICY_SET = 'new-application-policy-set';
         this.NEW_APPLICATION_POLICY_SET_GRID_ID = "new-application-policy-set-grid";
         this.APS_MODAL_HEADER = 'Firewall Policy Wizard';
-        
+        this.FW_STANDALONE_ALL_POLICY_SECTION_ID = 'fw-standalone-all-policy-section';
+        this.FW_STANDALONE_ALL_POLICY_ID = 'fw-standalone-all-policy-id';
+        this.FW_STANDALONE_ALL_POLICY_GRID_ID = 'fw-standalone-all-policy-grid-id';
+        this.FW_STANDALONE_ALL_POLICY_LIST_VIEW_ID = 'fw-standalone-all-policy-list-id';
         
         this.RULE_DATA_TAGS = 'rule-data-tags';
         this.RULE_DATA_ADDRESS_GROUPS = 'rule-data-address-groups';
