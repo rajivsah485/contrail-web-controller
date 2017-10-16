@@ -556,7 +556,6 @@ define([
                                     if($('#firewall-application-policy-grid').data("contrailGrid") !== undefined){
                                         $('#firewall-application-policy-grid').data("contrailGrid")._dataView.refreshData();
                                     }
-                                    $("#overlay-background-id").addClass("overlay-background");
                                     if(Object.keys(policyEditSet).length > 0){
                                         self.renderObject(options, 'addIcon', self);
                                         Knockback.ko.cleanNode($("#aps-gird-container")[0]);
@@ -573,6 +572,7 @@ define([
                                             });
                                             policyEditSet = {};
                                         }
+                                        $("#overlay-background-id").addClass("overlay-background");
                                     }else{
                                        self.renderObject(options, 'addIcon', self);  
                                     }
@@ -685,6 +685,8 @@ define([
                         if($("#policy_name input").length == 1){
                            $("#policy_name input").attr('disabled','disabled');
                         }
+                    }else{
+                        params.model.firewall_rules(new Backbone.Collection([]));
                     }
                 }
                 return true;
