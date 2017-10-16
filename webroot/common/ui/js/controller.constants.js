@@ -1186,26 +1186,87 @@ define([
         this.CONFIG_LB_LISTENER_ID = "config-lb-listener";
         this.CONFIG_LB_LISTENER_LIST_VIEW_ID = 'config-lb-listener-list-view';
         this.CONFIG_LB_LISTENER_GRID_ID = 'config-lb-listener-grid';
-        this.CONFIG_LB_LISTENER_TITLE = 'Listeners';
+        this.CONFIG_LB_LISTENER_TITLE = 'Listener';
+        this.CONFIG_LB_LISTENER_PREFIX_ID = 'config_lb_listener'
 
         this.CONFIG_LB_POOL_SECTION_ID = "config-lb-pool-section";
         this.CONFIG_LB_POOL_ID = "config-lb-pool";
         this.CONFIG_LB_POOL_LIST_VIEW_ID = 'config-lb-pool-list-view';
         this.CONFIG_LB_POOL_GRID_ID = 'config-lb-pool-grid';
-        this.CONFIG_LB_POOL_TITLE = 'Pools';
+        this.CONFIG_LB_POOL_TITLE = 'Pool';
+        this.CONFIG_LB_POOL_PREFIX_ID = 'config_lb_pool'
 
         this.CONFIG_LB_POOL_MEMBER_SECTION_ID = "config-lb-pool-member-section";
         this.CONFIG_LB_POOL_MEMBER_ID = "config-lb-pool-member";
         this.CONFIG_LB_POOL_MEMBER_LIST_VIEW_ID = 'config-lb-pool-member-list-view';
         this.CONFIG_LB_POOL_MEMBER_GRID_ID = 'config-lb-pool-member-grid';
         this.CONFIG_LB_POOL_MEMBER_TITLE = 'Pool Members';
+        this.CONFIG_LB_POOL_MEMBER_PREFIX_ID = 'config_lb_pool_member'
 
         this.CONFIG_LB_MONITOR_SECTION_ID = "config-lb-monitor-section";
         this.CONFIG_LB_MONITOR_MEMBER_ID = "config-lb-monitor";
         this.CONFIG_LB_MONITOR_LIST_VIEW_ID = 'config-lb-monitor-list-view';
         this.CONFIG_LB_MONITOR_GRID_ID = 'config-lb-monitor-grid';
-        this.CONFIG_LB_MONITOR_TITLE = 'Monitors';
+        this.CONFIG_LB_MONITOR_TITLE = 'Monitor';
+        this.CONFIG_LB_MONITOR_PREFIX_ID = 'config_lb_monitor';
 
+        this.CONFIG_LB_INFO_SECTION_ID = "config-lb-info-section";
+        this.CONFIG_LB_INFO_ID = "config-lb-info";
+        this.CONFIG_LB_INFO_LIST_VIEW_ID = 'config-lb-info-list-view';
+        this.CONFIG_LB_INFO_GRID_ID = 'config-lb-info-grid';
+        this.CONFIG_LB_INFO_TITLE = '';
+        this.CONFIG_LB_INFO_PREFIX_ID = "config_lb_info";
+        
+        this.CONFIG_LISTENER_INFO_SECTION_ID = "config-listener-info-section";
+        this.CONFIG_LISTENER_INFO_ID = "config-listener-info";
+        this.CONFIG_LISTENER_INFO_LIST_VIEW_ID = 'config-lb-listener-list-view';
+        this.CONFIG_LISTENER_INFO_GRID_ID = 'config-listener-info-grid';
+        this.CONFIG_LISTENER_INFO_TITLE = '';
+        this.CONFIG_LISTENER_INFO_PREFIX_ID = "config_listener_info";
+        
+        this.CONFIG_POOL_INFO_SECTION_ID = "config-pool-info-section";
+        this.CONFIG_POOL_INFO_ID = "config-pool-info";
+        this.CONFIG_POOL_INFO_LIST_VIEW_ID = 'config-lb-pool-list-view';
+        this.CONFIG_POOL_INFO_GRID_ID = 'config-pool-info-grid';
+        this.CONFIG_POOL_INFO_TITLE = '';
+        this.CONFIG_POOL_INFO_PREFIX_ID = "config_pool_info";
+        
+        this.LOAD_BALANCER_INFO_OPTIONS_MAP = [
+            {'key': 'name', 'name': 'Name'},
+            {'key': 'display_name', 'name': 'Display Name'},
+            {'key': 'loadbalancer_provider', 'name': 'Provider'},
+            {'key': 'loadbalancer_properties', 'name': 'Provisioning Status'},
+            {'key': 'loadbalancer_properties', 'name': 'Admin State'},
+            {'key': 'loadbalancer_properties', 'name': 'Fixed IPs'},
+            {'key': 'loadbalancer_properties', 'name': 'Operating Status'},
+            {'key': 'loadbalancer-listener', 'name': 'Listener Count'},
+            {'key': 'service_instance_refs', 'name': 'Service Instance'},
+            {'key': 'virtual_machine_interface_refs', 'name': 'Virtual Machine Interface'}
+        ];
+        
+        this.LISTENER_INFO_OPTIONS_MAP = [
+            {'key': 'name', 'name': 'Name'},
+            {'key': 'display_name', 'name': 'Display Name'},
+            {'key': 'loadbalancer_listener_properties', 'name': 'Protocol'},
+            {'key': 'loadbalancer_listener_properties', 'name': 'Connection Limit'},
+            {'key': 'loadbalancer_listener_properties', 'name': 'Protocol Port'},
+            {'key': 'loadbalancer_listener_properties', 'name': 'Admin State'},
+            {'key': 'loadbalancer-pool', 'name': 'Pool Count'}
+        ];
+        
+        this.POOL_INFO_OPTIONS_MAP = [
+            {'key': 'name', 'name': 'Name'},
+            {'key': 'display_name', 'name': 'Display Name'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Protocol'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Session Persistence'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Persistence Cookie Name'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Status Description'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Loadbalancer Method'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Admin State'},
+            {'key': 'loadbalancer-healthmonitor', 'name': 'Monitor Count'},
+            {'key': 'loadbalancer-members', 'name': 'Pool Member Count'}
+        ];
+        
         //Gohan Constants
         this.GOHAN_HASH_LIST = ['config_gc_serviceTemplates','config_gc_serviceInstance','config_gc_securityGroup','config_gc_networkPolicy','config_gc_network',
                                 'config_gc_server','config_gc_idPool','config_gc_association','config_gc_flavor','config_gc_image','config_gc_location'];

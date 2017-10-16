@@ -140,7 +140,7 @@ define([
                      },
                      {
                          field:  'loadbalancer',
-                         name:   'Listeners',
+                         name:   'Listener',
                          formatter: lbCfgFormatters.listenersCountFormatter,
                          sortable: {
                             sortBy: 'formattedValue'
@@ -177,7 +177,6 @@ define([
     };
     
     function onLoadBalancerClick(e, dc) {
-        var isGlobal = this.viewConfig.isGlobal;
         var viewTab = 'config_loadbalancer_details';
         var hashP = 'config_load_balancer';
         var hashParams = null,
@@ -457,7 +456,7 @@ define([
                                                     valueClass:'col-xs-9'
                                                 },
                                                 {
-                                                    label: 'Listeners',
+                                                    label: 'Listener',
                                                     key: 'loadbalancer',
                                                     templateGenerator: 'TextGenerator',
                                                     templateGeneratorConfig: {

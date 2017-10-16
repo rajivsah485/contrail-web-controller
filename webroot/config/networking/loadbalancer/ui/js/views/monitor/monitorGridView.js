@@ -5,10 +5,13 @@
 define([
     'underscore',
     'contrail-view',
-    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters'
+    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters',
+    'config/networking/loadbalancer/ui/js/models/monitorModel',
+    'config/networking/loadbalancer/ui/js/views/monitor/monitorEditView'
     ],
-    function (_, ContrailView, LbCfgFormatters) {
+    function (_, ContrailView, LbCfgFormatters, MonitorModel, MonitorEditView) {
     var lbCfgFormatters = new LbCfgFormatters();
+    var monitorEditView = new MonitorEditView();
     var dataView;
     var monitorGridView = ContrailView.extend({
         el: $(contentContainer),
@@ -63,10 +66,10 @@ define([
                     disableRowsOnLoading:true,
                     checkboxSelectable: {
                         onNothingChecked: function(e){
-                            $('#poolMemberDelete').addClass('disabled-link');
+                            $('#monitorDelete').addClass('disabled-link');
                         },
                         onSomethingChecked: function(e){
-                            $('#poolMemberDelete').removeClass('disabled-link');
+                            $('#monitorDelete').removeClass('disabled-link');
                         }
                     },
                     actionCell: getRowActionConfig,
@@ -154,7 +157,7 @@ define([
                 "type": "link",
                 "title": ctwl.CFG_LB_TITLE_DELETE,
                 "iconClass": "fa fa-trash",
-                "linkElementId": "poolMemberDelete",
+                "linkElementId": "monitorDelete",
                 "onClick": function () {
                     /*var gridElId = '#' + ctwl.CFG_VN_GRID_ID;
                     var checkedRows = $(gridElId).data("contrailGrid").getCheckedRows();
@@ -167,20 +170,6 @@ define([
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
                     }});*/
                 }
-            },
-            {
-                "type": "link",
-                "title": ctwl.CFG_LB_TITLE_CREATE,
-                "iconClass": "fa fa-plus",
-                "onClick": function () {
-                   /* var lbodel = new LbCfgModel();
-                    lbCfgEditView.model = lbodel;
-                    lbCfgEditView.renderAddLb({
-                                              "title": 'Create Loadbalancer',
-                                              callback: function () {
-                    $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
-                    }});*/
-                }
             }
 
         ];
@@ -189,19 +178,17 @@ define([
 
     function  getRowActionConfig (dc) {
         rowActionConfig = [
-            ctwgc.getEditConfig('Edit', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
-                vnCfgEditView.model = vnModel;
-                subscribeModelChangeEvents(vnModel);
-                vnCfgEditView.renderEditVNCfg({
-                                      "title": ctwl.EDIT,
+            ctwgc.getEditConfig('Edit Health Monitor', function(rowIndex) {
+                dataView = $('#' + ctwc.CONFIG_LB_MONITOR_GRID_ID).data("contrailGrid")._dataView;
+                monitorEditView.model = new MonitorModel(dataView.getItem(rowIndex));;
+                monitorEditView.renderMonitorEdit({
+                                      "title": 'Edit Monitor',
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             })
         ];
-        rowActionConfig.push(ctwgc.getDeleteConfig('Delete', function(rowIndex) {
+        rowActionConfig.push(ctwgc.getDeleteConfig('Delete Health Monitor', function(rowIndex) {
                 /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
                 vnCfgEditView.model = new VNCfgModel();
                 vnCfgEditView.renderMultiDeleteVNCfg({

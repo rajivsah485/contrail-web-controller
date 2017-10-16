@@ -13,11 +13,19 @@ define([
             var self = this,
                 viewConfig = this.attributes.viewConfig,
                 currentHashParams = layoutHandler.getURLHashParams(),
-                loadBalancer = currentHashParams.focusedElement.loadBalancer,
+                listener = currentHashParams.focusedElement.listener,
                 loadBalancerId = currentHashParams.focusedElement.uuid;
+                var lbName = currentHashParams.focusedElement.lbName;
+                var listenerRef = currentHashParams.focusedElement.listenerRef;
+                viewConfig.poolRef = window.location.href;
+                viewConfig.listenerRef = listenerRef;
+                viewConfig.listener = listener;
+                viewConfig.lbId = currentHashParams.focusedElement.uuid;
+                viewConfig.lbName = currentHashParams.focusedElement.lbName;
+                
             var breadcrumbCount = $('#breadcrumb').children().length;
             if(breadcrumbCount === 3){
-                pushBreadcrumb([loadBalancer]); 
+                pushBreadcrumb([{label: lbName, href: listenerRef},{label: listener, href: ''}]);
             }
             var listModelConfig = {
                     remote: {
@@ -30,7 +38,7 @@ define([
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getPoolGridViewConfig());
+                    contrailListModel, getPoolGridViewConfig(viewConfig));
         },
 
         parseLoadbalancersData : function(response) {
@@ -47,7 +55,7 @@ define([
         }
     });
 
-    var getPoolGridViewConfig = function () {
+    var getPoolGridViewConfig = function (viewConfig) {
         return {
             elementId: cowu.formatElementId([ctwc.CONFIG_LB_POOL_SECTION_ID]),
             view: "SectionView",
@@ -66,8 +74,12 @@ define([
                                             pageSize: 10,
                                             pageSizeSelect: [10, 50, 100]
                                         }
-                                    }//,
-                                    //isGlobal: false
+                                    },
+                                    listenerRef: viewConfig.listenerRef,
+                                    poolRef: viewConfig.poolRef,
+                                    listener: viewConfig.listener,
+                                    lbId: viewConfig.lbId,
+                                    lbName: viewConfig.lbName
                                 }
                             }
                         ]

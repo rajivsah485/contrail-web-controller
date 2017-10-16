@@ -1432,7 +1432,7 @@ define([
         // Load Balancer Labels
         this.CFG_LB_PAGE_ID = 'config-lb-page';
         this.CFG_LB_LIST_ID = 'config-lb-list';
-        this.CFG_LB_TITLE = 'Loadbalancers';
+        this.CFG_LB_TITLE = 'Load Balancers';
         this.CFG_LB_LIST_VIEW_ID = 'config-lb-list-view';
         this.CFG_LB_GRID_ID = 'config-lb-grid';
         this.CFG_LB_TITLE_CREATE = 'Create Loadbalancer';

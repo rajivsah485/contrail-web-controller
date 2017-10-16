@@ -24,7 +24,7 @@ define([
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: '/api/tenants/config/lbaas/load-balancers-details',//ctwc.URL_GET_CONFIG_DETAILS,
+                            url: '/api/tenants/config/lbaas/load-balancers-details?tenant_id=' + currentProject.value ,//ctwc.URL_GET_CONFIG_DETAILS,
                             type: "GET"//,
                             //data: lbCfgFormatter.setPostUrlData(options)
                         },

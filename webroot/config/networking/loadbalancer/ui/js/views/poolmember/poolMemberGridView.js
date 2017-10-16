@@ -5,10 +5,13 @@
 define([
     'underscore',
     'contrail-view',
-    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters'
+    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters',
+    'config/networking/loadbalancer/ui/js/models/poolMemberModel',
+    'config/networking/loadbalancer/ui/js/views/poolmember/poolMemberEditView'
     ],
-    function (_, ContrailView, LbCfgFormatters) {
+    function (_, ContrailView, LbCfgFormatters, PoolMemberModel, PoolMemberEditView) {
     var lbCfgFormatters = new LbCfgFormatters();
+    var poolMemberEditView = new PoolMemberEditView();
     var dataView;
     var poolMemberGridView = ContrailView.extend({
         el: $(contentContainer),
@@ -157,13 +160,12 @@ define([
                 "title": ctwl.CFG_LB_TITLE_CREATE,
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
-                   /* var lbodel = new LbCfgModel();
-                    lbCfgEditView.model = lbodel;
-                    lbCfgEditView.renderAddLb({
-                                              "title": 'Create Loadbalancer',
+                    poolMemberEditView.model = new PoolMemberModel();
+                    poolMemberEditView.renderAddEditPoolMember({
+                                              "title": 'Create Pool Member',
                                               callback: function () {
-                    $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
-                    }});*/
+                    $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                    }});
                 }
             }
 
@@ -173,19 +175,17 @@ define([
 
     function  getRowActionConfig (dc) {
         rowActionConfig = [
-            ctwgc.getEditConfig('Edit', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
-                vnCfgEditView.model = vnModel;
-                subscribeModelChangeEvents(vnModel);
-                vnCfgEditView.renderEditVNCfg({
-                                      "title": ctwl.EDIT,
+            ctwgc.getEditConfig('Edit Pool Member', function(rowIndex) {
+                dataView = $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView;
+                poolMemberEditView.model = new PoolMemberModel(dataView.getItem(rowIndex));
+                poolMemberEditView.renderAddEditPoolMember({
+                                      "title": 'Edit Pool Member',
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             })
         ];
-        rowActionConfig.push(ctwgc.getDeleteConfig('Delete', function(rowIndex) {
+        rowActionConfig.push(ctwgc.getDeleteConfig('Delete Pool Member', function(rowIndex) {
                 /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
                 vnCfgEditView.model = new VNCfgModel();
                 vnCfgEditView.renderMultiDeleteVNCfg({

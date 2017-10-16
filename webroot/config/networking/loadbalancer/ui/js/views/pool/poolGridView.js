@@ -5,10 +5,13 @@
 define([
     'underscore',
     'contrail-view',
-    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters'
+    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters',
+    'config/networking/loadbalancer/ui/js/models/poolModel',
+    'config/networking/loadbalancer/ui/js/views/pool/poolEditView'
     ],
-    function (_, ContrailView, LbCfgFormatters) {
+    function (_, ContrailView, LbCfgFormatters, PoolModel, PoolEditView) {
     var lbCfgFormatters = new LbCfgFormatters();
+    var poolEditView = new PoolEditView();
     var dataView;
     var poolGridView = ContrailView.extend({
         el: $(contentContainer),
@@ -45,6 +48,41 @@ define([
         }
     };
 
+    function onPoolClick(e, dc) {
+        var lbId = this.viewConfig.lbId;
+        var lbName = this.viewConfig.lbName;
+        var listenerRef = this.viewConfig.listenerRef;
+        var poolRef = this.viewConfig.poolRef;
+        var listenerName = this.viewConfig.listener;
+        var viewTab = 'config_pool_details';
+        var hashP = 'config_load_balancer';
+        var hashParams = null,
+            hashObj = {
+                view: viewTab,
+                focusedElement: {
+                    pool: dc.name,
+                    uuid: lbId,
+                    tab: viewTab,
+                    lbName: lbName,
+                    listenerRef: listenerRef,
+                    poolRef: poolRef,
+                    listenerName: listenerName
+                    
+                }
+            };
+        if (contrail.checkIfKeyExistInObject(true,
+                hashParams,
+                'clickedElement')) {
+            hashObj.clickedElement =
+                hashParams.clickedElement;
+        }
+
+        layoutHandler.setURLHashParams(hashObj, {
+            p: hashP,
+            merge: false,
+            triggerHashChange: true
+        });
+    };
 
     var getConfiguration = function (viewConfig) {
         var gridElementConfig = {
@@ -93,6 +131,10 @@ define([
                         id: 'name',
                         field: 'name',
                         name: 'Name',
+                        cssClass :'cell-hyperlink-blue',
+                        events : {
+                            onClick : onPoolClick.bind({viewConfig:viewConfig})
+                        }
                     },
                     {
                          field:  'uuid',
@@ -114,6 +156,14 @@ define([
                          field:  'uuid',
                          name:   'Pool Members',
                          formatter: lbCfgFormatters.poolMemberCountFormatter,
+                         sortable: {
+                            sortBy: 'formattedValue'
+                         }
+                     },
+                     {
+                         field:  'uuid',
+                         name:   'Health Monitor',
+                         formatter: lbCfgFormatters.healthMonitorCountFormatter,
                          sortable: {
                             sortBy: 'formattedValue'
                          }
@@ -151,20 +201,6 @@ define([
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
                     }});*/
                 }
-            },
-            {
-                "type": "link",
-                "title": ctwl.CFG_LB_TITLE_CREATE,
-                "iconClass": "fa fa-plus",
-                "onClick": function () {
-                   /* var lbodel = new LbCfgModel();
-                    lbCfgEditView.model = lbodel;
-                    lbCfgEditView.renderAddLb({
-                                              "title": 'Create Loadbalancer',
-                                              callback: function () {
-                    $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
-                    }});*/
-                }
             }
 
         ];
@@ -173,19 +209,17 @@ define([
 
     function  getRowActionConfig (dc) {
         rowActionConfig = [
-            ctwgc.getEditConfig('Edit', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
-                vnCfgEditView.model = vnModel;
-                subscribeModelChangeEvents(vnModel);
-                vnCfgEditView.renderEditVNCfg({
-                                      "title": ctwl.EDIT,
+            ctwgc.getEditConfig('Edit Pool', function(rowIndex) {
+                dataView = $('#' + ctwc.CONFIG_LB_POOL_GRID_ID).data("contrailGrid")._dataView;
+                poolEditView.model = new PoolModel(dataView.getItem(rowIndex));
+                poolEditView.renderEditPool({
+                                      "title": 'Edit Pool',
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             })
         ];
-        rowActionConfig.push(ctwgc.getDeleteConfig('Delete', function(rowIndex) {
+        rowActionConfig.push(ctwgc.getDeleteConfig('Delete Pool', function(rowIndex) {
                 /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
                 vnCfgEditView.model = new VNCfgModel();
                 vnCfgEditView.renderMultiDeleteVNCfg({
@@ -257,10 +291,20 @@ define([
                                                     valueClass:'col-xs-9'
                                                 },
                                                 {
-                                                    label: 'Pools',
+                                                    label: 'Pool Members',
                                                     key: 'uuid',
                                                     templateGeneratorConfig: {
                                                         formatter: 'poolMemberCount'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Health Monitor',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'healthMonitorCount'
                                                     },
                                                     templateGenerator: 'TextGenerator',
                                                     keyClass:'col-xs-3',
@@ -301,6 +345,11 @@ define([
 
     this.poolMemberCount = function (v, dc) {
         return lbCfgFormatters.poolMemberCountFormatter(null,
+                                        null, null, null, dc);
+    };
+    
+    this.healthMonitorCount = function (v, dc) {
+        return lbCfgFormatters.healthMonitorCountFormatter(null,
                                         null, null, null, dc);
     };
 

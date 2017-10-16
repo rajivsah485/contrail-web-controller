@@ -5,10 +5,13 @@
 define([
     'underscore',
     'contrail-view',
-    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters'
+    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters',
+    'config/networking/loadbalancer/ui/js/views/listener/listenerEditView',
+    'config/networking/loadbalancer/ui/js/models/listenerModel'
     ],
-    function (_, ContrailView, LbCfgFormatters) {
+    function (_, ContrailView, LbCfgFormatters, ListenerEditView, ListenerModel) {
     var lbCfgFormatters = new LbCfgFormatters();
+    var listenerEditView = new ListenerEditView();
     var dataView;
     var listenerGridView = ContrailView.extend({
         el: $(contentContainer),
@@ -45,6 +48,36 @@ define([
         }
     };
 
+    function onListenerClick(e, dc) {
+        var lbId = this.viewConfig.lbId;
+        var lbName = this.viewConfig.lbName;
+        var listenerRef = this.viewConfig.listenerRef;
+        var viewTab = 'config_listener_details';
+        var hashP = 'config_load_balancer';
+        var hashParams = null,
+            hashObj = {
+                view: viewTab,
+                focusedElement: {
+                    listener: dc.name,
+                    uuid: lbId,
+                    tab: viewTab,
+                    lbName: lbName,
+                    listenerRef: listenerRef
+                }
+            };
+        if (contrail.checkIfKeyExistInObject(true,
+                hashParams,
+                'clickedElement')) {
+            hashObj.clickedElement =
+                hashParams.clickedElement;
+        }
+
+        layoutHandler.setURLHashParams(hashObj, {
+            p: hashP,
+            merge: false,
+            triggerHashChange: true
+        });
+    };
 
     var getConfiguration = function (viewConfig) {
         var gridElementConfig = {
@@ -93,6 +126,10 @@ define([
                         id: 'name',
                         field: 'name',
                         name: 'Name',
+                        cssClass :'cell-hyperlink-blue',
+                        events : {
+                            onClick : onListenerClick.bind({viewConfig:viewConfig})
+                        }
                     },
                     {
                          field:  'uuid',
@@ -112,7 +149,7 @@ define([
                      },
                      {
                          field:  'uuid',
-                         name:   'Pools',
+                         name:   'Pool',
                          formatter: lbCfgFormatters.listenerPoolCountFormatter,
                          sortable: {
                             sortBy: 'formattedValue'
@@ -151,20 +188,6 @@ define([
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
                     }});*/
                 }
-            },
-            {
-                "type": "link",
-                "title": ctwl.CFG_LB_TITLE_CREATE,
-                "iconClass": "fa fa-plus",
-                "onClick": function () {
-                   /* var lbodel = new LbCfgModel();
-                    lbCfgEditView.model = lbodel;
-                    lbCfgEditView.renderAddLb({
-                                              "title": 'Create Loadbalancer',
-                                              callback: function () {
-                    $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
-                    }});*/
-                }
             }
 
         ];
@@ -173,19 +196,17 @@ define([
 
     function  getRowActionConfig (dc) {
         rowActionConfig = [
-            ctwgc.getEditConfig('Edit', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
-                vnCfgEditView.model = vnModel;
-                subscribeModelChangeEvents(vnModel);
-                vnCfgEditView.renderEditVNCfg({
-                                      "title": ctwl.EDIT,
+            ctwgc.getEditConfig('Edit Listener', function(rowIndex) {
+                dataView = $('#' + ctwc.CONFIG_LB_LISTENER_GRID_ID).data("contrailGrid")._dataView;
+                listenerEditView.model = new ListenerModel(dataView.getItem(rowIndex));;
+                listenerEditView.renderListenerEdit({
+                                      "title": 'Edit Listener',
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             })
         ];
-        rowActionConfig.push(ctwgc.getDeleteConfig('Delete', function(rowIndex) {
+        rowActionConfig.push(ctwgc.getDeleteConfig('Delete Listener', function(rowIndex) {
                 /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
                 vnCfgEditView.model = new VNCfgModel();
                 vnCfgEditView.renderMultiDeleteVNCfg({
@@ -257,7 +278,7 @@ define([
                                                     valueClass:'col-xs-9'
                                                 },
                                                 {
-                                                    label: 'Pools',
+                                                    label: 'Pool',
                                                     key: 'uuid',
                                                     templateGeneratorConfig: {
                                                         formatter: 'listenerPoolCount'
