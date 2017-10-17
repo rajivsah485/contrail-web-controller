@@ -23,72 +23,13 @@ define([
                         'webServerInfo;cgcEnabled', false, false);
                 var regionList = ctwu.getRegionList();
                 var currentCookie =  contrail.getCookie('region');
-                if(cgcEnabled && currentCookie === cowc.GLOBAL_CONTROLLER_ALL_REGIONS){
-                  $("#page-content").removeClass("dashboard-no-padding");
-                  //Create new model for each Region
-                  var parentContrailListModel =  new ContrailListModel({data:[]});
-                  var allVnList = [];
-                  self.renderView4Config(self.$el, parentContrailListModel,//parentLIstModel
-                          getNetworkListViewConfig(projectFQN, projectUUID));
-                          ctwu.setProject4NetworkListURLHashParams(projectFQN);
-                  var count = 0, regionListModelArray = [],regionNameObj = {}, rawData = [];
-                      for(i=0;i<regionList.length;i++){
-                          var regionListModel = new ContrailListModel($.extend(getNetworkListModelConfig(projectFQN,
-                                  projectUUID,regionList[i]), {isDataWrapped:true}));
-                          var vnMap  = {};
-                          var region1Arr = [];
-                          if(typeof(regionListModel) != 'undefined'){
-                              regionListModelArray.push(regionListModel);
-                          }
-                          regionListModel.onAllRequestsComplete.subscribe(function () {
-                                 if(regionListModelArray[count] != 'undefined'){
-                                      var regionModelgetItems = regionListModelArray[count].getItems();
-                                 }
-                                 vnMap[count] = regionModelgetItems;
-                                 count++;
-                                 var regionListLen = regionList.length;
-                                 //count the number of time the onAllREquestComplet is called if it equal the count of regino call the render.
-                                  if(count === regionListLen){
-                                      var otherRegMapArry = [];
-                                      for(var i in vnMap) {
-                                          var otherRegMap = {};
-                                          _.each(vnMap[i], function(vn){
-                                              regionNameObj['RegionName'] = regionList[i];
-                                              vn.rawData = $.extend(true, {}, regionNameObj, vn.rawData);
-                                              otherRegMap[vn.name] = vn;
-                                          });
-                                          otherRegMapArry.push(otherRegMap);
-                                      }
-                                      //Remove the first region value from the list since we are comparing already other regions with first region
-                                      otherRegMapArry.shift();
-                                      region1Arr = vnMap[0];
-                                      _.each(region1Arr, function(vn){
-                                          var vnName = vn.name;
-                                          rawData = [];
-                                          rawData.push(vn.rawData);
-                                          _.each(otherRegMapArry, function(otherVN){
-                                              if(otherVN[vnName] != null) {
-                                                  vn.instCnt = vn.instCnt + otherVN[vnName].instCnt;
-                                                  vn.intfCnt = vn.intfCnt + otherVN[vnName].intfCnt;
-                                                  vn.inThroughput = vn.inThroughput + otherVN[vnName].inThroughput;
-                                                  vn.outThroughput = vn.outThroughput + otherVN[vnName].outThroughput;
-                                                  rawData.push(otherVN[vnName].rawData);
-                                              }
-                                          });
-                                          vn.rawData = rawData;
-                                      });
-                                      parentContrailListModel.setData(region1Arr);
-                                  }
-                          });
-                      }
-                  }
-                  else {
-                     contrailListModel = new ContrailListModel(getNetworkListModelConfig(projectFQN,
-                            projectUUID,null));
+         
+                     contrailListModel = new ContrailListModel(getLoadBalancerListModelConfig(projectFQN,
+                            projectUUID));
                      self.renderView4Config(self.$el, contrailListModel,
                             getNetworkListViewConfig(projectFQN, projectUUID));
-                            //ctwu.setProject4NetworkListURLHashParams(projectFQN);
-                }
+                            ctwu.setProject4NetworkListURLHashParams(projectFQN);
+
         }
     });
     function updateNetworkModel (contrailListModel, parentListModelArray) {
@@ -99,6 +40,28 @@ define([
         var detailsList = parentListModelArray[0].getItems();
         var uniqList = nmwu.getUniqElements(detailsList, fqnList, "name");
         parentListModelArray[0].addData(uniqList);
+    }
+    
+    function  getLoadBalancerListModelConfig(parentUUID, parentFQN) {
+        var ajaxConfig = {
+            url : ctwc.get(ctwc.URL_GET_LOADBALANCER_LIST, 100, 1000, $.now()),
+            type: 'POST',
+            data: JSON.stringify({
+                id: qeUtils.generateQueryUUID(),
+                FQN: parentFQN,
+                fqnUUID: parentUUID
+            })
+        };
+
+        return {
+            remote: {
+                ajaxConfig: ajaxConfig,
+                dataParser: ctwp.interfaceDataParser,
+                cacheConfig : {
+                    ucid: (parentUUID != null) ? (ctwc.UCID_PREFIX_MN_LISTS + parentUUID + ":" + 'loadbalancers') : ctwc.UCID_ALL_INTERFACES_LIST
+                }
+            }
+        }
     }
 
     function getNetworkListModelConfig(parentFQN, parentUUID,regions) {
@@ -120,7 +83,7 @@ define([
             virtual_network_list_url = ctwc.get(ctwc.URL_GET_VIRTUAL_NETWORKS_LIST, $.now());
         }
         var ajaxConfig = {
-            url : virtual_networks_url,
+            url : '/api/tenant/networking/get-loadbalancers-list',
             type: 'POST',
             data: JSON.stringify({
                 id: qeUtils.generateQueryUUID(),
@@ -136,7 +99,7 @@ define([
                 hlRemoteConfig: {
                     remote: {
                         ajaxConfig: {
-                            url: virtual_network_list_url,
+                            url: '/api/tenant/networking/get-loadbalancers-list',
                             type: 'POST',
                             data: JSON.stringify({
                                 reqId: qeUtils.generateQueryUUID(),
@@ -224,7 +187,7 @@ define([
                                 }
                             },
                         ]
-                    }/*,
+                    },
                     {
                         columns: [
                             {
@@ -237,7 +200,7 @@ define([
                                     pagerOptions: { options: { pageSize: 8, pageSizeSelect: [8, 50, 100] } }}
                             }
                         ]
-                    }*/
+                    }
                 ]
             }
         }

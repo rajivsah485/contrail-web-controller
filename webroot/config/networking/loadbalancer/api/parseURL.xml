@@ -18,20 +18,22 @@
      1. List LB's with base info href, fq_name, uuid - GET
         /api/tenants/config/lbaas/load-balancers,
                                              listLoadBalancers
-     2. List LB's  details- GET LB's, listeners, FloatingIP
+     2. List LB's  details- GET LB's, listeners, FloatingIP,
+        virtual-network-network_ipam_refs
         /api/tenants/config/lbaas/load-balancers-details
                                              getLoadBalancersDetails
      3. List LB's Full details includes all details of listeners, Floating ips,
+        virtual-network-network_ipam_refs
         Pool, Memebers, Health Monitor.
         /api/tenants/config/lbaas/load-balancers-tree
                                               getLoadBalancersTree
-     3. Retrieve a specific Load Balancer - GET
+     4. Retrieve a specific Load Balancer - GET
         /api/tenants/config/lbaas/load-balancer/:id,
                                              getLoadBalancerbyId
-     4. Create a Load Balancer - POST
+     5. Create a Load Balancer - POST
         /api/tenants/config/lbaas/load-balancer,
                                              createLoadBalancer
-     5. Edit Load Balancer attributes - POST
+     6. Edit Load Balancer attributes - POST
         /api/tenants/config/lbaas/load-balancer/:id
                                              updateLoadBalancer
      Note: The Load Balancer's ID, provisioning_status, operating_status,
@@ -42,7 +44,7 @@
      Note :A Load Balancer that is does not have a provisioning_status of ACTIVE
      cannot be updated.
 
-     6. Delete LB - DELETE
+     7. Delete LB - DELETE
         /api/tenants/config/lbaas/load-balancer/:id,
                                               deleteLoadBalancer
 -->
@@ -127,9 +129,16 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.listListeners</callback>
       </item>
+      
+      <item>
+          <url>/api/tenants/config/lbaas/load-balancer/:lbid/listeners</url>
+          <method>get</method>
+          <feature>lbaasconfig</feature>
+          <callback>lbaasconfigapi.listListenersByLBId</callback>
+      </item>
 
       <item>
-          <url> /api/tenants/config/lbaas/listener/:id</url>
+          <url>/api/tenants/config/lbaas/load-balancer/:lbid/listener/:lid</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.getListenerById</callback>
@@ -188,8 +197,17 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.listPools</callback>
       </item>
+      
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id</url>
+          <url>/api/tenants/config/lbaas/load-balancer/:lbid/listener/:lid/pools</url>
+          <method>get</method>
+          <feature>lbaasconfig</feature>
+          <callback>lbaasconfigapi.listPoolsByListernerId</callback>
+      </item>
+      
+      
+      <item>
+          <url>/api/tenants/config/lbaas/load-balancer/:lbid/listener/:lid/pool/:pid</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.getPoolById</callback>
@@ -216,18 +234,18 @@
 <!--
     ***Members: Use the following APIs to manage Member resources***
     18. List all Members of a pool - GET
-            /api/tenants/config/lbaas/pool/:id/members
+            /api/tenants/config/lbaas/pool/:pid/members
                                               listAllMembersByPoolId
 
     19. Retrieve a specific Member of a Pool : GET
             /api/tenants/config/lbaas/pool/:id/member/:id
                                             getMemberByPoolId
     20. Add a New Member to a Pool - POST
-            /api/tenants/config/lbaas/pool/:id/member
+            /api/tenants/config/lbaas/pool/:pid/member
                                           createMemberByPoolId
 
     21. Update a Member of a Pool
-            /api/tenants/config/lbaas/pool/:id/member/:id
+            /api/tenants/config/lbaas/pool/:pid/member/:mid
                                            updateMemberByPoolId
 
     Note: The Member's ID, tenant_id, address, protocol_port,
@@ -245,31 +263,31 @@
 -->
 
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id/members</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/members</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.listAllMembersByPoolId</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id/member/:id</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/member/:mid</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.getMemberByPoolId</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id/member</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/member</url>
           <method>post</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.createMemberByPoolId</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id/member/:id</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/member/:mid</url>
           <method>put</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.updateMemberByPoolId</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id/member/:id</url>
+          <url>/api/tenants/config/lbaas/pool/member/:mid</url>
           <method>delete</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deleteMemberByPoolId</callback>
@@ -307,25 +325,25 @@
 -->
 
       <item>
-          <url>/api/tenants/config/lbaas/health-monitors</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/health-monitors</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
-          <callback>lbaasconfigapi.listAllHealthMonitors</callback>
+          <callback>lbaasconfigapi.listAllHealthMonitorsbyPoolId</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/health-monitor/:id</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/health-monitor/:hid</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.getHealthMonitorById</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/health-monitor</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/health-monitor</url>
           <method>post</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.createHealthMonitor</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/health-monitor/:id</url>
+          <url>/api/tenants/config/lbaas/pool/:pid/health-monitor/:hid</url>
           <method>put</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.updateHealthMonitor</callback>

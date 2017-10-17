@@ -221,30 +221,34 @@ function getLoadBalancerbyId(request, response, appData) {
             commonUtils.handleJSONResponse(error, response, null);
             return;
         }
-        var jsonstr = JSON.stringify(lb);
-        var new_jsonstr = jsonstr.replace(/loadbalancer_listener_back_refs/g,
-                "loadbalancer-listener");
-        lb = JSON.parse(new_jsonstr);
-        var lbs = {
-            'loadbalancers' : [ lb ]
-        };
-        var dataObj = {
-            lbs : lbs,
-            appData : appData
-        };
-        async.waterfall([ async.apply(getListenersDetailInfo, appData, lbs),
-                async.apply(getFloatingIPfromVMI, appData),
-                async.apply(getPoolDetailInfo, appData),
-                async.apply(getMemberHealthMonitorInfo, appData) ], function(
-                error, lbs) {
-            if (error) {
-                commonUtils.handleJSONResponse(err, response, null);
-            } else {
-                var lb = lbs['loadbalancers'][0];
-                commonUtils.handleJSONResponse(error, response, lb);
-            }
+        getLoadBalancerbyIdCB(lb, appData, function(error, lbs){
+	        	if (error) {
+	    			commonUtils.handleJSONResponse(error, response, null);
+	    		} else {
+	    			var lb = lbs['loadbalancers'][0];
+	    			commonUtils.handleJSONResponse(error, response, lb);
+	    		}
         });
+       
     });
+}
+
+function getLoadBalancerbyIdCB(lb, appData, callback) {
+	var jsonstr = JSON.stringify(lb);
+	var new_jsonstr = jsonstr.replace(/loadbalancer_listener_back_refs/g,
+			"loadbalancer-listener");
+	lb = JSON.parse(new_jsonstr);
+	var lbs = {
+		'loadbalancers' : [ lb ]
+	};
+	
+	async.waterfall([ async.apply(getListenersDetailInfo, appData, lbs),
+			async.apply(getFloatingIPfromVMI, appData),
+			async.apply(getPoolDetailInfo, appData),
+			async.apply(getMemberHealthMonitorInfo, appData) ], function(error,
+			lbs) {
+			callback(error, lbs);
+	});
 }
 
 /**
@@ -437,14 +441,11 @@ function parseFloatingIps(lbs, vmiData, appData, callback) {
                         if (results != null && results.length > 0) {
                             if (lbs['loadbalancers'].length > 0
                                     && results != null && results.length > 0) {
-                                console.log(JSON.stringify(results));
                                 for (var j = 0; j < lbs['loadbalancers'].length; j++) {
                                     if (lbs['loadbalancers'][j]['loadbalancer'] != null
                                             && lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'] != null
                                             && lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'].length > 0) {
                                         for (i = 0; i < lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'].length; i++) {
-                                            console
-                                                    .log(lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'][i]['uuid']);
                                             for (var l = 0; l < results.length; l++) {
                                                 if (results[l]['floating-ip'] != null) {
                                                     var vmi_ref_fip = results[l]['floating-ip']['virtual_machine_interface_refs']
@@ -518,15 +519,13 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
                         if (results != null && results.length > 0) {
                             if (lbs['loadbalancers'].length > 0
                                     && results != null && results.length > 0) {
-                                console.log(JSON.stringify(results));
+                                //console.log(JSON.stringify(results));
                                 for (var j = 0; j < lbs['loadbalancers'].length; j++) {
                                     if (lbs['loadbalancers'][j]['loadbalancer'] != null
                                             && lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'] != null
                                             && lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'].length > 0) {
                                         for (i = 0; i < lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'].length; i++) {
-                                            console
-                                                    .log(lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'][i]['uuid']);
-                                            for (var l = 0; l < results.length; l++) {
+                                           for (var l = 0; l < results.length; l++) {
                                                 if (results[l]['virtual-network'] != null) {
                                                     lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'][i]['virtual-network'] = {};
                                                     lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'][i]['virtual-network'].uuid = results[l]['virtual-network']['uuid'];
@@ -641,7 +640,7 @@ function mergeListenerToLB(lbs, listeners, callback) {
 function getPoolDetailInfo(appData, lbs, callback) {
 
     console.log("getPoolDetailInfo");
-    console.log(JSON.stringify(lbs));
+   // console.log(JSON.stringify(lbs));
     var reqUrl = null;
     var dataObjArr = [];
     var i = 0, lisLength = 0;
@@ -750,7 +749,9 @@ function getMemberHealthMonitorInfo(appData, lbs, callback) {
                         && lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'] != null
                         && lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'].length > 0) {
                     for (k = 0; k < lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'].length; k++) {
-                        if (lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'].length > 0) {
+                    		var mem = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'];
+                    		//console.log("mem:",mem);
+                        if (mem!= undefined && mem.length > 0) {
                             for (q = 0; q < lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'].length; q++) {
                                 memUUID
                                         .push(lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'][q]['uuid']);
@@ -788,7 +789,7 @@ function getMemberHealthMonitorInfo(appData, lbs, callback) {
             }
         }
     }
-    var helLength = memUUID.length;
+    var helLength = helUUID.length;
     for (i = 0; i < helLength; i++) {
         reqUrl = '/loadbalancer-healthmonitor/' + helUUID[i]
                 + '?exclude_hrefs=true';
@@ -826,7 +827,6 @@ function getMemberHealthMonitorInfo(appData, lbs, callback) {
  * @returns
  */
 function mergeMemberHealthDetailToLB(lbs, results, callback) {
-    console.log("mergeMemberDetail");
     if (lbs['loadbalancers'].length > 0 && results.length > 0) {
         for (var j = 0; j < lbs['loadbalancers'].length; j++) {
             if (lbs['loadbalancers'][j]['loadbalancer'] != null
@@ -836,22 +836,33 @@ function mergeMemberHealthDetailToLB(lbs, results, callback) {
                     if (lbs['loadbalancers'][j]['loadbalancer'] != null
                             && lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'] != null
                             && lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'].length > 0) {
-                        for (k = 0; k < lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'].length; k++) {
-                            if (lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'].length > 0) {
-                                for (q = 0; q < lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'].length; q++) {
-                                    for (var l = 0; l < results.length; l++) {
-                                        if (results[l]['loadbalancer-member'] != null) {
-                                            if (lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'][q]['uuid'] == results[l]['loadbalancer-member']['uuid']) {
-                                                lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'][q] = results[l]['loadbalancer-member'];
-                                            }
-                                        } else {
-                                            if (lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-healthmonitor'][q]['uuid'] == results[l]['loadbalancer-healthmonitor']['uuid']) {
-                                                lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-healthmonitor'][q] = results[l]['loadbalancer-healthmonitor'];
-                                            }
-                                        }
+                        for (k = 0; k < lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'].length; k++) { 
+                        	   var healthM = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-healthmonitor'];
+                        	   if (healthM.length > 0) {
+                        		   for(z=0; z< healthM.length; z++){
+                        			   for (var l = 0; l < results.length; l++) {
+                                     if (results[l]['loadbalancer-healthmonitor'] != null) {
+	                                        if (healthM[z]['uuid'] == results[l]['loadbalancer-healthmonitor']['uuid']) {
+	                                        	 healthM[z] = results[l]['loadbalancer-healthmonitor'];
+	                                        }
+                                    	   }
                                     }
                                 }
                             }
+                            
+                            var mem= lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'];
+	                    		if (mem != undefined && mem.length > 0) {
+	                            for (q = 0; q < mem.length; q++) {
+	                                for (var l = 0; l < results.length; l++) {
+	                                    if (results[l]['loadbalancer-member'] != null) {
+	                                        if (mem[q]['uuid'] == results[l]['loadbalancer-member']['uuid']) {
+	                                        		mem[q] = results[l]['loadbalancer-member'];
+	                                        }
+	                                    }
+	                                }
+	                            }
+	                        }
+                            
                         }
                     }
                 }
@@ -936,6 +947,193 @@ function deleteLoadBalancer(request, response, appData) {
     return;
 }
 
+function listListenersByLBId(request, response, appData){
+ 	var lb_uuid = request.param('lbid');
+ 	if (!(lb_uuid = request.param('lbid').toString())) {
+        error = new appErrors.RESTServerError('Loadbalancer uuid is missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+    
+    var lbURL = '/loadbalancer/' + lb_uuid;
+    configApiServer.apiGet(lbURL, appData, function(error, lb) {
+        if (error) {
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        getLoadBalancerbyIdCB(lb, appData, function(error, lbs){
+	        	if (error) {
+	    			commonUtils.handleJSONResponse(error, response, null);
+	    		} else {
+	    			var lb = lbs['loadbalancers'][0];
+	    			listenerList = commonUtils.getValueByJsonPath(lb,
+	    					'loadbalancer;loadbalancer-listener', [], false);
+	    			var reLis = [];
+	    			_.each(listenerList, function(listener) {
+	    					reLis.push(listener);
+	    			});
+	    			commonUtils.handleJSONResponse(error, response, reLis);		
+	    		}
+        });
+       
+    });
+}
+
+function getListenerById(request, response, appData){
+	 	var lb_uuid = request.param('lbid');
+	 	var  l_uuid = request.param('lid');
+	 	if (!(lb_uuid = request.param('lbid').toString())) {
+	        error = new appErrors.RESTServerError('Loadbalancer uuid is missing');
+	        commonUtils.handleJSONResponse(error, response, null);
+	        return;
+	    }
+	 	if (!(l_uuid = request.param('lid').toString())) {
+	        error = new appErrors.RESTServerError('Listener uuid is missing');
+	        commonUtils.handleJSONResponse(error, response, null);
+	        return;
+	    }
+	   
+	    
+	    var lbListURL = '/loadbalancer/' + lb_uuid;
+	    configApiServer.apiGet(lbListURL, appData, function(error, lb) {
+	        if (error) {
+	            commonUtils.handleJSONResponse(error, response, null);
+	            return;
+	        }
+	        getLoadBalancerbyIdCB(lb, appData, function(error, lbs){
+		        	if (error) {
+		    			commonUtils.handleJSONResponse(error, response, null);
+		    		} else {
+		    			var lb = lbs['loadbalancers'][0];
+		    			parseListenerbyId(l_uuid, lb, function(error,listener){
+		    				commonUtils.handleJSONResponse(error, response, listener[0]);
+		    			});
+		    		}
+	        });
+	       
+	    });
+}
+
+function parseListenerbyId(l_uuid, lb, callback) {
+	listenerList = commonUtils.getValueByJsonPath(lb,
+			'loadbalancer;loadbalancer-listener', [], false);
+	var reLis = [];
+	_.each(listenerList, function(listener) {
+		if (listener.uuid == l_uuid) {
+			reLis.push(listener);
+		}
+	});
+	callback(null, reLis);
+}
+
+function listPoolsByListernerId(request, response, appData){
+ 	var lb_uuid = request.param('lbid');
+ 	var  l_uuid = request.param('lid');
+ 	if (!(lb_uuid = request.param('lbid').toString())) {
+        error = new appErrors.RESTServerError('Loadbalancer uuid is missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+ 	if (!(l_uuid = request.param('lid').toString())) {
+        error = new appErrors.RESTServerError('Listener uuid is missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+   
+    
+    var lbListURL = '/loadbalancer/' + lb_uuid;
+    configApiServer.apiGet(lbListURL, appData, function(error, lb) {
+        if (error) {
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        getLoadBalancerbyIdCB(lb, appData, function(error, lbs){
+	        	if (error) {
+	    			commonUtils.handleJSONResponse(error, response, null);
+	    		} else {
+	    			var lb = lbs['loadbalancers'][0];
+	    			parseListenerbyId(l_uuid, lb, function(error,listener){
+	    				poolList = commonUtils.getValueByJsonPath(listener[0],
+	    						'loadbalancer-pool', [], false);
+	    				commonUtils.handleJSONResponse(error, response, poolList);
+	    			});
+	    			
+	    		}
+        });
+       
+    });
+}
+
+function parsePoolsbyListenerId(l_uuid, lb, callback) {
+	listenerList = commonUtils.getValueByJsonPath(lb,
+			'loadbalancer;loadbalancer-listener', [], false);
+	var reLis = [];
+	_.each(listenerList, function(listener) {
+		if (listener.uuid == l_uuid) {
+			reLis.push(listener);
+		}
+	});
+	
+	poolList = commonUtils.getValueByJsonPath(reLis,
+			'loadbalancer-listener;loadbalancer-pool', [], false);
+	
+	callback(null, poolList);
+}
+
+
+function getPoolById(request, response, appData){
+ 	var lb_uuid = request.param('lbid');
+ 	var  l_uuid = request.param('lid');
+ 	var  p_uuid = request.param('pid');
+ 	if (!(lb_uuid = request.param('lbid').toString())) {
+        error = new appErrors.RESTServerError('Loadbalancer uuid is missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+ 	if (!(l_uuid = request.param('lid').toString())) {
+        error = new appErrors.RESTServerError('Listener uuid is missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+   
+ 	if (!(p_uuid = request.param('pid').toString())) {
+        error = new appErrors.RESTServerError('Pool uuid is missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+    
+    var lbListURL = '/loadbalancer/' + lb_uuid;
+    configApiServer.apiGet(lbListURL, appData, function(error, lb) {
+        if (error) {
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        getLoadBalancerbyIdCB(lb, appData, function(error, lbs){
+	        	if (error) {
+	    			commonUtils.handleJSONResponse(error, response, null);
+	    		} else {
+	    			var lb = lbs['loadbalancers'][0];
+	    			parseListenerbyId(l_uuid, lb, function(error,listener){
+	    				poolList = commonUtils.getValueByJsonPath(listener[0],
+	    						'loadbalancer-pool', [], false);
+	    				
+	    				var reLis = [];
+	    				_.each(poolList, function(pool) {
+	    					if (pool.uuid == p_uuid) {
+	    						reLis.push(pool);
+	    					}
+	    				});
+	    				commonUtils.handleJSONResponse(error, response, reLis);
+	    			});
+	    			
+	    		}
+        });
+       
+    });
+}
+
+
+
 exports.listLoadBalancers = listLoadBalancers;
 exports.getLoadBalancersTree = getLoadBalancersTree;
 exports.getLoadBalancersDetails = getLoadBalancersDetails;
@@ -943,3 +1141,7 @@ exports.getLoadBalancerbyId = getLoadBalancerbyId;
 exports.createLoadBalancer = createLoadBalancer;
 exports.updateLoadBalancer = updateLoadBalancer;
 exports.deleteLoadBalancer = deleteLoadBalancer;
+exports.getListenerById = getListenerById;
+exports.listListenersByLBId = listListenersByLBId;
+exports.listPoolsByListernerId = listPoolsByListernerId;
+exports.getPoolById = getPoolById;

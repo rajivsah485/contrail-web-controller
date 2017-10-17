@@ -52,6 +52,8 @@ define([
         this.URL_GET_VMI_UUID_LIST = '/api/tenants/config/get-config-uuid-list?type=virtual-machine-interface&parentUUID={0}';
         this.URL_CONFIG_GET_VM_DETAILS_PAGED = '/api/tenants/config/get-virtual-machine-details-paged';
 
+        this.URL_GET_LOADBALANCER_LIST = '/api/tenant/networking/get-loadbalancers-list?startAt={0}';
+        
         this.URL_VM_VN_STATS = '/api/tenant/networking/stats';
         this.URL_VM_INTERFACES = '/api/tenant/networking/virtual-machine-interfaces/summary';
 
