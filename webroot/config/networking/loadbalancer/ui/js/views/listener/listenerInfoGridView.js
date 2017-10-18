@@ -65,15 +65,15 @@ define([
                 },
                 statusMessages: {
                     loading: {
-                        text: 'Loading Listeners..'
+                        text: 'Loading Listener Details..'
                     },
                     empty: {
-                        text: 'No Listeners Found.'
+                        text: 'No Listener Details Found.'
                     },
                     errorGettingData: {
                         type: 'error',
                         iconClasses: 'fa fa-warning',
-                        text: 'Error in getting Listeners.'
+                        text: 'Error in getting Listener Details.'
                     }
                 }
             },
@@ -109,26 +109,14 @@ define([
                 "title": 'Edit Listener',
                 "iconClass": 'fa fa-pencil-square-o',
                 "onClick": function() {
-                    var ajaxConfig = {
-                        url : "/api/tenants/config/lbaas/load-balancer/"+ viewConfig.lbId,
-                        type : 'GET'
-                    };
-                    contrail.ajaxHandler(ajaxConfig, null, function(response) {
-                        var listenerData = getValueByJsonPath(response,
-                            "loadbalancer;loadbalancer-listener;0", {});
-                        if(Object.keys(listenerData).length > 0){
-                            listenerModel = new ListenerInfoModel(listenerData);
-                            listenerInfoEditView.model = listenerModel;
-                            listenerInfoEditView.renderEditListenerInfo({
-                                          "title": 'Edit Listener Details',
-                                          callback: function() {
-                                var dataView =
-                                    $(gridElId).data("contrailGrid")._dataView;
-                                dataView.refreshData();
-                            }});
-                        }
-                    },function(error){
-                    });
+                    listenerInfoEditView.model = new ListenerInfoModel(viewConfig.listener.list);
+                    listenerInfoEditView.renderEditListenerInfo({
+                                  "title": 'Edit Listener Details',
+                                  callback: function() {
+                        var dataView =
+                            $(gridElId).data("contrailGrid")._dataView;
+                        dataView.refreshData();
+                    }});
                 }
             }
         ];

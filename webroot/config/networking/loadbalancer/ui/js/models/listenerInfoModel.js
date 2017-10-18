@@ -9,6 +9,7 @@ define([
     var listenerInfoModel = ContrailModel.extend({
         defaultConfig: {
             "display_name": "",
+            "description":"",
             "loadbalancer_listener_properties": {},
             "protocol": "",
             "admin_state": false,
@@ -36,6 +37,11 @@ define([
                     "loadbalancer_listener_properties;protocol_port", '');
             if(port != ''){
                 modelConfig["protocol_port"] = port;
+            }
+            var description = getValueByJsonPath(modelConfig,
+                    "id_perms;description", '');
+            if(description != ''){
+                modelConfig["description"] = description;
             }
             return modelConfig;
         }

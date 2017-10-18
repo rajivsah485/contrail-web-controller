@@ -1236,11 +1236,13 @@ define([
         this.LOAD_BALANCER_INFO_OPTIONS_MAP = [
             {'key': 'name', 'name': 'Name'},
             {'key': 'display_name', 'name': 'Display Name'},
+            {'key': 'id_perms', 'name': 'Description'},
             {'key': 'loadbalancer_provider', 'name': 'Provider'},
             {'key': 'loadbalancer_properties', 'name': 'Provisioning Status'},
+            {'key': 'loadbalancer_properties', 'name': 'Operating Status'},
             {'key': 'loadbalancer_properties', 'name': 'Admin State'},
             {'key': 'loadbalancer_properties', 'name': 'Fixed IPs'},
-            {'key': 'loadbalancer_properties', 'name': 'Operating Status'},
+            {'key': 'virtual_machine_interface_refs', 'name': 'Floating IPs'},
             {'key': 'loadbalancer-listener', 'name': 'Listener Count'},
             {'key': 'service_instance_refs', 'name': 'Service Instance'},
             {'key': 'virtual_machine_interface_refs', 'name': 'Virtual Machine Interface'}
@@ -1249,6 +1251,7 @@ define([
         this.LISTENER_INFO_OPTIONS_MAP = [
             {'key': 'name', 'name': 'Name'},
             {'key': 'display_name', 'name': 'Display Name'},
+            {'key': 'id_perms', 'name': 'Description'},
             {'key': 'loadbalancer_listener_properties', 'name': 'Protocol'},
             {'key': 'loadbalancer_listener_properties', 'name': 'Connection Limit'},
             {'key': 'loadbalancer_listener_properties', 'name': 'Protocol Port'},
@@ -1259,9 +1262,9 @@ define([
         this.POOL_INFO_OPTIONS_MAP = [
             {'key': 'name', 'name': 'Name'},
             {'key': 'display_name', 'name': 'Display Name'},
+            {'key': 'id_perms', 'name': 'Description'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Protocol'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Session Persistence'},
-            {'key': 'loadbalancer_pool_properties', 'name': 'Persistence Cookie Name'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Status Description'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Loadbalancer Method'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Admin State'},

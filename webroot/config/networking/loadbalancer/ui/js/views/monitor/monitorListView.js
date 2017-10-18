@@ -18,14 +18,16 @@ define([
                 lbName = currentHashParams.focusedElement.lbName,
                 listenerRef = currentHashParams.focusedElement.listenerRef,
                 poolRef = currentHashParams.focusedElement.poolRef,
-                listenerName = currentHashParams.focusedElement.listenerName;
+                listenerName = currentHashParams.focusedElement.listenerName,
+                listenerId = currentHashParams.focusedElement.listenerId,
+                poolId = currentHashParams.focusedElement.poolId;
                 if($('#breadcrumb').children().length === 3){
                     pushBreadcrumb([{label: lbName, href: listenerRef},{label: listenerName, href: poolRef},{label: poolName, href: ''}]);
                 }
                 var listModelConfig = {
                         remote: {
                             ajaxConfig: {
-                                url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
+                                url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId + '/listener/' + listenerId + '/pool/' + poolId ,
                                 type: "GET"
                             },
                             dataParser: self.parseLoadbalancersData,
@@ -37,16 +39,8 @@ define([
         },
 
         parseLoadbalancersData : function(response) {
-           var listenerList = getValueByJsonPath(response,
-                        "loadbalancer;loadbalancer-listener", [], false),
-               monitorList = [], poolList = [];
-           _.each(listenerList, function(listner) {
-               var pool = getValueByJsonPath(listner, 'loadbalancer-pool', []);
-               if(pool.length > 0){
-                 poolList = poolList.concat(pool);   
-               }
-           });
-           _.each(poolList, function(pool) {
+           var monitorList = [];
+           _.each(response, function(pool) {
                var monitor = getValueByJsonPath(pool, 'loadbalancer-healthmonitor', []);
                if(monitor.length > 0){
                    monitorList = monitorList.concat(monitor);   

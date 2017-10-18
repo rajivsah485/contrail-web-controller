@@ -10,6 +10,7 @@ define([
         defaultConfig: {
             "display_name": "",
             "protocol": "",
+            "description":"",
             "loadbalancer_listener_properties": {},
             'connection_limit': "",
             "protocol_port": "",
@@ -36,6 +37,11 @@ define([
                     "loadbalancer_listener_properties;protocol_port", '');
             if(port != ''){
                 modelConfig["protocol_port"] = port;
+            }
+            var description = getValueByJsonPath(modelConfig,
+                    "id_perms;description", '');
+            if(description != ''){
+                modelConfig["description"] = description;
             }
             return modelConfig;
         }

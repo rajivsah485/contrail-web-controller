@@ -93,9 +93,17 @@ define([
             columnHeader: {
                 columns: [
                     {
-                        id: 'name',
-                        field: 'name',
+                        id: 'display_name',
+                        field: 'display_name',
                         name: 'Name',
+                    },
+                    {
+                        field:  'uuid',
+                        name:   'Description',
+                        formatter: lbCfgFormatters.listenerDescriptionFormatter,
+                        sortable: {
+                           sortBy: 'formattedValue'
+                        }
                     },
                     {
                          field:  'uuid',
@@ -143,16 +151,15 @@ define([
                 "iconClass": "fa fa-trash",
                 "linkElementId": "poolMemberDelete",
                 "onClick": function () {
-                    /*var gridElId = '#' + ctwl.CFG_VN_GRID_ID;
+                    var gridElId = '#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID;
                     var checkedRows = $(gridElId).data("contrailGrid").getCheckedRows();
 
-                    vnCfgEditView.model = new VNCfgModel();
-                    vnCfgEditView.renderMultiDeleteVNCfg({"title":
-                                                            ctwl.CFG_VN_TITLE_MULTI_DELETE,
+                    poolMemberEditView.model = new PoolMemberModel();
+                    poolMemberEditView.renderMultiDeletePoolMember({"title": 'Delete pool Members',
                                                             checkedRows: checkedRows,
                                                             callback: function () {
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
-                    }});*/
+                    }});
                 }
             },
             {
@@ -161,7 +168,7 @@ define([
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
                     poolMemberEditView.model = new PoolMemberModel();
-                    poolMemberEditView.renderAddEditPoolMember({
+                    poolMemberEditView.renderAddPoolMember({
                                               "title": 'Create Pool Member',
                                               callback: function () {
                     $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView.refreshData();
@@ -178,7 +185,7 @@ define([
             ctwgc.getEditConfig('Edit Pool Member', function(rowIndex) {
                 dataView = $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView;
                 poolMemberEditView.model = new PoolMemberModel(dataView.getItem(rowIndex));
-                poolMemberEditView.renderAddEditPoolMember({
+                poolMemberEditView.renderEditPoolMember({
                                       "title": 'Edit Pool Member',
                                       callback: function () {
                                           dataView.refreshData();
@@ -186,14 +193,14 @@ define([
             })
         ];
         rowActionConfig.push(ctwgc.getDeleteConfig('Delete Pool Member', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                vnCfgEditView.model = new VNCfgModel();
-                vnCfgEditView.renderMultiDeleteVNCfg({
-                                      "title": ctwl.CFG_VN_TITLE_DELETE,
+                dataView = $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView;
+                poolMemberEditView.model = new PoolMemberModel();
+                poolMemberEditView.renderMultiDeletePoolMember({
+                                      "title": 'Delete Pool Member',
                                       checkedRows: [dataView.getItem(rowIndex)],
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             }));
         return rowActionConfig;
     };
@@ -232,6 +239,16 @@ define([
                                                 {
                                                     key: 'uuid',
                                                     label: 'UUID',
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Description',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'listenerDescription'
+                                                    },
                                                     templateGenerator: 'TextGenerator',
                                                     keyClass:'col-xs-3',
                                                     valueClass:'col-xs-9'
@@ -306,6 +323,11 @@ define([
 
     this.poolMemberAdminState = function (v, dc){
         return lbCfgFormatters.poolMemberAdminStateFormatter(null,
+                null, null, null, dc);
+    };
+
+    this.listenerDescription = function(v, dc){
+        return lbCfgFormatters.listenerDescriptionFormatter(null,
                 null, null, null, dc);
     };
 

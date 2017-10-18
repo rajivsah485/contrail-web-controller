@@ -54,6 +54,46 @@ define([
                                         document.getElementById(modalId));
                 kbValidation.bind(self);
             });
+        },
+        renderMultiDeleteListener: function(options) {
+            var delTemplate =
+                //Fix the template to be common delete template
+                contrail.getTemplate4Id('core-generic-delete-form-template');
+            var self = this;
+
+            var delLayout = delTemplate({prefixId: prefixId});
+            cowu.createModal({'modalId': modalId, 'className': 'modal-480',
+                             'title': options['title'], 'btnName': 'Confirm',
+                             'body': delLayout,
+               'onSave': function () {
+                /*self.model.multiDeleteVNCfg(options['checkedRows'], {
+                    init: function () {
+                        cowu.enableModalLoading(modalId);
+                    },
+                    success: function () {
+                        options['callback']();
+                        $("#" + modalId).modal('hide');
+                    },
+                    error: function (error) {
+                        //Fix the form modal id for error
+                        cowu.disableModalLoading(modalId, function () {
+                            self.model.showErrorAttr(prefixId +
+                                                     cowc.FORM_SUFFIX_ID,
+                                                     error.responseText);
+                        });
+                    }
+                });*/
+                // TODO: Release binding on successful configure
+            }, 'onCancel': function () {
+                Knockback.release(self.model,
+                                    document.getElementById(modalId));
+                kbValidation.unbind(self);
+                $("#" + modalId).modal('hide');
+            }});
+            this.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
+            Knockback.applyBindings(self.model,
+                                        document.getElementById(modalId));
+            kbValidation.bind(self);
         }
     });
 
@@ -77,12 +117,27 @@ define([
                                 }
                             },
                             {
+                                elementId: "description",
+                                view: "FormInputView",
+                                viewConfig: {
+                                    path: "description",
+                                    label: 'Description',
+                                    dataBindValue: "description",
+                                    class: "col-xs-6"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        columns: [
+                            {
                                 elementId: 'protocol',
                                 view: "FormDropdownView",
                                 viewConfig: {
                                     label: 'Protocol',
                                     path : 'protocol',
                                     class: 'col-xs-6',
+                                    disabled: true,
                                     dataBindValue :
                                         'protocol',
                                     elementConfig : {
@@ -95,21 +150,22 @@ define([
                                                 {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
                                     }
                                 }
-                            }
-                        ]
-                    },
-                    {
-                        columns: [
+                            },
                             {
                                 elementId: "protocol_port",
                                 view: "FormInputView",
                                 viewConfig: {
                                     path: "protocol_port",
+                                    disabled: true,
                                     label: 'Protocol Port',
                                     dataBindValue: "protocol_port",
                                     class: "col-xs-6"
                                 }
-                            },
+                            }
+                        ]
+                    },
+                    {
+                        columns: [
                             {
                                 elementId: "connection_limit",
                                 view: "FormInputView",
@@ -119,13 +175,7 @@ define([
                                     dataBindValue: "connection_limit",
                                     class: "col-xs-6"
                                 }
-                            }
-                            
-                        ]
-                    },
-                    {
-                        columns: [
-                            {
+                            },{
                                 elementId: 'admin_state',
                                 view: "FormCheckboxView",
                                 viewConfig : {

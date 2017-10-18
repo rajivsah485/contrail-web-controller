@@ -18,7 +18,9 @@ define([
                 lbName = currentHashParams.focusedElement.lbName,
                 listenerRef = currentHashParams.focusedElement.listenerRef,
                 poolRef = currentHashParams.focusedElement.poolRef,
-                listenerName = currentHashParams.focusedElement.listenerName;
+                listenerName = currentHashParams.focusedElement.listenerName,
+                listenerId = currentHashParams.focusedElement.listenerId,
+                poolId = currentHashParams.focusedElement.poolId;
             if($('#breadcrumb').children().length === 4){
                 $('#breadcrumb li').last().remove();
             }
@@ -28,7 +30,7 @@ define([
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
+                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId + '/listener/' + listenerId + '/pool/' + poolId ,
                             type: "GET"
                         },
                         dataParser: self.parseLoadbalancersData,
@@ -40,16 +42,8 @@ define([
         },
 
         parseLoadbalancersData : function(response) {
-           var listenerList = getValueByJsonPath(response,
-                        "loadbalancer;loadbalancer-listener", [], false),
-               poolMemberList = [], poolList = [];
-           _.each(listenerList, function(listner) {
-               var pool = getValueByJsonPath(listner, 'loadbalancer-pool', []);
-               if(pool.length > 0){
-                 poolList = poolList.concat(pool);   
-               }
-           });
-           _.each(poolList, function(pool) {
+           var poolMemberList = [];
+           _.each(response, function(pool) {
                var poolMember = getValueByJsonPath(pool, 'loadbalancer-members', []);
                if(poolMember.length > 0){
                    poolMemberList = poolMemberList.concat(poolMember);   

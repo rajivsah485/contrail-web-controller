@@ -11,6 +11,7 @@ define([
             "display_name": "",
             "loadbalancer_pool_properties": {},
             "protocol": "",
+            "description":"",
             "admin_state": false,
             "session_persistence": "",
             "persistence_cookie_name": "",
@@ -48,6 +49,11 @@ define([
                     "loadbalancer_pool_properties;loadbalancer_method", '');
             if(method != ''){
                 modelConfig["loadbalancer_method"] = method;
+            }
+            var description = getValueByJsonPath(modelConfig,
+                    "id_perms;description", '');
+            if(description != ''){
+                modelConfig["description"] = description;
             }
             return modelConfig;
         }

@@ -4,22 +4,27 @@
 
 define([
     'underscore',
-    'contrail-model'
-], function (_, ContrailModel) {
+    'contrail-model',
+    'config/networking/loadbalancer/ui/js/models/poolMemberCollectionModel'
+], function (_, ContrailModel, PoolMemberCollectionModel) {
     var poolMemberModel = ContrailModel.extend({
         defaultConfig: {
             "display_name": "",
             "subnet":"",
             "ip_address":"",
+            "description":"",
             "port":"80",
             "weight":"1",
             "admin_state":false,
             "status_description": "",
-            "loadbalancer_member_properties": {}
+            "loadbalancer_member_properties": {},
+            'pool_member': []
             
         },
 
         formatModelConfig: function(modelConfig) {
+           var poolMemberCollection = [];
+           modelConfig["pool_member"] = new Backbone.Collection(poolMemberCollection);
            var protocolPort = getValueByJsonPath(modelConfig,
                     "loadbalancer_member_properties;protocol_port", '');
             if(protocolPort != ''){
@@ -50,7 +55,28 @@ define([
             if(subnet != ''){
                 modelConfig["subnet"] = subnet;
             }
+            var description = getValueByJsonPath(modelConfig,
+                    "id_perms;description", '');
+            if(description != ''){
+                modelConfig["description"] = description;
+            }
             return modelConfig;
+        },
+        addPoolMember: function() {
+            var poolMember = this.model().attributes['pool_member'],
+                newPoolMember = new PoolMemberCollectionModel();
+            poolMember.add([newPoolMember]);
+        },
+        addPoolMemberByIndex: function(data, member) {
+            var selectedRuleIndex = data.model().collection.indexOf(member.model());
+            var poolMember = this.model().attributes['pool_member'],
+                newPoolMember = new PoolMemberCollectionModel();
+            poolMember.add([newPoolMember],{at: selectedRuleIndex+1});
+        },
+        deletePoolMember: function(data, member) {
+            var memberCollection = data.model().collection,
+                delMember = member.model();
+            memberCollection.remove(delMember);
         }
     });
     return poolMemberModel;

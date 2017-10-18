@@ -39,7 +39,13 @@ define([
         this.operatingStatusFormatter = function(d, c, v, cd, dc) {
             var status = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;operating_status', '');
             if (status !== '') {
-                return status;
+                if(status === 'ONLINE'){
+                    return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                    'ONLINE'); 
+                }else{
+                    return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                    'OFFLINE');
+                }
             }else{
                 return '-'; 
             } 
@@ -48,12 +54,18 @@ define([
         this.provisioningStatusFormatter = function(d, c, v, cd, dc) {
             var status = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;provisioning_status', '');
             if (status !== '') {
-                return status;
+                if(status === 'ACTIVE'){
+                    return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                    'ACTIVE');
+                }else{
+                    return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                    'INACTIVE');
+                }
             }else{
                 return '-'; 
             } 
         };
-        
+
         this.ipAddressFormatter = function(d, c, v, cd, dc) {
             var ip = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;vip_address', '');
             if (ip !== '') {
@@ -105,9 +117,11 @@ define([
             if(vmi.length > 0){
               _.each(vmi, function(ref) {
                     var ip = getValueByJsonPath(ref, 'floating-ip;ip', '');
-                    var floatingIp = '<span>'+ ip +'</span>';
-                    fixedIpList.push(floatingIp);
-              });
+                    if(ip != ''){
+                        var floatingIp = '<span>'+ ip +'</span>';
+                        fixedIpList.push(floatingIp); 
+                    }
+               });
             }
             if(fixedIpList.length > 0){
                 for(var j = 0; j< fixedIpList.length,j < 2; j++){
@@ -131,10 +145,10 @@ define([
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;admin_state', false);
             if(adminStatus){
                 return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Active');
+                'Yes');
             }else{
                 return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'Down');
+                'No');
             }
         };
         
@@ -227,7 +241,16 @@ define([
             }
              return true;
         };
-
+        this.listenerDescriptionFormatter = function(d, c, v, cd, dc) {
+            var description = getValueByJsonPath(dc,
+                                'id_perms;description', '');
+            if (description != '') {
+                return description;
+            }else{
+                return '-';
+            }
+        };
+        
         this.listenersFormatterList = function(d, c, v, cd, dc){
             var subnetString = "", protocol, port, state, returnString = '',
             listeners = getValueByJsonPath(dc, 'loadbalancer;loadbalancer-listener', []);
@@ -247,7 +270,9 @@ define([
                     if(listenerProp.admin_state != undefined){
                         status = listenerProp.admin_state;
                         if(status){
-                           state = '<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;Active';
+                           state = '<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;Yes';
+                        }else{
+                           state = '<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;No';
                         }
                     }else{
                         state = '-';
@@ -477,10 +502,10 @@ define([
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_listener_properties;admin_state', false);
             if(adminStatus){
                 return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Active');
+                'Yes');
             }else{
                 return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'Down');
+                'No');
             }
         };
         
@@ -529,10 +554,10 @@ define([
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_pool_properties;admin_state', false);
             if(adminStatus){
                 return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Active');
+                'Yes');
             }else{
                 return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'Down');
+                'No');
             }
         };
         
@@ -567,10 +592,10 @@ define([
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_member_properties;admin_state', false);
             if(adminStatus){
                 return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Active');
+                'Yes');
             }else{
                 return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'Down');
+                'No');
             }
         };
         ///
@@ -623,10 +648,10 @@ define([
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_healthmonitor_properties;admin_state', false);
             if(adminStatus){
                 return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Active');
+                'Yes');
             }else{
                 return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'Down');
+                'No');
             }
         };
 
@@ -641,6 +666,13 @@ define([
                        return val; 
                    }
                }
+               if('id_perms' === rowData['key']) {
+                   if(val.description == '' || val.description == null){
+                       return '-';
+                   }else{
+                       return val.description; 
+                   }
+               }
                if('loadbalancer_provider' === rowData['key']) {
                    if(val == '' || val == null){
                        return '-';
@@ -653,7 +685,13 @@ define([
                       if(val.provisioning_status == '' || val.provisioning_status == null){
                           return '-';
                       }else{
-                          return val.provisioning_status;
+                          if(val.provisioning_status === 'ACTIVE'){
+                              return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                              'ACTIVE');
+                          }else{
+                              return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                              'INACTIVE');
+                          }
                       }
                   }
                   if(rowData['name'] === 'Admin State'){
@@ -661,9 +699,11 @@ define([
                           return '-';
                       }else{
                           if(val.admin_state == true){
-                              return 'Active';
+                              return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                              'Yes');
                           }else{
-                              return 'Down';
+                              return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                              'No');
                           }
                       }
                   }
@@ -678,7 +718,13 @@ define([
                       if(val.operating_status == '' || val.operating_status == null){
                           return '-';
                       }else{
-                          return val.operating_status;
+                          if(val.operating_status === 'ONLINE'){
+                              return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                              'ONLINE'); 
+                          }else{
+                              return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                              'OFFLINE'); 
+                          }
                       }
                   }
               }
@@ -698,19 +744,89 @@ define([
                           var to = val[i].to;
                           toList.push(to[to.length -1]);
                       } 
-                      return toList.join(',');
+                      var siUuid = toList.join(',');
+                      var siHash = '/#p=config_sc_svcInstances';
+                      var siUrl = window.location.origin + siHash;
+                      return ( '<a href="'+ siUrl + '" style="color: #3184c5">' + siUuid + '</a>');
                   }
              }
               if('virtual_machine_interface_refs' === rowData['key']) {
-                  var toList = [];
-                  if(val.length == 0 || val == null || val == undefined){
-                      return '-';
-                  }else{
-                      for(var i = 0; i < val.length; i++){
-                          var to = val[i].to;
-                          toList.push(to[to.length -1]);
+                  if(rowData['name'] === 'Floating IPs'){
+                      var vmi = val,
+                      fixedIpList = [], returnString = '';
+                      if(vmi.length > 0){
+                        _.each(vmi, function(ref) {
+                              var ip = getValueByJsonPath(ref, 'floating-ip;ip', '');
+                              if(ip != ''){
+                                  var floatingIp = '<span>'+ ip +'</span>';
+                                  fixedIpList.push(floatingIp); 
+                              }
+                         });
+                      }
+                      if(fixedIpList.length > 0){
+                          for(var j = 0; j < fixedIpList.length; j++){
+                              if(fixedIpList[j]) {
+                                  returnString += fixedIpList[j] + "<br>";
+                              }
+                          }
+                          return returnString;
+                      }else{
+                          return '-';
+                      }
+                  }
+                  if(rowData['name'] === 'Subnet'){
+                      var vmiref = val,
+                      subnetList = [], returnString = '';
+                      if(vmiref.length > 0){
+                          _.each(vmiref, function(vmi) {
+                              var vn = getValueByJsonPath(vmi, 'virtual-network', {});
+                              if(Object.keys(vn).length > 0){
+                                 var ipamRef = getValueByJsonPath(vn, 'network_ipam_refs', []);
+                                 _.each(ipamRef, function(ipam) {
+                                     var attr = getValueByJsonPath(ipam, 'attr;ipam_subnets', []);
+                                     if(attr.length > 0){
+                                         _.each(attr, function(obj) {
+                                             var subnet = getValueByJsonPath(obj, 'subnet',{});
+                                             var text = subnet.ip_prefix + '/' + subnet.ip_prefix_len;
+                                             var prefix_ip = '<span>'+ text +'</span>';
+                                             subnetList.push(prefix_ip);
+                                         });
+                                     }else{
+                                        return '-';  
+                                     }
+                                 });
+                              }else{
+                                 return '-'; 
+                              }
+                           });
+                          if(subnetList.length > 0){
+                              for(var j = 0; j < subnetList.length; j++){
+                                  if(subnetList[j]) {
+                                      returnString += subnetList[j] + "<br>";
+                                  }
+                              }
+                              return returnString;
+                          }else{
+                              return '-'; 
+                          }
+                      }else{
+                          return '-';
+                      }
+                  }
+                  if(rowData['name'] === 'Virtual Machine Interface'){
+                      var toList = [];
+                      if(val.length == 0 || val == null || val == undefined){
+                          return '-';
+                      }else{
+                          for(var i = 0; i < val.length; i++){
+                              var to = val[i].to;
+                              toList.push(to[to.length -1]);
+                          } 
+                          var vmiUuid = toList.join(',');
+                          var vmiHash = '/#p=config_net_ports';
+                          var vmiUrl = window.location.origin + vmiHash;
+                          return ( '<a href="'+ vmiUrl+ '" style="color: #3184c5">' + vmiUuid + '</a>');
                       } 
-                      return toList.join(',');
                   }
              }
               return val;
@@ -727,6 +843,13 @@ define([
                      return val; 
                  }
              }
+             if('id_perms' === rowData['key']) {
+                 if(val.description == '' || val.description == null){
+                     return '-';
+                 }else{
+                     return val.description; 
+                 }
+             }
              if('loadbalancer_listener_properties' === rowData['key']){
                 if(rowData['name'] === 'Protocol'){
                     if(val.protocol == '' || val.protocol == null){
@@ -740,9 +863,11 @@ define([
                         return '-';
                     }else{
                         if(val.admin_state == true){
-                            return 'Active';
+                            return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                            'Yes');
                         }else{
-                            return 'Down';
+                            return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                            'No');
                         }
                     }
                 }
@@ -782,6 +907,13 @@ define([
                    return val; 
                }
            }
+           if('id_perms' === rowData['key']) {
+               if(val.description == '' || val.description == null){
+                   return '-';
+               }else{
+                   return val.description; 
+               }
+           }
            if('loadbalancer_pool_properties' === rowData['key']){
               if(rowData['name'] === 'Protocol'){
                   if(val.protocol == '' || val.protocol == null){
@@ -795,9 +927,11 @@ define([
                       return '-';
                   }else{
                       if(val.admin_state == true){
-                          return 'Active';
+                          return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                          'Yes');
                       }else{
-                          return 'Down';
+                          return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                          'No');
                       }
                   }
               }
@@ -839,8 +973,8 @@ define([
                }
           }
           if('loadbalancer-members' === rowData['key']) {
-              if(val.length == 0 || val == null || val == undefined){
-                  return '-';
+              if(val == undefined){
+                  return '0';
               }else{
                   return val.length; 
               }
