@@ -77,12 +77,27 @@ define([
                                 }
                             },
                             {
+                                elementId: "description",
+                                view: "FormInputView",
+                                viewConfig: {
+                                    path: "description",
+                                    label: 'Description',
+                                    dataBindValue: "description",
+                                    class: "col-xs-6"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        columns: [
+                            {
                                 elementId: 'protocol',
                                 view: "FormDropdownView",
                                 viewConfig: {
                                     label: 'Protocol',
                                     path : 'protocol',
                                     class: 'col-xs-6',
+                                    disabled: true,
                                     dataBindValue :
                                         'protocol',
                                     elementConfig : {
@@ -95,21 +110,22 @@ define([
                                                 {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
                                     }
                                 }
-                            }
-                        ]
-                    },
-                    {
-                        columns: [
+                            },
                             {
                                 elementId: "protocol_port",
                                 view: "FormInputView",
                                 viewConfig: {
                                     path: "protocol_port",
+                                    disabled: true,
                                     label: 'Protocol Port',
                                     dataBindValue: "protocol_port",
                                     class: "col-xs-6"
                                 }
-                            },
+                            }
+                        ]
+                    },
+                    {
+                        columns: [
                             {
                                 elementId: "connection_limit",
                                 view: "FormInputView",
@@ -119,12 +135,7 @@ define([
                                     dataBindValue: "connection_limit",
                                     class: "col-xs-6"
                                 }
-                            }
-                        ]
-                    },
-                    {
-                        columns: [
-                            {
+                            },{
                                 elementId: 'admin_state',
                                 view: "FormCheckboxView",
                                 viewConfig : {

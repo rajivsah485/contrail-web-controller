@@ -77,6 +77,21 @@ define([
                                 }
                             },
                             {
+                                elementId: "description",
+                                view: "FormInputView",
+                                viewConfig: {
+                                    path: "description",
+                                    label: 'Description',
+                                    dataBindValue: "description",
+                                    class: "col-xs-6"
+                                }
+                            }
+                            
+                        ]
+                    },
+                    {
+                        columns: [
+                            {
                                 elementId: 'protocol',
                                 view: "FormDropdownView",
                                 viewConfig: {
@@ -91,36 +106,29 @@ define([
                                         placeholder : 'Select Protocol',
                                         data : [{id: 'HTTP', text:'HTTP'},
                                                 {id: 'HTTPS', text:'HTTPS'},
-                                                {id: 'TCP', text:'TCP'},
-                                                {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
+                                                {id: 'TCP', text:'TCP'}]
                                     }
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        columns: [
-                            {
-                                elementId: "session_persistence",
-                                view: "FormInputView",
-                                viewConfig: {
-                                    path: "session_persistence",
-                                    label: 'Session Persistence',
-                                    dataBindValue: "session_persistence",
-                                    class: "col-xs-6"
                                 }
                             },
                             {
-                                elementId: "persistence_cookie_name",
-                                view: "FormInputView",
+                                elementId: 'session_persistence',
+                                view: "FormDropdownView",
                                 viewConfig: {
-                                    path: "persistence_cookie_name",
-                                    label: 'Persistence Cookie Name',
-                                    dataBindValue: "persistence_cookie_name",
-                                    class: "col-xs-6"
+                                    label: 'Session Persistence',
+                                    path : 'session_persistence',
+                                    class: 'col-xs-6',
+                                    dataBindValue :
+                                        'session_persistence',
+                                    elementConfig : {
+                                        dataTextField : "text",
+                                        dataValueField : "id",
+                                        placeholder : 'Select Session Persistence',
+                                        data : [{id: 'SOURCE_IP', text:'SOURCE_IP'},
+                                                {id: 'HTTP_COOKIE', text:'HTTP_COOKIE'},
+                                                {id: 'APP_COOKIE', text:'APP_COOKIE'}]
+                                    }
                                 }
                             }
-                            
                         ]
                     },
                     {
@@ -142,6 +150,7 @@ define([
                                     label: 'Load Balancer Method',
                                     path : 'loadbalancer_method',
                                     class: 'col-xs-6',
+                                    disabled: true,
                                     dataBindValue :
                                         'loadbalancer_method',
                                     elementConfig : {

@@ -7,19 +7,24 @@ define([
     'contrail-view',
     'contrail-list-model'
 ], function (_, ContrailView, ContrailListModel) {
+    var self;
     var poolInfoView = ContrailView.extend({
         el: $(contentContainer),
         render: function () {
-            var self = this,
-            viewConfig = this.attributes.viewConfig,
+            self = this;
+            var viewConfig = this.attributes.viewConfig,
             currentHashParams = layoutHandler.getURLHashParams(),
             poolName = currentHashParams.focusedElement.pool,
             loadBalancerId = currentHashParams.focusedElement.uuid,
             lbName = currentHashParams.focusedElement.lbName,
             listenerRef = currentHashParams.focusedElement.listenerRef,
             poolRef = currentHashParams.focusedElement.poolRef,
-            listenerName = currentHashParams.focusedElement.listenerName;
+            listenerName = currentHashParams.focusedElement.listenerName,
+            listenerId = currentHashParams.focusedElement.listenerId,
+            poolId = currentHashParams.focusedElement.poolId;
             viewConfig.lbId = currentHashParams.focusedElement.uuid;
+            self.pool = {};
+            self.pool.list = [];
             if($('#breadcrumb').children().length === 4){
                 $('#breadcrumb li').last().remove();
             }
@@ -29,7 +34,7 @@ define([
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
+                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId + '/listener/' + listenerId + '/pool/' + poolId,
                             type: "GET"
                         },
                         dataParser: self.parsePoolinfoData,
@@ -37,11 +42,11 @@ define([
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getPoolInfoViewConfig(viewConfig));
+                    contrailListModel, getPoolInfoViewConfig(viewConfig, self.pool));
         },
 
         parsePoolinfoData : function(response) {
-            var listener = getValueByJsonPath(response,
+            /*var listener = getValueByJsonPath(response,
                          "loadbalancer;loadbalancer-listener", [], false), dataItems = [],
                          poolList = [];
             _.each(listener, function(obj) {
@@ -49,16 +54,18 @@ define([
                 if(pool.length > 0){
                   poolList = poolList.concat(pool);   
                 }
-            });
+            });*/
+            var dataItems = [];
+            self.pool.list = response[0];
             _.each(ctwc.POOL_INFO_OPTIONS_MAP, function(poolOption){
                 dataItems.push({ name: poolOption.name,
-                    value: poolList[0][poolOption.key], key: poolOption.key});
+                    value: response[0][poolOption.key], key: poolOption.key});
             });
             return dataItems;
          }
     });
 
-    var getPoolInfoViewConfig = function (viewConfig) {
+    var getPoolInfoViewConfig = function (viewConfig, pool) {
         return {
             elementId: cowu.formatElementId([ctwc.CONFIG_POOL_INFO_SECTION_ID]),
             view: "SectionView",
@@ -78,7 +85,8 @@ define([
                                             pageSizeSelect: [10, 50, 100]
                                         }
                                     },
-                                    lbId: viewConfig.lbId
+                                    lbId: viewConfig.lbId,
+                                    pool: pool
                                 }
                             }
                         ]

@@ -93,9 +93,17 @@ define([
             columnHeader: {
                 columns: [
                     {
-                        id: 'name',
-                        field: 'name',
+                        id: 'display_name',
+                        field: 'display_name',
                         name: 'Name',
+                    },
+                    {
+                        field:  'uuid',
+                        name:   'Description',
+                        formatter: lbCfgFormatters.listenerDescriptionFormatter,
+                        sortable: {
+                           sortBy: 'formattedValue'
+                        }
                     },
                     {
                          field:  'uuid',
@@ -159,16 +167,15 @@ define([
                 "iconClass": "fa fa-trash",
                 "linkElementId": "monitorDelete",
                 "onClick": function () {
-                    /*var gridElId = '#' + ctwl.CFG_VN_GRID_ID;
+                    var gridElId = '#' + ctwc.CONFIG_LB_MONITOR_GRID_ID;
                     var checkedRows = $(gridElId).data("contrailGrid").getCheckedRows();
 
-                    vnCfgEditView.model = new VNCfgModel();
-                    vnCfgEditView.renderMultiDeleteVNCfg({"title":
-                                                            ctwl.CFG_VN_TITLE_MULTI_DELETE,
+                    monitorEditView.model = new MonitorModel();
+                    monitorEditView.renderMultiDeleteMonitor({"title": 'Delete Monitor',
                                                             checkedRows: checkedRows,
                                                             callback: function () {
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
-                    }});*/
+                    }});
                 }
             }
 
@@ -189,14 +196,14 @@ define([
             })
         ];
         rowActionConfig.push(ctwgc.getDeleteConfig('Delete Health Monitor', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                vnCfgEditView.model = new VNCfgModel();
-                vnCfgEditView.renderMultiDeleteVNCfg({
-                                      "title": ctwl.CFG_VN_TITLE_DELETE,
+                dataView = $('#' + ctwc.CONFIG_LB_MONITOR_GRID_ID).data("contrailGrid")._dataView;
+                monitorEditView.model = new MonitorModel();
+                monitorEditView.renderMultiDeleteMonitor({
+                                      "title": 'Delete Monitor',
                                       checkedRows: [dataView.getItem(rowIndex)],
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             }));
         return rowActionConfig;
     };
@@ -235,6 +242,16 @@ define([
                                                 {
                                                     key: 'uuid',
                                                     label: 'UUID',
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Description',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'listenerDescription'
+                                                    },
                                                     templateGenerator: 'TextGenerator',
                                                     keyClass:'col-xs-3',
                                                     valueClass:'col-xs-9'
@@ -339,6 +356,11 @@ define([
 
     this.monitorAdminState = function (v, dc){
         return lbCfgFormatters.monitorAdminStateFormatter(null,
+                null, null, null, dc);
+    };
+    
+    this.listenerDescription = function(v, dc){
+        return lbCfgFormatters.listenerDescriptionFormatter(null,
                 null, null, null, dc);
     };
 

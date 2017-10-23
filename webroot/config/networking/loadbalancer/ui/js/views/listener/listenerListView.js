@@ -24,7 +24,7 @@ define([
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
+                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId + '/listeners' ,
                             type: "GET"
                         },
                         dataParser: self.parseLoadbalancersData,
@@ -36,9 +36,9 @@ define([
         },
 
         parseLoadbalancersData : function(response) {
-           var listenerList = getValueByJsonPath(response,
-                        "loadbalancer;loadbalancer-listener", [], false);
-           return listenerList;
+           //var listenerList = getValueByJsonPath(response,
+                        //"loadbalancer;loadbalancer-listener", [], false);
+           return response;
         }
     });
 

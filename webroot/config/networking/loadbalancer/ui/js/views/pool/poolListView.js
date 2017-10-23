@@ -14,6 +14,7 @@ define([
                 viewConfig = this.attributes.viewConfig,
                 currentHashParams = layoutHandler.getURLHashParams(),
                 listener = currentHashParams.focusedElement.listener,
+                listenerId = currentHashParams.focusedElement.listenerId,
                 loadBalancerId = currentHashParams.focusedElement.uuid;
                 var lbName = currentHashParams.focusedElement.lbName;
                 var listenerRef = currentHashParams.focusedElement.listenerRef;
@@ -22,6 +23,7 @@ define([
                 viewConfig.listener = listener;
                 viewConfig.lbId = currentHashParams.focusedElement.uuid;
                 viewConfig.lbName = currentHashParams.focusedElement.lbName;
+                viewConfig.listenerId = currentHashParams.focusedElement.listenerId;
                 
             var breadcrumbCount = $('#breadcrumb').children().length;
             if(breadcrumbCount === 3){
@@ -30,7 +32,7 @@ define([
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
+                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId + '/listener/' + listenerId + '/pools' ,
                             type: "GET"
                         },
                         dataParser: self.parseLoadbalancersData,
@@ -42,7 +44,7 @@ define([
         },
 
         parseLoadbalancersData : function(response) {
-           var listenerList = getValueByJsonPath(response,
+           /*var listenerList = getValueByJsonPath(response,
                         "loadbalancer;loadbalancer-listener", [], false),
                poolList = [];
            _.each(listenerList, function(listner) {
@@ -50,8 +52,8 @@ define([
                if(pool.length > 0){
                  poolList = poolList.concat(pool);   
                }
-           });
-           return poolList;
+           });*/
+           return response;
         }
     });
 
@@ -79,7 +81,8 @@ define([
                                     poolRef: viewConfig.poolRef,
                                     listener: viewConfig.listener,
                                     lbId: viewConfig.lbId,
-                                    lbName: viewConfig.lbName
+                                    lbName: viewConfig.lbName,
+                                    listenerId: viewConfig.listenerId
                                 }
                             }
                         ]

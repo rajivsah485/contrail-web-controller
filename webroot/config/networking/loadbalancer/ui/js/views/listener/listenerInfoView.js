@@ -7,24 +7,28 @@ define([
     'contrail-view',
     'contrail-list-model'
 ], function (_, ContrailView, ContrailListModel) {
+    var self;
     var listenerInfoView = ContrailView.extend({
         el: $(contentContainer),
         render: function () {
-            var self = this,
-            viewConfig = this.attributes.viewConfig,
+            self = this;
+            var viewConfig = this.attributes.viewConfig,
             currentHashParams = layoutHandler.getURLHashParams(),
             listener = currentHashParams.focusedElement.listener,
+            listenerId = currentHashParams.focusedElement.listenerId,
             loadBalancerId = currentHashParams.focusedElement.uuid;
             var lbName = currentHashParams.focusedElement.lbName;
             var listenerRef = currentHashParams.focusedElement.listenerRef;
             viewConfig.lbId = currentHashParams.focusedElement.uuid;
+            self.listener = {};
+            self.listener.list = [];
             if($('#breadcrumb').children().length === 3){
                 pushBreadcrumb([{label: lbName, href: listenerRef},{label: listener, href: ''}]);
             }
             var listModelConfig = {
                     remote: {
                         ajaxConfig: {
-                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId ,
+                            url: '/api/tenants/config/lbaas/load-balancer/'+ loadBalancerId + '/listener/' + listenerId ,
                             type: "GET"
                         },
                         dataParser: self.parseListenerinfoData,
@@ -32,21 +36,21 @@ define([
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getListenerInfoViewConfig(viewConfig));
+                    contrailListModel, getListenerInfoViewConfig(viewConfig, self.listener));
         },
 
         parseListenerinfoData : function(response) {
-            var listener = getValueByJsonPath(response,
-                         "loadbalancer;loadbalancer-listener", [], false), dataItems = [];
+            var listener = response, dataItems = [];
+            self.listener.list = listener;
             _.each(ctwc.LISTENER_INFO_OPTIONS_MAP, function(listenerOption){
                 dataItems.push({ name: listenerOption.name,
-                    value: listener[0][listenerOption.key], key: listenerOption.key});
+                    value: listener[listenerOption.key], key: listenerOption.key});
             });
             return dataItems;
          }
     });
 
-    var getListenerInfoViewConfig = function (viewConfig) {
+    var getListenerInfoViewConfig = function (viewConfig, listener) {
         return {
             elementId: cowu.formatElementId([ctwc.CONFIG_LISTENER_INFO_SECTION_ID]),
             view: "SectionView",
@@ -66,7 +70,8 @@ define([
                                             pageSizeSelect: [10, 50, 100]
                                         }
                                     },
-                                    lbId: viewConfig.lbId
+                                    lbId: viewConfig.lbId,
+                                    listener: listener
                                 }
                             }
                         ]

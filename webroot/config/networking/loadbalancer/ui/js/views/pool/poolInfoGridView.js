@@ -65,15 +65,15 @@ define([
                 },
                 statusMessages: {
                     loading: {
-                        text: 'Loading Pool..'
+                        text: 'Loading Pool Details..'
                     },
                     empty: {
-                        text: 'No Pool Found.'
+                        text: 'No Pool Details Found.'
                     },
                     errorGettingData: {
                         type: 'error',
                         iconClasses: 'fa fa-warning',
-                        text: 'Error in getting Pool.'
+                        text: 'Error in getting Pool Details'
                     }
                 }
             },
@@ -109,32 +109,14 @@ define([
                 "title": 'Edit Listener',
                 "iconClass": 'fa fa-pencil-square-o',
                 "onClick": function() {
-                    var ajaxConfig = {
-                        url : "/api/tenants/config/lbaas/load-balancer/"+ viewConfig.lbId,
-                        type : 'GET'
-                    };
-                    contrail.ajaxHandler(ajaxConfig, null, function(response) {
-                        var listenerList = getValueByJsonPath(response,
-                            "loadbalancer;loadbalancer-listener", []), poolList = [];
-                        _.each(listenerList, function(obj) {
-                            var pool = getValueByJsonPath(obj, 'loadbalancer-pool', []);
-                            if(pool.length > 0){
-                              poolList = poolList.concat(pool);   
-                            }
-                        });
-                        
-                        if(Object.keys(poolList).length > 0){
-                            poolInfoEditView.model = new PoolInfoModel(poolList[0]);
-                            poolInfoEditView.renderEditPoolInfo({
-                                          "title": 'Edit Pool Details',
-                                          callback: function() {
-                                var dataView =
-                                    $(gridElId).data("contrailGrid")._dataView;
-                                dataView.refreshData();
-                            }});
-                        }
-                    },function(error){
-                    });
+                    poolInfoEditView.model = new PoolInfoModel(viewConfig.pool.list);
+                    poolInfoEditView.renderEditPoolInfo({
+                                  "title": 'Edit Pool Details',
+                                  callback: function() {
+                        var dataView =
+                            $(gridElId).data("contrailGrid")._dataView;
+                        dataView.refreshData();
+                    }});
                 }
             }
         ];

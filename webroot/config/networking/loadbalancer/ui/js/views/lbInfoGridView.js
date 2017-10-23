@@ -65,10 +65,10 @@ define([
                 },
                 statusMessages: {
                     loading: {
-                        text: 'Loading Loadbalancers..'
+                        text: 'Loading Loadbalancer Details..'
                     },
                     empty: {
-                        text: 'No Loadbalancers Found.'
+                        text: 'No Loadbalancer Details Found.'
                     },
                     errorGettingData: {
                         type: 'error',
@@ -106,29 +106,16 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": 'Edit Load Balancer',
+                "title": 'Edit Load Balancer Details',
                 "iconClass": 'fa fa-pencil-square-o',
                 "onClick": function() {
-                    var ajaxConfig = {
-                        url : "/api/tenants/config/lbaas/load-balancer/"+ viewConfig.lbId,
-                        type : 'GET'
-                    };
-                    contrail.ajaxHandler(ajaxConfig, null, function(response) {
-                        var lbData = getValueByJsonPath(response,
-                            "loadbalancer", {});
-                        if(Object.keys(lbData).length > 0){
-                            lbInfoModel = new LbInfoModel(lbData);
-                            lbInfoEditView.model = lbInfoModel;
-                            lbInfoEditView.renderEditInfoLb({
-                                          "title": 'Edit Load Balancer Details',
-                                          callback: function() {
-                                var dataView =
-                                    $(gridElId).data("contrailGrid")._dataView;
-                                dataView.refreshData();
-                            }});
-                        }
-                    },function(error){
-                    });
+                    lbInfoEditView.model = new LbInfoModel(viewConfig.loadBalancer.list);;
+                    lbInfoEditView.renderEditLb({
+                                  "title": 'Edit Load Balancer Details',
+                                  callback: function() {
+                        var dataView = $(gridElId).data("contrailGrid")._dataView;
+                        dataView.refreshData();
+                    }});
                 }
             }
         ];

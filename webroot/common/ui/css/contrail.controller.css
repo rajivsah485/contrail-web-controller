@@ -12,7 +12,15 @@
  #configure-Loadbalancer .modal-footer .btnSave{
  	display:none;
  }
-
+#associated_ip_address .select2-container{
+	padding: 0px !important;
+}
+#associated_ip_address{
+	margin-top: 20px;
+}
+#associated_ip_address .select2-container ul li input{
+	width: 100% !important;
+}
 /* Service Instances page*/
 .padingTop6{
     padding-top:6px;
