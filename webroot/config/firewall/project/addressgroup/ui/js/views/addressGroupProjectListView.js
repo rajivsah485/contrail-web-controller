@@ -27,7 +27,12 @@ define([
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getAddressGroupGridViewConfig());
+                    contrailListModel, getAddressGroupGridViewConfig(viewConfig));
+            $("#aps-back-button").off('click').on('click', function(){
+                $('#modal-landing-container').show();
+                $("#aps-gird-container").empty();
+                $('#aps-landing-container').hide();
+            });
         },
         parseAddressGroupsData : function(response){
             var dataItems = [],
@@ -41,7 +46,7 @@ define([
         }
     });
 
-    var getAddressGroupGridViewConfig = function () {
+    var getAddressGroupGridViewConfig = function (viewConfig) {
         return {
             elementId: cowu.formatElementId([ctwc.SECURITY_POLICY_TAG_SECTION_ID]),
             view: "SectionView",
@@ -61,7 +66,10 @@ define([
                                             pageSizeSelect: [10, 50, 100]
                                         }
                                     },
-                                    isGlobal: false                            
+                                    isGlobal: false,
+                                    projectSelectedValueData: viewConfig.projectSelectedValueData,
+                                    hashParams:viewConfig.hashParams,
+                                    isWizard: true
                                 }
                             }
                         ]

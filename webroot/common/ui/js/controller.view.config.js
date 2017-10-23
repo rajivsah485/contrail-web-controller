@@ -115,7 +115,8 @@ define([
                         tabConfig: {
                             activate: function(event, ui) {
                                 $('#' + ctwl.INSTANCE_PORT_DIST_CHART_ID).trigger('refresh');
-                            }
+                            },
+                            visible: cowu.isAdmin()
                         },
                         viewConfig: {
                             modelKey: ctwc.get(ctwc.UMID_INSTANCE_UVE, instanceUUID),
@@ -944,7 +945,12 @@ define([
             };
         };
 
-        self.getTimeRangeConfig = function (format) {
+        self.getTimeRangeConfig = function (format, addSinceOption) {
+            var dropdownOptions = ctwc.TIMERANGE_DROPDOWN_VALUES;
+            if(addSinceOption) {
+                dropdownOptions = dropdownOptions
+                            .concat(ctwc.TIMERANGE_DROPDOWN_ADDITIONAL_VALUES);
+            }
             var timeRangeConfig = {
                 columns: [
                     {
@@ -957,7 +963,7 @@ define([
                             elementConfig: {
                                 dataTextField: "text",
                                 dataValueField: "id",
-                                data: ctwc.TIMERANGE_DROPDOWN_VALUES
+                                data: dropdownOptions
                             }
                         }
                     },{
@@ -970,7 +976,7 @@ define([
                             class: "col-xs-4",
                             elementConfig:
                                 qeUtils.getFromTimeElementConfig('from_time', 'to_time', format),
-                            visible: "time_range() == -1"
+                            visible: "time_range() == -1 || time_range() == -2"
                         }
                     },{
                         elementId: 'to_time',

@@ -8,9 +8,13 @@ define([
     'backbone',
     'contrail-view',
     'config/firewall/common/applicationpolicy/ui/js/models/applicationPolicyModel',
-    'config/firewall/common/applicationpolicy/ui/js/views/applicationPolicyEditView'
-], function (_, moment, Backbone, ContrailView, ApplicationPolicyModel, ApplicationPolicyEditView) {
+    'config/firewall/common/applicationpolicy/ui/js/views/applicationPolicyEditView',
+    'config/firewall/fwpolicywizard/common/ui/js/views/fwPolicyWizardEditView',
+    'config/firewall/fwpolicywizard/common/ui/js/models/fwPolicyWizardModel'
+], function (_, moment, Backbone, ContrailView, ApplicationPolicyModel, ApplicationPolicyEditView,
+        FwPolicyWizardEditView, FwPolicyWizardModel) {
     var applicationPolicyEditView = new ApplicationPolicyEditView(),
+        FwPolicyWizardEditView = new FwPolicyWizardEditView(),
         gridElId = "#" + ctwc.FIREWALL_APPLICATION_POLICY_GRID_ID;
 
     var applicationPolicyGridView = ContrailView.extend({
@@ -203,24 +207,22 @@ define([
                         );
                     }
                 }
-
             },
             {
                 "type": "link",
                 "title": ctwl.TITLE_CREATE_APP_POLICY_SET,
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
-                	applicationPolicyEditView.model = new ApplicationPolicyModel();
-                	applicationPolicyEditView.renderAddEditApplicationPolicy({
-                                              "title": ctwl.TITLE_CREATE_APP_POLICY_SET,
-                                              'mode': 'add',
-                                              'isGlobal': viewConfig.isGlobal,
-                                              callback: function () {
-                       $('#' + ctwc.FIREWALL_APPLICATION_POLICY_GRID_ID).data("contrailGrid")._dataView.refreshData();
-                    }});
+                        applicationPolicyEditView.model = new ApplicationPolicyModel();
+                        applicationPolicyEditView.renderAddEditApplicationPolicy({
+                                                  "title": ctwl.TITLE_CREATE_APP_POLICY_SET,
+                                                  'mode': 'add',
+                                                  'isGlobal': viewConfig.isGlobal,
+                                                  callback: function () {
+                           $('#' + ctwc.FIREWALL_APPLICATION_POLICY_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                        }});
                 }
             }
-
         ];
         return headerActionConfig;
     }

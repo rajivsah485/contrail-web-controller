@@ -807,7 +807,7 @@ define([
 
         this.TMPL_CORE_GENERIC_EDIT = 'core-generic-edit-form-template';
         this.TMPL_CORE_GENERIC_DEL = 'core-generic-delete-form-template';
-
+        this.TMPL_APPLICATION_POLICY_SET = 'application-policy-set-edit-form-template';
         this.CONFIG_LINK_LOCAL_SERVICES_PAGE_ID = 'config-link-local-services-page';
         this.CONFIG_LINK_LOCAL_SERVICES_LIST_VIEW_ID = 'config-link-local-services-list';
         this.CONFIG_LINK_LOCAL_SERVICES_SECTION_ID = 'lls';
@@ -824,6 +824,7 @@ define([
         this.CREATE = "Create";
 
         /* Firewall labels */
+        this.FW_POLICY_WIZARD = "Firewall Policy Wizard";
         this.TITLE_POLICY_INFO = "Policy Info";
         this.TITLE_EDIT_FW_POLICY = "Edit Firewall Policy";
         this.TITLE_FW_POLICY = 'Firewall Policies';
@@ -1399,6 +1400,11 @@ define([
             "Delete Forwarding Classes";
         this.TITLE_EDIT_FORWARDING_CLASS = 'Edit Forwarding Class';
 
+        //SLO
+        this.TITLE_SLO = 'Security Logging Object';
+        this.TITLE_SLO_MULTI_DELETE = "Delete SLO";
+        this.TITLE_CREATE_SLO = 'Create Security Logging Object';
+        this.TITLE_DELETE_SLO = 'Delete Security Logging Object';
         // Health Check Config labels
         this.CFG_SVC_HEALTH_CHK_PAGE_ID = 'config-svc-health-chk-page';
         this.CFG_SVC_HEALTH_CHK_LIST_ID = 'config-svc-health-chk-list';
@@ -1425,6 +1431,7 @@ define([
         /*Traffic Groups Labels */
         this.TRAFFIC_GROUPS_ENDPOINT_STATS = 'traffic-groups-endpoint-statistics';
         this.TITLE_TRAFFIC_GROUPS_ENDPOINT_STATS = 'Endpoint Statistics';
+        this.TRAFFIC_GROUPS_SESSION_STATS = 'traffic-groups-session-statistics';
         this.TRAFFIC_GROUPS_SETTINGS = 'Traffic_Groups_Settings';
         this.TITLE_TRAFFIC_GROUPS_SETTINGS = 'Traffic Groups Settings';
         this.TRAFFIC_GROUPS_NO_DATA = 'No Statistics found for the selected duration in this project';

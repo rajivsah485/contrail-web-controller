@@ -6,9 +6,11 @@ define([
     'underscore',
     'contrail-view',
     'config/firewall/common/servicegroup/ui/js/models/serviceGroupModel',
-    'config/firewall/common/servicegroup/ui/js/views/serviceGroupEditView'
-], function (_, ContrailView, ServiceGroupModel, ServiceGroupEditView) {
+    'config/firewall/common/servicegroup/ui/js/views/serviceGroupEditView',
+    'config/firewall/fwpolicywizard/common/ui/js/views/overlayServiceGroupEditView'
+], function (_, ContrailView, ServiceGroupModel, ServiceGroupEditView, OverlayServiceGroupEditView) {
     var serviceGroupEditView = new ServiceGroupEditView(),
+        overlayServiceGroupEditView = new OverlayServiceGroupEditView(),
         gridElId = "#" + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID;
 
     var serviceGroupGridView = ContrailView.extend({
@@ -122,25 +124,43 @@ define([
         var rowActionConfig = [
             ctwgc.getEditConfig('Edit', function(rowIndex) {
                 dataView = $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data("contrailGrid")._dataView;
-                serviceGroupEditView.model = new ServiceGroupModel(dataView.getItem(rowIndex));
-                serviceGroupEditView.renderAddEditServiceGroup({
-                                      "title": 'Edit Service Group',
-                                      'mode':'edit',
-                                      'isGlobal': viewConfig.isGlobal,
-                                       callback: function () {
-                                          dataView.refreshData();
-                }});
+                if(viewConfig.isWizard){
+                    overlayServiceGroupEditView.model = new ServiceGroupModel(dataView.getItem(rowIndex));
+                    overlayServiceGroupEditView.renderServiceGroup({
+                                            'mode':'edit',
+                                            'viewConfig': viewConfig,
+                                            'isGlobal': viewConfig.isGlobal
+                    });
+                } else{
+                    serviceGroupEditView.model = new ServiceGroupModel(dataView.getItem(rowIndex));
+                    serviceGroupEditView.renderAddEditServiceGroup({
+                        "title": 'Edit Service Group',
+                        'mode':'edit',
+                        'isGlobal': viewConfig.isGlobal,
+                         callback: function () {
+                            dataView.refreshData();
+                    }});
+                }
             }),
             ctwgc.getDeleteConfig('Delete', function(rowIndex) {
                var dataItem = $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data('contrailGrid')._dataView.getItem(rowIndex);
-               serviceGroupEditView.model = new ServiceGroupModel(dataItem);
-               serviceGroupEditView.renderDeleteServiceGrp({
-                                      "title": ctwl.TITLE_SERVICE_GROUP_DELETE,
-                                      selectedGridData: [dataItem],
-                                      callback: function () {
-                                          var dataView = $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data("contrailGrid")._dataView;
-                                          dataView.refreshData();
-                }});
+               if(viewConfig.isWizard){
+                   overlayServiceGroupEditView.model = new ServiceGroupModel(dataItem);
+                   overlayServiceGroupEditView.renderServiceGroup({
+                                           selectedGridData: [dataItem],
+                                           'viewConfig': viewConfig,
+                                           'mode':'delete'
+                   });
+               } else{
+                   serviceGroupEditView.model = new ServiceGroupModel(dataItem);
+                   serviceGroupEditView.renderDeleteServiceGrp({
+                                          "title": ctwl.TITLE_SERVICE_GROUP_DELETE,
+                                          selectedGridData: [dataItem],
+                                          callback: function () {
+                                              var dataView = $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data("contrailGrid")._dataView;
+                                              dataView.refreshData();
+                    }});
+               } 
             })
         ];
         return rowActionConfig;
@@ -156,18 +176,27 @@ define([
                     var serviceGroupModel = new ServiceGroupModel();
                     var checkedRows = $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data("contrailGrid").getCheckedRows();
                     if(checkedRows && checkedRows.length > 0) {
-                    	serviceGroupEditView.model = serviceGroupModel;
-                    	serviceGroupEditView.renderDeleteServiceGrp(
-                            {"title": ctwl.TITLE_SERVICE_GROUP_MULTI_DELETE,
-                            	selectedGridData: checkedRows,
-                                callback: function () {
-                                    var dataView =
-                                        $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).
-                                        data("contrailGrid")._dataView;
-                                    dataView.refreshData();
+                        if(viewConfig.isWizard){
+                            overlayServiceGroupEditView.model = serviceGroupModel;
+                            overlayServiceGroupEditView.renderServiceGroup({
+                                        selectedGridData: checkedRows,
+                                        'viewConfig': viewConfig,
+                                        'mode':'delete'
+                            });
+                        } else{
+                            serviceGroupEditView.model = serviceGroupModel;
+                            serviceGroupEditView.renderDeleteServiceGrp(
+                                {"title": ctwl.TITLE_SERVICE_GROUP_MULTI_DELETE,
+                                    selectedGridData: checkedRows,
+                                    callback: function () {
+                                        var dataView =
+                                            $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).
+                                            data("contrailGrid")._dataView;
+                                        dataView.refreshData();
+                                    }
                                 }
-                            }
-                        );
+                            );
+                        }
                     }
                 }
 
@@ -177,14 +206,23 @@ define([
                 "title": ctwl.TITLE_CREATE_SERVICE_GROUP,
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
-                	serviceGroupEditView.model = new ServiceGroupModel();
-                	serviceGroupEditView.renderAddEditServiceGroup({
-                                              "title": 'Create',
-                                              'mode': 'add',
-                                              'isGlobal': viewConfig.isGlobal,
-                                              callback: function () {
-                       $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data("contrailGrid")._dataView.refreshData();
-                    }});
+                    if(viewConfig.isWizard){
+                        overlayServiceGroupEditView.model = new ServiceGroupModel();
+                        overlayServiceGroupEditView.renderServiceGroup({
+                                                'mode': 'add',
+                                                'viewConfig': viewConfig,
+                                                'isGlobal': viewConfig.isGlobal
+                        });
+                    } else{
+                        serviceGroupEditView.model = new ServiceGroupModel();
+                        serviceGroupEditView.renderAddEditServiceGroup({
+                                                  "title": 'Create',
+                                                  'mode': 'add',
+                                                  'isGlobal': viewConfig.isGlobal,
+                                                  callback: function () {
+                           $('#' + ctwc.SECURITY_POLICY_SERVICE_GRP_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                        }});
+                    }
                 }
             }
 

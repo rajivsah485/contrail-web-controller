@@ -103,32 +103,31 @@ define([
                     init: ctwvc.getProjectBreadcrumbDropdownViewConfig(hashParams, customProjectDropdownOptions)
                 }
             };
-        
         return ctwvc.getDomainBreadcrumbDropdownViewConfig(hashParams, customDomainDropdownOptions);
     };
 
     function getNetworkListConfig(viewConfig) {
         var hashParams = viewConfig.hashParams,
+            roles = globalObj.webServerInfo.role,
             customProjectDropdownOptions = {
                 getProjectsFromIdentity: true,
-                defaultValueIndex: 1,
                 includeDefaultProject: true,
+                defaultValueIndex: 1,
                 childView: {
                     init: getNetworkListViewConfig(viewConfig)
-                }/*,
-                allDropdownOption: ctwc.ALL_PROJECT_DROPDOWN_OPTION*/
+                },
+                allDropdownOption: ctwc.ALL_PROJECT_DROPDOWN_OPTION
             },
             customDomainDropdownOptions = {
                 childView: {
                     init: ctwvc.getProjectBreadcrumbDropdownViewConfig(hashParams, customProjectDropdownOptions)
                 }
             };
-            var currentCookie =  contrail.getCookie('region');
-            if (currentCookie != cowc.GLOBAL_CONTROLLER_ALL_REGIONS){
-                customProjectDropdownOptions['allDropdownOption']
-                    = ctwc.ALL_PROJECT_DROPDOWN_OPTION;
-                customProjectDropdownOptions['defaultValueIndex'] = 1;
-            }
+        var currentCookie =  contrail.getCookie('region');
+        if (currentCookie == cowc.GLOBAL_CONTROLLER_ALL_REGIONS || !cowu.isAdmin()){
+            delete customProjectDropdownOptions['allDropdownOption'];
+            customProjectDropdownOptions['defaultValueIndex'] = 0;
+        }
         return ctwvc.getDomainBreadcrumbDropdownViewConfig(hashParams, customDomainDropdownOptions)
     };
 
@@ -191,6 +190,7 @@ define([
 
     function getInstanceListConfig(viewConfig) {
         var hashParams = viewConfig.hashParams,
+            roles = globalObj.webServerInfo.role,
             customNetworkDropdownOptions = {
                 defaultValueIndex: 1,
                 childView: {
@@ -212,12 +212,18 @@ define([
                     init: ctwvc.getProjectBreadcrumbDropdownViewConfig(hashParams, customProjectDropdownOptions)
                 }
             };
-
+        if (!cowu.isAdmin()){
+            delete customProjectDropdownOptions['allDropdownOption'];
+            customProjectDropdownOptions['defaultValueIndex'] = 0;
+            delete customNetworkDropdownOptions['allDropdownOption'];
+            customNetworkDropdownOptions['defaultValueIndex'] = 0;
+        }
         return ctwvc.getDomainBreadcrumbDropdownViewConfig(hashParams, customDomainDropdownOptions)
     };
 
     function getInterfaceListConfig(viewConfig) {
         var hashParams = viewConfig.hashParams,
+            roles = globalObj.webServerInfo.role,
             customNetworkDropdownOptions = {
                 defaultValueIndex: 1,
                 childView: {
@@ -228,7 +234,7 @@ define([
             customProjectDropdownOptions = {
                 getProjectsFromIdentity: true,
                 includeDefaultProject: true,
-                defaultValueIndex: 1,
+                defaultValueIndex: 0,
                 childView: {
                     init: ctwvc.getNetworkBreadcrumbDropdownViewConfig(hashParams, customNetworkDropdownOptions),
                 },
@@ -239,7 +245,12 @@ define([
                     init: ctwvc.getProjectBreadcrumbDropdownViewConfig(hashParams, customProjectDropdownOptions)
                 }
             };
-
+        if (!cowu.isAdmin()){
+            delete customProjectDropdownOptions['allDropdownOption'];
+            customProjectDropdownOptions['defaultValueIndex'] = 0;
+            delete customNetworkDropdownOptions['allDropdownOption'];
+            customNetworkDropdownOptions['defaultValueIndex'] = 0;
+        }
         return ctwvc.getDomainBreadcrumbDropdownViewConfig(hashParams, customDomainDropdownOptions)
     }
 
