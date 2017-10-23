@@ -73,6 +73,7 @@
         <feature>lbaasconfig</feature>
         <callback>lbaasconfigapi.getLoadBalancerbyId</callback>
     </item>
+    
     <item>
         <url>/api/tenants/config/lbaas/load-balancer</url>
         <method>post</method>
@@ -151,13 +152,13 @@
       </item>
 
       <item>
-          <url>/api/tenants/config/lbaas/listener/:id</url>
+          <url>/api/tenants/config/lbaas/listener/:uuid</url>
           <method>put</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.updateListener</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/listener/:id</url>
+          <url>/api/tenants/config/lbaas/listener/:uuid</url>
           <method>delete</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deleteListenerById</callback>
@@ -233,16 +234,13 @@
 
 <!--
     ***Members: Use the following APIs to manage Member resources***
-    18. List all Members of a pool - GET
-            /api/tenants/config/lbaas/pool/:pid/members
-                                              listAllMembersByPoolId
-
+   
     19. Retrieve a specific Member of a Pool : GET
             /api/tenants/config/lbaas/pool/:id/member/:id
                                             getMemberByPoolId
     20. Add a New Member to a Pool - POST
             /api/tenants/config/lbaas/pool/:pid/member
-                                          createMemberByPoolId
+                                          createMember
 
     21. Update a Member of a Pool
             /api/tenants/config/lbaas/pool/:pid/member/:mid
@@ -262,14 +260,9 @@
     to is not in an ACTIVE provisioning_status.
 -->
 
+    
       <item>
-          <url>/api/tenants/config/lbaas/pool/:pid/members</url>
-          <method>get</method>
-          <feature>lbaasconfig</feature>
-          <callback>lbaasconfigapi.listAllMembersByPoolId</callback>
-      </item>
-      <item>
-          <url>/api/tenants/config/lbaas/pool/:pid/member/:mid</url>
+          <url>/api/tenants/config/lbaas/pool/member/:mid</url>
           <method>get</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.getMemberByPoolId</callback>
@@ -278,13 +271,13 @@
           <url>/api/tenants/config/lbaas/pool/:pid/member</url>
           <method>post</method>
           <feature>lbaasconfig</feature>
-          <callback>lbaasconfigapi.createMemberByPoolId</callback>
+          <callback>lbaasconfigapi.createMemberbyPoolId</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:pid/member/:mid</url>
+          <url>/api/tenants/config/lbaas/pool/member/:mid</url>
           <method>put</method>
           <feature>lbaasconfig</feature>
-          <callback>lbaasconfigapi.updateMemberByPoolId</callback>
+          <callback>lbaasconfigapi.updateMemberById</callback>
       </item>
       <item>
           <url>/api/tenants/config/lbaas/pool/member/:mid</url>
@@ -336,6 +329,7 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.getHealthMonitorById</callback>
       </item>
+      
       <item>
           <url>/api/tenants/config/lbaas/pool/:pid/health-monitor</url>
           <method>post</method>
