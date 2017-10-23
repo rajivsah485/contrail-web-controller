@@ -11,6 +11,7 @@ define([
 
         defaultConfig: {
             'name': 'Load balancer 1',
+            'display_name': '',
             'description': '',
             'ip_address': '',
             'lb_provider': '',
@@ -26,7 +27,7 @@ define([
             'listener_protocol':'',
             'listener_port':'',
             'listener_admin_state': false,
-            'pool_name':'',
+            'pool_name':'Pool 1',
             'pool_description':'',
             'pool_method':'',
             'pool_member': [],
@@ -38,7 +39,11 @@ define([
             'monitor_type':'',
             'health_check_interval':'5',
             'retry_count':'3',
-            'timeout':'5'
+            'timeout':'5',
+            'monitor_http_method': 'GET',
+            'monitor_http_status_code':'200',
+            'monitor_url_path':'/',
+            'field_disable': false
             
         },
 
@@ -62,7 +67,7 @@ define([
             var memberCollection = data.model().collection,
                 delMember = member.model();
             memberCollection.remove(delMember);
-        },
+        }
     });
     return lbCfgModel;
 });

@@ -41,7 +41,7 @@ define([
                 $("#" + modalId).modal("hide");
             }});
             self.renderView4Config($("#" + modalId).find("#" + prefixId + "-form"),
-                        self.model, getLoadBalancerViewConfig(self.model, options),
+                        self.model, getLoadBalancerViewConfig(self.model, options, self),
                         '', null, null,
                         function() {
                     if (!contrail.checkIfKnockoutBindingExist(modalId)) {
@@ -93,6 +93,7 @@ define([
                                       view: "FormInputView",
                                       viewConfig: {
                                           path: "ip_address",
+                                          placeholder : 'xx.xx.xx.xx',
                                           dataBindValue: "ip_address",
                                           class: "col-xs-6"
                                       }
@@ -143,100 +144,22 @@ define([
                                                     {id: '11ebe43e-13cc-4667-a50c-86cb184a38dc', text:'opencontrail'}]
                                             }
                                         }
+                                    },
+                                    {
+                                        elementId: 'lb_admin_state',
+                                        view: "FormCheckboxView",
+                                        viewConfig : {
+                                            path : 'lb_admin_state',
+                                            class : "col-xs-6",
+                                            label:'Admin State',
+                                            dataBindValue : 'lb_admin_state',
+                                            elementConfig : {
+                                                isChecked:false
+                                            }
+                                        }
                                     }
-                                ]
-                     },
-                     {
-                         columns: [
-                             {
-                             elementId: 'loadbalancer_properties11',
-                             view: "AccordianView",
-                             viewConfig: [
-                                 {
-                                 elementId: 'advanced',
-                                 title: 'Loadbalancer Properties',
-                                 view: "SectionView",
-                                 active:false,
-                                 viewConfig: {
-                                         rows: [{
-                                             columns: [
-                                                 {
-                                                     elementId: "lb_status",
-                                                     view: "FormInputView",
-                                                     viewConfig: {
-                                                         path: "lb_status",
-                                                         label: 'Status',
-                                                         dataBindValue: "lb_status",
-                                                         class: "col-xs-6"
-                                                     }
-                                                 },
-                                                 {
-                                                     elementId: "lb_provisioning_status",
-                                                     view: "FormInputView",
-                                                     viewConfig: {
-                                                         path: "lb_provisioning_status",
-                                                         label: 'Provisioning Status',
-                                                         dataBindValue: "lb_provisioning_status",
-                                                         class: "col-xs-6"
-                                                     }
-                                                 }
-                                             ]
-                                         },
-                                         {
-                                             columns: [
-                                                 {
-                                                     elementId: "lb_vipaddress",
-                                                     view: "FormInputView",
-                                                     viewConfig: {
-                                                         path: "lb_vipaddress",
-                                                         label: 'Vip Address',
-                                                         dataBindValue: "lb_vipaddress",
-                                                         class: "col-xs-6"
-                                                     }
-                                                 },
-                                                 {
-                                                     elementId: "lb_vipsubnetid",
-                                                     view: "FormInputView",
-                                                     viewConfig: {
-                                                         path: "lb_vipsubnetid",
-                                                         label: 'Vip Subnet Id',
-                                                         dataBindValue: "lb_vipsubnetid",
-                                                         class: "col-xs-6"
-                                                     }
-                                                 }
-                                             ]
-                                         },
-                                         {
-                                             columns: [
-                                                 {
-                                                     elementId: "lb_operating_status",
-                                                     view: "FormInputView",
-                                                     viewConfig: {
-                                                         path: "lb_operating_status",
-                                                         label: 'Operating Status',
-                                                         dataBindValue: "lb_operating_status",
-                                                         class: "col-xs-6"
-                                                     }
-                                                 },
-                                                 {
-                                                     elementId: 'lb_admin_state',
-                                                     view: "FormCheckboxView",
-                                                     viewConfig : {
-                                                         path : 'lb_admin_state',
-                                                         class : "col-xs-6",
-                                                         label:'Admin State',
-                                                         dataBindValue : 'lb_admin_state',
-                                                         elementConfig : {
-                                                             isChecked:false
-                                                         }
-                                                     }
-                                                 }
-                                             ]
-                                         }]
-                                     }
-                                 }]
-                             }]
-                         }
+                            ]
+                     }
                 ]
             }
     }
@@ -396,8 +319,7 @@ define([
                                                placeholder : 'Select Protocol',
                                                data : [{id: 'HTTP', text:'HTTP'},
                                                        {id: 'HTTPS', text:'HTTPS'},
-                                                       {id: 'TCP', text:'TCP'},
-                                                       {id: 'TERMINATED_HTTPS', text:'TERMINATED_HTTPS'}]
+                                                       {id: 'TCP', text:'TCP'}]
                                            }
                                        }
                                    },
@@ -425,16 +347,6 @@ define([
                          {
                              columns: [
                                  {
-                                     elementId: "pool_subnet_id",
-                                     view: "FormInputView",
-                                     viewConfig: {
-                                         path: "pool_subnet_id",
-                                         label: 'subnet Id',
-                                         dataBindValue: "pool_subnet_id",
-                                         class: "col-xs-6"
-                                     }
-                                 },
-                                 {
                                      elementId: 'pool_admin_state',
                                      view: "FormCheckboxView",
                                      viewConfig : {
@@ -452,7 +364,7 @@ define([
                  ]
              }
      }
-    function getMonitorControl(options){
+    function getMonitorControl(options, self){
         return {
                  rows: [
                      {
@@ -470,7 +382,14 @@ define([
                                          dataTextField : "text",
                                          dataValueField : "id",
                                          placeholder : 'Select Monitor Type',
-                                         data : [{id: 'HTTP', text:'HTTP'},{id: 'HTTPS', text:'HTTPS'},
+                                         change: function(data) {
+                                             if(data.val === 'HTTP'){
+                                                 self.model.field_disable(true);
+                                             }else{
+                                                 self.model.field_disable(false);
+                                             }
+                                         },
+                                         data : [{id: 'HTTP', text:'HTTP'},
                                                  {id: 'PING', text:'PING'},{id: 'TCP', text:'TCP'}]
                                      }
                                  }
@@ -513,6 +432,55 @@ define([
                                  }
                              }
                          ]
+                     },
+                     {
+                         columns: [
+                             {
+                                 elementId: 'monitor_http_method',
+                                 view: "FormDropdownView",
+                                 viewConfig: {
+                                     label: 'HTTP Method',
+                                     path : 'monitor_http_method',
+                                     class: 'col-xs-6',
+                                     visible: 'field_disable',
+                                     dataBindValue :
+                                         'monitor_http_method',
+                                     elementConfig : {
+                                         dataTextField : "text",
+                                         dataValueField : "id",
+                                         placeholder : 'Select HTTP Method',
+                                         data : [{id: 'GET', text:'GET'},
+                                                 {id: 'HEAD', text:'HEAD'}]
+                                     }
+                                 }
+                             },
+                             {
+                                 elementId: "monitor_http_status_code",
+                                 view: "FormInputView",
+                                 viewConfig: {
+                                     path: "monitor_http_status_code",
+                                     visible: 'field_disable',
+                                     label: 'Expected HTTP Status Code',
+                                     dataBindValue: "monitor_http_status_code",
+                                     class: "col-xs-6"
+                                 }
+                             }
+                         ]
+                     },
+                     {
+                         columns: [
+                             {
+                                 elementId: "monitor_url_path",
+                                 view: "FormInputView",
+                                 viewConfig: {
+                                     path: "monitor_url_path",
+                                     visible: 'field_disable',
+                                     label: 'URL Path',
+                                     dataBindValue: "monitor_url_path",
+                                     class: "col-xs-6"
+                                 }
+                             }
+                         ]
                      }
                  ]
              }
@@ -540,12 +508,25 @@ define([
                                ],
                             columns: [
                                 {
+                                    elementId: "pool_name",
+                                    view: "FormInputView",
+                                    name: 'Name',
+                                    width: 200,
+                                    viewConfig: {
+                                        path: "pool_name",
+                                        label: '',
+                                        dataBindValue: "pool_name()",
+                                        width: 200,
+                                    }
+                                },
+                                {
                                     elementId: "pool_member_ip_address",
                                     view: "FormInputView",
                                     name: 'IP Address',
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_ip_address",
+                                        placeholder : 'xx.xx.xx.xx',
                                         label: '',
                                         dataBindValue: "pool_member_ip_address()",
                                         width: 200,
@@ -662,6 +643,7 @@ define([
                             }
                         },
                         onNext: function(params) {
+                            $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
                             return true;
                         },
                         onPrevious: function(params) {
@@ -726,7 +708,11 @@ define([
                             }
                         },
                         onNext: function(params) {
-                            $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').text('Create Load Balancer');
+                            if(options.mode === 'loadbalancer'){
+                                $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').text('Create Load Balancer'); 
+                            }else{
+                                $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').text('Create Listener');
+                            }
                             return true;
                         },
                         onPrevious: function(params) {
@@ -738,7 +724,7 @@ define([
         };
         return addPoolViewConfig;
     }
-    function getCreateMonitorViewConfig(lbModel, options) {
+    function getCreateMonitorViewConfig(lbModel, options, self) {
         var gridPrefix = "add-monitor",
             addPoolViewConfig = {
             elementId:  cowu.formatElementId([prefixId, 'monitor']),
@@ -749,7 +735,7 @@ define([
                         elementId:  cowu.formatElementId([prefixId, 'monitor']),
                         title: 'Monitor',
                         view: "SectionView",
-                        viewConfig: getMonitorControl(options),
+                        viewConfig: getMonitorControl(options, self),
                         stepType: "step",
                         onInitRender: true,
                         buttons: {
@@ -769,7 +755,7 @@ define([
         };
         return addPoolViewConfig;
     }
-    function getLoadBalancerViewConfig(lbModel, options) {
+    function getLoadBalancerViewConfig(lbModel, options, self) {
         var addLB1ViewConfig = {
                 elementId: cowu.formatElementId([prefixId, 'loadbalancer_wizard']),
                 view: "WizardView",
@@ -786,25 +772,30 @@ define([
             createMoniter = null;
 
         
-        /*
-            Appending create LB Steps
-         */
-        createLB = $.extend(true, {}, getCreateLBViewConfig(lbModel, options).viewConfig).steps;
-
-        createLB[0].title = 'Load Balancer';
-        createLB[0].onPrevious = function() {
-            return false;
-        };
-        createLB[0].buttons = {
-            next: {
-                label:'Next'
-            },
-            previous: {
-                visible: false,
-                label:'Previous'
-            }
-        };
-        steps = steps.concat(createLB);
+        
+        var listenerPrevious = false;
+        if(options.mode === 'loadbalancer'){
+            /*
+              Appending create LB Steps
+            */
+            createLB = $.extend(true, {}, getCreateLBViewConfig(lbModel, options).viewConfig).steps;
+    
+            createLB[0].title = 'Load Balancer';
+            createLB[0].onPrevious = function() {
+                return false;
+            };
+            createLB[0].buttons = {
+                next: {
+                    label:'Next'
+                },
+                previous: {
+                    visible: false,
+                    label:'Previous'
+                }
+            };
+            steps = steps.concat(createLB); 
+            listenerPrevious = true; 
+        }
         
         /*
            Appending create Listener Steps
@@ -820,7 +811,7 @@ define([
                 label:'Next'
             },
             previous: {
-                visible: true,
+                visible: listenerPrevious,
                 label:'Previous'
             }
         };
@@ -869,7 +860,7 @@ define([
         /*
         Appending create Pool Steps
        */
-        createMoniter = $.extend(true, {}, getCreateMonitorViewConfig(lbModel, options).viewConfig).steps;
+        createMoniter = $.extend(true, {}, getCreateMonitorViewConfig(lbModel, options, self).viewConfig).steps;
 
         createMoniter[0].title = 'Monitor';
         createMoniter[0].onPrevious = function() {

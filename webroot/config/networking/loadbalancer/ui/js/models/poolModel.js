@@ -10,9 +10,9 @@ define([
         defaultConfig: {
             "display_name": "",
             "protocol": "",
+            "description":"",
             "loadbalancer_pool_properties": {},
             'session_persistence': "",
-            "persistence_cookie_name": "",
             "status_description":"",
             "loadbalancer_method":"",
             "admin_state": false
@@ -34,11 +34,6 @@ define([
             if(persistence != ''){
                 modelConfig["session_persistence"] = persistence;
             }
-            var cookieName = getValueByJsonPath(modelConfig,
-                    "loadbalancer_pool_properties;persistence_cookie_name", '');
-            if(cookieName != ''){
-                modelConfig["persistence_cookie_name"] = cookieName;
-            }
             var description = getValueByJsonPath(modelConfig,
                     "loadbalancer_pool_properties;status_description", '');
             if(description != ''){
@@ -48,6 +43,11 @@ define([
                     "loadbalancer_pool_properties;loadbalancer_method", '');
             if(method != ''){
                 modelConfig["loadbalancer_method"] = method;
+            }
+            var description = getValueByJsonPath(modelConfig,
+                    "id_perms;description", '');
+            if(description != ''){
+                modelConfig["description"] = description;
             }
             return modelConfig;
         }

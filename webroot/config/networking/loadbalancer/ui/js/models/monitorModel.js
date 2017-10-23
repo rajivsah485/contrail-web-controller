@@ -10,13 +10,16 @@ define([
         defaultConfig: {
             "display_name": "",
             "delay":"5",
-            "expected_codes":"0",
+            "description":"",
             "max_retries":"3",
-            "http_method":"",
             "admin_state":false,
             "timeout": "5",
             "monitor_type":"",
-            "loadbalancer_healthmonitor_properties": {}
+            "loadbalancer_healthmonitor_properties": {},
+            "field_disable": false,
+            'http_method': '',
+            'expected_codes':'',
+            'url_path':'',
             
         },
 
@@ -31,11 +34,6 @@ define([
             if(adminState){
                 modelConfig["admin_state"] = adminState;
             }
-            var code = getValueByJsonPath(modelConfig,
-                    "loadbalancer_healthmonitor_properties;expected_codes", '');
-            if(code != ''){
-                modelConfig["expected_codes"] = code;
-            }
             var retries = getValueByJsonPath(modelConfig,
                     "loadbalancer_healthmonitor_properties;max_retries", '');
             if(retries != ''){
@@ -46,6 +44,16 @@ define([
             if(httpMethod != ''){
                 modelConfig["http_method"] = httpMethod;
             }
+            var expectedCodes = getValueByJsonPath(modelConfig,
+                    "loadbalancer_healthmonitor_properties;expected_codes", '');
+            if(expectedCodes != ''){
+                modelConfig["expected_codes"] = expectedCodes;
+            }
+            var urlPath = getValueByJsonPath(modelConfig,
+                    "loadbalancer_healthmonitor_properties;url_path", '');
+            if(urlPath != ''){
+                modelConfig["url_path"] = urlPath;
+            }
             var timeout = getValueByJsonPath(modelConfig,
                     "loadbalancer_healthmonitor_properties;timeout", '');
             if(timeout != ''){
@@ -55,6 +63,11 @@ define([
                     "loadbalancer_healthmonitor_properties;monitor_type", '');
             if(monitorType != ''){
                 modelConfig["monitor_type"] = monitorType;
+            }
+            var description = getValueByJsonPath(modelConfig,
+                    "id_perms;description", '');
+            if(description != ''){
+                modelConfig["description"] = description;
             }
             return modelConfig;
         }

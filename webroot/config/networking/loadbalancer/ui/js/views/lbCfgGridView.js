@@ -7,20 +7,24 @@ define([
     'contrail-view',
     'config/networking/loadbalancer/ui/js/views/lbCfgFormatters',
     'config/networking/loadbalancer/ui/js/views/lbCfgEditView',
+    'config/networking/loadbalancer/ui/js/views/lbInfoEditView',
     'config/networking/loadbalancer/ui/js/models/lbCfgModel',
+    'config/networking/loadbalancer/ui/js/models/lbInfoModel'
     ],
-    function (_, ContrailView, LbCfgFormatters, LbCfgEditView, LbCfgModel) {
+    function (_, ContrailView, LbCfgFormatters, LbCfgEditView, LbInfoEditView, LbCfgModel, LbInfoModel) {
     var lbCfgFormatters = new LbCfgFormatters();
     var dataView;
 
     var lbCfgEditView = new LbCfgEditView();
-
+    var lbInfoEditView = new LbInfoEditView();
+    var self;
     var lbCfgGridView = ContrailView.extend({
         el: $(contentContainer),
 
         render: function () {
-            var self = this;
+            self = this;
             var viewConfig = this.attributes.viewConfig;
+            self.ProjectId = viewConfig.selectedProjId;
             this.renderView4Config(self.$el, self.model,
                                    getLBCfgGridViewConfig(viewConfig));
         }
@@ -97,7 +101,7 @@ define([
                      {
                          field:  'loadbalancer',
                          name:   'Name',
-                         formatter: lbCfgFormatters.nameFormatter,
+                         formatter: lbCfgFormatters.displayNameFormatter,
                          sortable: {
                             sortBy: 'formattedValue'
                          },
@@ -183,7 +187,7 @@ define([
             hashObj = {
                 view: viewTab,
                 focusedElement: {
-                    loadBalancer: dc.loadbalancer.name,
+                    loadBalancer: dc.loadbalancer.display_name,
                     uuid: dc.uuid,
                     tab: viewTab
                 }
@@ -210,16 +214,15 @@ define([
                 "iconClass": "fa fa-trash",
                 "linkElementId": "linkLBDelete",
                 "onClick": function () {
-                    /*var gridElId = '#' + ctwl.CFG_VN_GRID_ID;
+                    var gridElId = '#' + ctwl.CFG_LB_GRID_ID;
                     var checkedRows = $(gridElId).data("contrailGrid").getCheckedRows();
 
-                    vnCfgEditView.model = new VNCfgModel();
-                    vnCfgEditView.renderMultiDeleteVNCfg({"title":
-                                                            ctwl.CFG_VN_TITLE_MULTI_DELETE,
+                    lbInfoEditView.model = new LbInfoModel();
+                    lbInfoEditView.renderMultiDeleteLb({"title": 'Delete Load Balancers',
                                                             checkedRows: checkedRows,
                                                             callback: function () {
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
-                    }});*/
+                    }});
                 }
             },
             {
@@ -231,6 +234,7 @@ define([
                     lbCfgEditView.model = lbodel;
                     lbCfgEditView.renderAddLb({
                                               "title": 'Create Loadbalancer',
+                                              'mode': 'loadbalancer',
                                               callback: function () {
                     $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});
@@ -244,38 +248,55 @@ define([
     function  getRowActionConfig (dc) {
         rowActionConfig = [
             ctwgc.getEditConfig('Edit Loadbalancer', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                var vnModel = new VNCfgModel(dataView.getItem(rowIndex));
-                vnCfgEditView.model = vnModel;
-                subscribeModelChangeEvents(vnModel);
-                vnCfgEditView.renderEditVNCfg({
-                                      "title": ctwl.EDIT,
+                var rowData = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.getItem(rowIndex);
+                lbInfoEditView.model = new LbInfoModel(rowData.loadbalancer);
+                lbInfoEditView.renderEditLb({
+                                      "title": 'Edit Load Balancer',
                                       callback: function () {
-                                          dataView.refreshData();
-                }});*/
+                         ('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                }});
             })
         ];
         rowActionConfig.push(ctwgc.getEditConfig('Associate Floating IP', function(rowIndex) {
-            /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-            vnCfgEditView.model = new VNCfgModel();
-            vnCfgEditView.renderMultiDeleteVNCfg({
-                                  "title": ctwl.CFG_VN_TITLE_DELETE,
-                                  checkedRows: [dataView.getItem(rowIndex)],
+            var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
+            lbInfoEditView.model = new LbInfoModel();
+            lbInfoEditView.renderAssociateIp({
+                                  "title": 'Associate Floating IP Address',
+                                   'ProjectId':self.ProjectId,
+                                   callback: function () {
+                                      dataView.refreshData();
+            }});
+        }));
+        rowActionConfig.push(ctwgc.getEditConfig('Diassociate Floating IP', function(rowIndex) {
+            var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
+            var lbModel = dataView.getItem(rowIndex);
+            var LbName = lbModel.loadbalancer.name;
+            lbInfoEditView.model = new LbInfoModel();
+            lbInfoEditView.renderDeassociateIp({
+                                  "title": 'Confirm Disassociate Floating IP Address',
+                                  'LbName': LbName,
                                   callback: function () {
                                       dataView.refreshData();
-            }});*/
+            }});
         }));
         rowActionConfig.push(ctwgc.getDeleteConfig('Delete Loadbalancer', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                vnCfgEditView.model = new VNCfgModel();
-                vnCfgEditView.renderMultiDeleteVNCfg({
-                                      "title": ctwl.CFG_VN_TITLE_DELETE,
+                var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
+                lbInfoEditView.model = new LbInfoModel();
+                lbInfoEditView.renderMultiDeleteLb({
+                                      "title": 'Delete Load Balancer',
                                       checkedRows: [dataView.getItem(rowIndex)],
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
-            }));
-        return rowActionConfig;
+                }});
+        }));
+        var floatingIp = getValueByJsonPath(dc, 'loadbalancer;virtual_machine_interface_refs;0;floating-ip', {});
+        if(Object.keys(floatingIp).length > 0){
+            rowActionConfig.splice(1, 1);
+            return rowActionConfig;
+        }else{
+            rowActionConfig.splice(2, 1);
+            return rowActionConfig;
+        }
     }
 
     function getSubnetExpandDetailsTmpl() {

@@ -7,11 +7,14 @@ define([
     'contrail-view',
     'config/networking/loadbalancer/ui/js/views/lbCfgFormatters',
     'config/networking/loadbalancer/ui/js/views/listener/listenerEditView',
-    'config/networking/loadbalancer/ui/js/models/listenerModel'
+    'config/networking/loadbalancer/ui/js/models/listenerModel',
+    'config/networking/loadbalancer/ui/js/models/lbCfgModel',
+    'config/networking/loadbalancer/ui/js/views/lbCfgEditView'
     ],
-    function (_, ContrailView, LbCfgFormatters, ListenerEditView, ListenerModel) {
+    function (_, ContrailView, LbCfgFormatters, ListenerEditView, ListenerModel, LbCfgModel, LbCfgEditView) {
     var lbCfgFormatters = new LbCfgFormatters();
     var listenerEditView = new ListenerEditView();
+    var lbCfgEditView = new LbCfgEditView();
     var dataView;
     var listenerGridView = ContrailView.extend({
         el: $(contentContainer),
@@ -58,7 +61,8 @@ define([
             hashObj = {
                 view: viewTab,
                 focusedElement: {
-                    listener: dc.name,
+                    listener: dc.display_name,
+                    listenerId: dc.uuid,
                     uuid: lbId,
                     tab: viewTab,
                     lbName: lbName,
@@ -88,7 +92,7 @@ define([
                 defaultControls: {
                     //columnPickable:true
                  },
-                advanceControls: getHeaderActionConfig(),
+                advanceControls: getHeaderActionConfig(viewConfig),
             },
             body: {
                 options: {
@@ -113,22 +117,30 @@ define([
                 dataSource: {data: []},
                 statusMessages: {
                     loading: {
-                        text: 'Loading Listeners..'
+                        text: 'Loading Listener..'
                     },
                     empty: {
-                        text: 'No Listeners Found.'
+                        text: 'No Listener Found.'
                     }
                 }
             },
             columnHeader: {
                 columns: [
                     {
-                        id: 'name',
-                        field: 'name',
+                        id: 'display_name',
+                        field: 'display_name',
                         name: 'Name',
                         cssClass :'cell-hyperlink-blue',
                         events : {
                             onClick : onListenerClick.bind({viewConfig:viewConfig})
+                        }
+                    },
+                    {
+                        field:  'uuid',
+                        name:   'Description',
+                        formatter: lbCfgFormatters.listenerDescriptionFormatter,
+                        sortable: {
+                           sortBy: 'formattedValue'
                         }
                     },
                     {
@@ -169,7 +181,7 @@ define([
         return gridElementConfig
     };
     
-    function getHeaderActionConfig() {
+    function getHeaderActionConfig(viewConfig) {
         var headerActionConfig = [
             {
                 "type": "link",
@@ -177,16 +189,31 @@ define([
                 "iconClass": "fa fa-trash",
                 "linkElementId": "listenerDelete",
                 "onClick": function () {
-                    /*var gridElId = '#' + ctwl.CFG_VN_GRID_ID;
+                    var gridElId = '#' + ctwc.CONFIG_LB_LISTENER_GRID_ID;
                     var checkedRows = $(gridElId).data("contrailGrid").getCheckedRows();
 
-                    vnCfgEditView.model = new VNCfgModel();
-                    vnCfgEditView.renderMultiDeleteVNCfg({"title":
-                                                            ctwl.CFG_VN_TITLE_MULTI_DELETE,
+                    listenerEditView.model = new ListenerModel();
+                    listenerEditView.renderMultiDeleteListener({"title": 'Delete Listeners',
                                                             checkedRows: checkedRows,
                                                             callback: function () {
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
-                    }});*/
+                    }});
+                }
+            },
+            {
+                "type": "link",
+                "title": 'Create Listener',
+                "iconClass": "fa fa-plus",
+                "onClick": function () {
+                    var title = viewConfig.lbName + ' > '+ 'Create Listener'
+                    var lbodel = new LbCfgModel();
+                    lbCfgEditView.model = lbodel;
+                    lbCfgEditView.renderAddLb({
+                                              "title": title,
+                                              'mode': 'listener',
+                                              callback: function () {
+                    $('#' + ctwc.CONFIG_LB_LISTENER_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                    }});
                 }
             }
 
@@ -207,14 +234,14 @@ define([
             })
         ];
         rowActionConfig.push(ctwgc.getDeleteConfig('Delete Listener', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                vnCfgEditView.model = new VNCfgModel();
-                vnCfgEditView.renderMultiDeleteVNCfg({
-                                      "title": ctwl.CFG_VN_TITLE_DELETE,
+                var dataView = $('#' + ctwc.CONFIG_LB_LISTENER_GRID_ID).data("contrailGrid")._dataView;
+                listenerEditView.model = new ListenerModel();
+                listenerEditView.renderMultiDeleteListener({
+                                      "title": 'Delete Listener',
                                       checkedRows: [dataView.getItem(rowIndex)],
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             }));
         return rowActionConfig;
     };
@@ -253,6 +280,16 @@ define([
                                                 {
                                                     key: 'uuid',
                                                     label: 'UUID',
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Description',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'listenerDescription'
+                                                    },
                                                     templateGenerator: 'TextGenerator',
                                                     keyClass:'col-xs-3',
                                                     valueClass:'col-xs-9'
@@ -329,6 +366,11 @@ define([
         return lbCfgFormatters.listenerAdminStateFormatter(null,
                 null, null, null, dc);
     };
+    
+    this.listenerDescription = function(v, dc){
+        return lbCfgFormatters.listenerDescriptionFormatter(null,
+                null, null, null, dc);
+    }
 
     return listenerGridView;
 });

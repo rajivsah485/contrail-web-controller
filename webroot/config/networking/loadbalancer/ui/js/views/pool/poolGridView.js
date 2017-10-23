@@ -54,19 +54,22 @@ define([
         var listenerRef = this.viewConfig.listenerRef;
         var poolRef = this.viewConfig.poolRef;
         var listenerName = this.viewConfig.listener;
+        var listenerId = this.viewConfig.listenerId;
         var viewTab = 'config_pool_details';
         var hashP = 'config_load_balancer';
         var hashParams = null,
             hashObj = {
                 view: viewTab,
                 focusedElement: {
-                    pool: dc.name,
+                    pool: dc.display_name,
                     uuid: lbId,
                     tab: viewTab,
                     lbName: lbName,
                     listenerRef: listenerRef,
                     poolRef: poolRef,
-                    listenerName: listenerName
+                    listenerName: listenerName,
+                    listenerId: listenerId,
+                    poolId: dc.uuid
                     
                 }
             };
@@ -118,22 +121,30 @@ define([
                 dataSource: {data: []},
                 statusMessages: {
                     loading: {
-                        text: 'Loading Pools..'
+                        text: 'Loading Pool..'
                     },
                     empty: {
-                        text: 'No Pools Found.'
+                        text: 'No Pool Found.'
                     }
                 }
             },
             columnHeader: {
                 columns: [
                     {
-                        id: 'name',
-                        field: 'name',
+                        id: 'display_name',
+                        field: 'display_name',
                         name: 'Name',
                         cssClass :'cell-hyperlink-blue',
                         events : {
                             onClick : onPoolClick.bind({viewConfig:viewConfig})
+                        }
+                    },
+                    {
+                        field:  'uuid',
+                        name:   'Description',
+                        formatter: lbCfgFormatters.listenerDescriptionFormatter,
+                        sortable: {
+                           sortBy: 'formattedValue'
                         }
                     },
                     {
@@ -190,16 +201,15 @@ define([
                 "iconClass": "fa fa-trash",
                 "linkElementId": "poolDelete",
                 "onClick": function () {
-                    /*var gridElId = '#' + ctwl.CFG_VN_GRID_ID;
+                    var gridElId = '#' + ctwc.CONFIG_LB_POOL_GRID_ID;
                     var checkedRows = $(gridElId).data("contrailGrid").getCheckedRows();
 
-                    vnCfgEditView.model = new VNCfgModel();
-                    vnCfgEditView.renderMultiDeleteVNCfg({"title":
-                                                            ctwl.CFG_VN_TITLE_MULTI_DELETE,
+                    poolEditView.model = new PoolModel();
+                    poolEditView.renderMultiDeletePool({"title": 'Delete Pools',
                                                             checkedRows: checkedRows,
                                                             callback: function () {
                         $(gridElId).data("contrailGrid")._dataView.refreshData();
-                    }});*/
+                    }});
                 }
             }
 
@@ -220,14 +230,14 @@ define([
             })
         ];
         rowActionConfig.push(ctwgc.getDeleteConfig('Delete Pool', function(rowIndex) {
-                /*dataView = $('#' + ctwl.CFG_VN_GRID_ID).data("contrailGrid")._dataView;
-                vnCfgEditView.model = new VNCfgModel();
-                vnCfgEditView.renderMultiDeleteVNCfg({
-                                      "title": ctwl.CFG_VN_TITLE_DELETE,
+                var dataView = $('#' + ctwc.CONFIG_LB_POOL_GRID_ID).data("contrailGrid")._dataView;
+                poolEditView.model = new PoolModel();
+                poolEditView.renderMultiDeletePool({
+                                      "title": 'Delete pool',
                                       checkedRows: [dataView.getItem(rowIndex)],
                                       callback: function () {
                                           dataView.refreshData();
-                }});*/
+                }});
             }));
         return rowActionConfig;
     };
@@ -266,6 +276,16 @@ define([
                                                 {
                                                     key: 'uuid',
                                                     label: 'UUID',
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Description',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'listenerDescription'
+                                                    },
                                                     templateGenerator: 'TextGenerator',
                                                     keyClass:'col-xs-3',
                                                     valueClass:'col-xs-9'
@@ -358,5 +378,9 @@ define([
                 null, null, null, dc);
     };
 
+    this.listenerDescription = function(v, dc){
+        return lbCfgFormatters.listenerDescriptionFormatter(null,
+                null, null, null, dc);
+    };
     return poolGridView;
 });

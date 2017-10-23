@@ -12,7 +12,8 @@ define([
             'pool_member_ip_address' : '',
             'pool_member_subnet' : '',
             'pool_member_port': '',
-            'pool_member_weight':'1'
+            'pool_member_weight':'1',
+            'pool_name':''
         },
         formatModelConfig: function (modelConfig) {
             return modelConfig;
