@@ -164,7 +164,7 @@ define([
             },
             {
                 "type": "link",
-                "title": ctwl.CFG_LB_TITLE_CREATE,
+                "title": 'Create Pool Member',
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
                     poolMemberEditView.model = new PoolMemberModel();

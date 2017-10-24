@@ -189,11 +189,19 @@ define([
                 url: ctwc.get(ctwc.URL_CFG_FIP_DETAILS) + '/' + options.ProjectId,
                 type:"GET"
             });
+            getAjaxs[1] = $.ajax({
+                url: '/api/tenants/config/floating-ip-pools/' +
+                contrail.getCookie(cowc.COOKIE_DOMAIN) + ':' +
+                contrail.getCookie(cowc.COOKIE_PROJECT),
+                type:"GET"
+            });
             $.when.apply($, getAjaxs).then(
                 function () {
                     var returnArr = []
-                    var floatingList = arguments[0]['floating_ip_back_refs'];
-                    var floatingIpList = [];
+                    var floatingList = arguments[0][0]['floating_ip_back_refs'];
+                    var fipPoolResponse = getValueByJsonPath(arguments[1][0],
+                            'floating_ip_pool_refs', []);
+                    var floatingIpList = [], fipPoolList = [];;
                     for(var i = 0; i < floatingList.length; i++){
                         var floatingIp = floatingList[i]['floating-ip'];
                         floatingIpList.push(
@@ -203,10 +211,27 @@ define([
                                      parent : "floating_ip_address"});
                         
                     }
-                    
+                    if (fipPoolResponse.length > 0) {
+                        $.each(fipPoolResponse, function (i, obj) {
+                            var flatName =      obj['to'][1] + ":" +
+                                                obj['to'][2] + ":" + obj['to'][3];
+                            var flatNameId =    obj['to'][0] + ":" + obj['to'][1] + ":" +
+                                                obj['to'][2] + ":" + obj['to'][3];
+                            //var subnets = getValueByJsonPath(obj, 'subnets', '')
+                           // subnets = subnets.length ? subnets : 'No subnets available';
+                            //fipPoolList.push({id: flatNameId.toString(),
+                                               // text: flatName + ' (' + subnets + ')'});
+                            fipPoolList.push(
+                                    {text : flatName,
+                                        value : flatNameId + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_pools",
+                                        id : flatNameId + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_pools",
+                                        parent : "floating_ip_pools"});
+                            
+                        });     
+                    }
                     var addrFields = [];
                     addrFields.push({text : 'Floating IP Addresses', value : 'floating_ip_address', id: 'floating_ip_address', children : floatingIpList},
-                                   {text : "Floating IP Pools", value: "floating_ip_pools", id:'floating_ip_pools', children: []});
+                                   {text : "Floating IP Pools", value: "floating_ip_pools", id:'floating_ip_pools', children: fipPoolList});
                     returnArr["addrFields"] = addrFields;
                     callback(returnArr);
                 }
@@ -278,7 +303,8 @@ define([
                                     elementConfig: {
                                         placeholder: 'Select Floating IP address or pool',
                                         //defaultValueId : 1,
-                                        minimumResultsForSearch : 1,
+                                        //minimumResultsForSearch : 1,
+                                        maximumSelectionSize: 1,
                                         dataTextField: "text",
                                         dataValueField: "value",
                                         data: allData.addrFields,
