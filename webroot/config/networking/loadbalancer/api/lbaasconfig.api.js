@@ -154,10 +154,7 @@ function getLoadBalancersDetailsInfo(error, lbs, response, appData) {
 								async.waterfall([
 										async.apply(getListenersDetailInfo,
 												appData, lbs),
-										async.apply(getServiceInstanceDetailsfromLB,
-												appData),
-										async.apply(getFloatingIPfromVMI,
-												appData), ], function(error,
+										async.apply(getLoadBalancerRefDetails, appData) ], function(error,
 										lbs) {
 									commonUtils.handleJSONResponse(error,
 											response, lbs);
@@ -311,26 +308,13 @@ function getLoadBalancersTreeInfo(error, lbs, response, appData) {
 									lbs : lbs,
 									appData : appData
 								};
-								async
-										.waterfall(
-												[
-													async.apply(getListenersDetailInfo,
-																appData,
-																lbs),
-													async.apply(getServiceInstanceDetailsfromLB,
-																appData),
-													async.apply(getFloatingIPfromVMI,
-																appData),
-													async.apply(	getPoolDetailInfo,
-																		appData),
-													async.apply(getMemberHealthMonitorInfo,
-																		appData) ],
+								async.waterfall([
+												async.apply(getListenersDetailInfo, appData, lbs),			
+												async.apply(getLoadBalancerRefDetails, appData),	
+												async.apply(	getPoolDetailInfo, appData),
+												async.apply(getMemberHealthMonitorInfo, appData) ],
 												function(error, lbs) {
-													commonUtils
-															.handleJSONResponse(
-																	error,
-																	response,
-																	lbs);
+													commonUtils.handleJSONResponse(error, response, lbs);
 												});
 							});
 		} else {
@@ -341,10 +325,26 @@ function getLoadBalancersTreeInfo(error, lbs, response, appData) {
 	}
 }
 
+function getLoadBalancerRefDetails(appData, lbs, callback){
+	async.parallel([
+			async.apply(getServiceInstanceDetailsfromLB, appData,lbs),
+			async.apply(getFloatingIPfromVMI, appData,lbs)],
+	 function(err, results) {
+		var sviData = results[0];
+		var vmiData= results[1];
+		parseServiceInstanceDetailsfromLB(sviData, lbs, function(error,lbs){
+			parseFloatingIps(lbs, vmiData, appData, function(lbs) {
+				callback(null, lbs);
+			});
+		});
+	});
+}
+
 function getServiceInstanceDetailsfromLB(appData, lbs, callback) {
 	var reqUrl = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
+	console.log("getServiceInstanceDetailsfromLB");
 	var sviUUID = [];
 	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
 		var svi_refs = lbs['loadbalancers'][j]['loadbalancer']['service_instance_refs'];
@@ -373,33 +373,40 @@ function getServiceInstanceDetailsfromLB(appData, lbs, callback) {
 		commonUtils.getAPIServerResponse(configApiServer.apiGet,true),
 		function(error, sviData) {
 			if (error) {
-				callback(error, lbs);
+				callback(error, sviData);
 				return;
 			}
-			if (sviData != null && sviData.length > 0) {
-				if (lbs['loadbalancers'].length > 0
-						&& sviData != null && sviData.length > 0) {
-					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-						var svi_refs = lbs['loadbalancers'][j]['loadbalancer']['service_instance_refs'];
-						if (lbs['loadbalancers'][j]['loadbalancer'] != null
-								&& svi_refs != null	&& svi_refs.length > 0) {
-							for (i = 0; i < svi_refs.length; i++) {
-								for (var l = 0; l < sviData.length; l++) {
-								  if(svi_refs[i]['uuid'] == sviData[l]['service-instance']['uuid']){
-										svi_refs[i]['name']= sviData[l]['service-instance']['name'];
-										svi_refs[i]['display_name'] = sviData[l]['service-instance']['display_name'];
-										svi_refs[i]['service_instance_properties'] = sviData[l]['service-instance']['service_instance_properties'];
-										
-									}
-								}
-								
+			callback(null, sviData);
+		});
+}
+
+
+
+function parseServiceInstanceDetailsfromLB(sviData, lbs, callback) {
+	console.log("parseServiceInstanceDetailsfromLB");
+	if (sviData != null && sviData.length > 0) {
+		if (lbs['loadbalancers'].length > 0 && sviData != null
+				&& sviData.length > 0) {
+			for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+				var svi_refs = lbs['loadbalancers'][j]['loadbalancer']['service_instance_refs'];
+				if (lbs['loadbalancers'][j]['loadbalancer'] != null
+						&& svi_refs != null && svi_refs.length > 0) {
+					for (i = 0; i < svi_refs.length; i++) {
+						for (var l = 0; l < sviData.length; l++) {
+							if (svi_refs[i]['uuid'] == sviData[l]['service-instance']['uuid']) {
+								svi_refs[i]['name'] = sviData[l]['service-instance']['name'];
+								svi_refs[i]['display_name'] = sviData[l]['service-instance']['display_name'];
+								svi_refs[i]['service_instance_properties'] = sviData[l]['service-instance']['service_instance_properties'];
+
 							}
 						}
+
 					}
 				}
 			}
-			callback(null, lbs);
-		});
+		}
+	}
+	callback(null, lbs);
 }
 
 /**
@@ -438,42 +445,17 @@ function getFloatingIPfromVMI(appData, lbs, callback) {
 		callback(error, null);
 		return;
 	}
-	async
-			.map(
-					dataObjArr,
-					commonUtils.getAPIServerResponse(configApiServer.apiGet,
-							true),
-					function(error, vmiData) {
-						if (error) {
-							callback(error, lbs);
-							return;
-						}
-						if (vmiData != null && vmiData.length > 0) {
-							if (lbs['loadbalancers'].length > 0
-									&& vmiData != null && vmiData.length > 0) {
-								for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-									var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-									if (lbs['loadbalancers'][j]['loadbalancer'] != null
-											&& vmi_refs != null
-											&& vmi_refs.length > 0) {
-										for (i = 0; i < vmi_refs.length; i++) {
-											for (var l = 0; l < vmiData.length; l++) {
-												if (vmi_refs[i]['uuid'] == vmiData[l]['virtual-machine-interface']['uuid']) {
-													vmi_refs[i]['name'] = vmiData[l]['virtual-machine-interface']['name'];
-													vmi_refs[i]['display_name'] = vmiData[l]['virtual-machine-interface']['display_name'];
-												}
-											}
-
-										}
-									}
-								}
-							}
-						}
-						parseFloatingIps(lbs, vmiData, appData, function(lbs) {
-							callback(null, lbs);
-						});
-					});
-
+	async.map( dataObjArr,
+			commonUtils.getAPIServerResponse(configApiServer.apiGet,
+					true),
+			function(error, vmiData) {
+				if (error) {
+					callback(error, null);
+					return;
+				}
+				
+			  callback(null, vmiData);
+			});
 }
 
 /**
@@ -487,6 +469,27 @@ function getFloatingIPfromVMI(appData, lbs, callback) {
  */
 function parseFloatingIps(lbs, vmiData, appData, callback) {
 	console.log("parseFloatingIps");
+	if (vmiData != null && vmiData.length > 0) {
+		if (lbs['loadbalancers'].length > 0
+				&& vmiData != null && vmiData.length > 0) {
+			for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+				var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
+				if (lbs['loadbalancers'][j]['loadbalancer'] != null
+						&& vmi_refs != null
+						&& vmi_refs.length > 0) {
+					for (i = 0; i < vmi_refs.length; i++) {
+						for (var l = 0; l < vmiData.length; l++) {
+							if (vmi_refs[i]['uuid'] == vmiData[l]['virtual-machine-interface']['uuid']) {
+								vmi_refs[i]['name'] = vmiData[l]['virtual-machine-interface']['name'];
+								vmi_refs[i]['display_name'] = vmiData[l]['virtual-machine-interface']['display_name'];
+							}
+						}
+
+					}
+				}
+			}
+		}
+	}
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
@@ -563,7 +566,7 @@ function parseFloatingIps(lbs, vmiData, appData, callback) {
  * @returns
  */
 function parseVNSubnets(lbs, vmiData, appData, callback) {
-	console.log("parseFloatingIps");
+	console.log("parseVNSubnets");
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
@@ -719,9 +722,7 @@ function mergeListenerToLB(lbs, listeners, callback) {
  * @returns
  */
 function getPoolDetailInfo(appData, lbs, callback) {
-
 	console.log("getPoolDetailInfo");
-	// console.log(JSON.stringify(lbs));
 	var reqUrl = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
