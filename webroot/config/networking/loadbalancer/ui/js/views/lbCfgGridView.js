@@ -495,6 +495,36 @@ define([
                                                     templateGenerator: 'TextGenerator',
                                                     keyClass:'col-xs-3',
                                                     valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Ha Mode',
+                                                    key: 'loadbalancer',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'haModeFormatter'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Service Instance Refs',
+                                                    key: 'loadbalancer',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'serviceInstanceFormatter'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Virtual Machine Interface Refs',
+                                                    key: 'loadbalancer',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'virtualMachineFormatter'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
                                                 }
                                             ]
                                         },getListenersExpandDetailsTmpl(),
@@ -582,6 +612,21 @@ define([
     
     this.lbSharedPermissionFormatter = function(v, dc){
         return lbCfgFormatters.lbSharedPermissionFormatter(null,
+                null, null, null, dc);
+    };
+    
+    this.haModeFormatter = function(v, dc){
+        return lbCfgFormatters.haModeFormatterText(null,
+                null, null, null, dc);
+    };
+    
+    this.serviceInstanceFormatter = function(v, dc){
+        return lbCfgFormatters.serviceInstanceFormatter(null,
+                null, null, null, dc);
+    };
+    
+    this.virtualMachineFormatter = function(v, dc){
+        return lbCfgFormatters.virtualMachineFormatter(null,
                 null, null, null, dc);
     }
     return lbCfgGridView;

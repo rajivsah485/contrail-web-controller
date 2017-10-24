@@ -1332,6 +1332,8 @@ define([
             {'key': 'loadbalancer-members', 'name': 'Pool Member Count'}
         ];
         
+        this.OPERATING_STATUS_MAP = ['ONLINE', 'Online', 'DRAINING', 'Draining', 'OFFLINE', 'Offline', 'DEGRADED', 'Degraded', 'ERROR', 'Error', 'NO_MONITOR', 'No Monitor'];
+        this.PROVISIONING_STATUS_MAP = ['ACTIVE', 'Active', 'DELETED', 'Deleted', 'ERROR', 'Error', 'PENDING_CREATE', 'Pending Create', 'PENDING_UPDATE', 'Pending Update', 'PENDING_DELETE', 'Pending Delete'];
         //Gohan Constants
         this.GOHAN_HASH_LIST = ['config_gc_serviceTemplates','config_gc_serviceInstance','config_gc_securityGroup','config_gc_networkPolicy','config_gc_network',
                                 'config_gc_server','config_gc_idPool','config_gc_association','config_gc_flavor','config_gc_image','config_gc_location'];

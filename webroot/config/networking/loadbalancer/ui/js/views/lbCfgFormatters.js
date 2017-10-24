@@ -35,16 +35,44 @@ define([
                 return '-'; 
             } 
         };
-
+        this.haModeFormatterText = function(d, c, v, cd, dc){
+            var haMode = getValueByJsonPath(dc, 'loadbalancer;service_instance_refs;0;service_instance_properties;ha_mode', '');
+            if(haMode !== ''){
+                return haMode;
+            }else{
+                return '-';
+            }
+        };
+        this.serviceInstanceFormatter = function(d, c, v, cd, dc){
+            var si = getValueByJsonPath(dc, 'loadbalancer;service_instance_refs;0;display_name', '');
+            if(si !== ''){
+                return si;
+            }else{
+                return '-';
+            }
+        };
+        this.virtualMachineFormatter = function(d, c, v, cd, dc){
+            var vmi = getValueByJsonPath(dc, 'loadbalancer;virtual_machine_interface_refs;0;display_name', '');
+            if(vmi !== ''){
+                return vmi;
+            }else{
+                return '-';
+            }
+        };
         this.operatingStatusFormatter = function(d, c, v, cd, dc) {
             var status = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;operating_status', '');
             if (status !== '') {
-                if(status === 'ONLINE'){
+                var getIndex = ctwc.OPERATING_STATUS_MAP.indexOf(status) + 1;
+                var statusVal = ctwc.OPERATING_STATUS_MAP[getIndex];
+                if(statusVal === 'Online'){
                     return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                    'ONLINE'); 
-                }else{
+                            statusVal); 
+                }else if(statusVal === 'Error'){
                     return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                    'OFFLINE');
+                            statusVal);
+                }else {
+                    return ('<div class="status-badge-rounded status-partially-active"></div>&nbsp;&nbsp;' +
+                            statusVal); 
                 }
             }else{
                 return '-'; 
@@ -54,12 +82,17 @@ define([
         this.provisioningStatusFormatter = function(d, c, v, cd, dc) {
             var status = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;provisioning_status', '');
             if (status !== '') {
-                if(status === 'ACTIVE'){
+                var getIndex = ctwc.PROVISIONING_STATUS_MAP.indexOf(status) + 1;
+                var statusVal = ctwc.PROVISIONING_STATUS_MAP[getIndex];
+                if(statusVal === 'Active'){
                     return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                    'ACTIVE');
-                }else{
+                            statusVal);
+                }else if(statusVal === 'Error'){
                     return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                    'INACTIVE');
+                            statusVal);
+                }else{
+                    return ('<div class="status-badge-rounded status-partially-active"></div>&nbsp;&nbsp;' +
+                            statusVal); 
                 }
             }else{
                 return '-'; 
@@ -685,12 +718,17 @@ define([
                       if(val.provisioning_status == '' || val.provisioning_status == null){
                           return '-';
                       }else{
-                          if(val.provisioning_status === 'ACTIVE'){
+                          var getIndex = ctwc.PROVISIONING_STATUS_MAP.indexOf(val.provisioning_status) + 1;
+                          var statusVal = ctwc.PROVISIONING_STATUS_MAP[getIndex];
+                          if(statusVal === 'Active'){
                               return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                              'ACTIVE');
-                          }else{
+                                      statusVal);
+                          }else if(statusVal === 'Error'){
                               return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                              'INACTIVE');
+                                      statusVal);
+                          }else{
+                              return ('<div class="status-badge-rounded status-partially-active"></div>&nbsp;&nbsp;' +
+                                      statusVal); 
                           }
                       }
                   }
@@ -718,12 +756,17 @@ define([
                       if(val.operating_status == '' || val.operating_status == null){
                           return '-';
                       }else{
-                          if(val.operating_status === 'ONLINE'){
+                          var getIndex = ctwc.OPERATING_STATUS_MAP.indexOf(val.operating_status) + 1;
+                          var statusVal = ctwc.OPERATING_STATUS_MAP[getIndex];
+                          if(statusVal === 'Online'){
                               return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                              'ONLINE'); 
-                          }else{
+                                      statusVal); 
+                          }else if(statusVal === 'Error'){
                               return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                              'OFFLINE'); 
+                                      statusVal); 
+                          }else{
+                              return ('<div class="status-badge-rounded status-partially-active"></div>&nbsp;&nbsp;' +
+                                      statusVal); 
                           }
                       }
                   }
@@ -755,15 +798,22 @@ define([
                       var vmi = val,
                       fixedIpList = [], returnString = '';
                       if(vmi.length > 0){
-                        _.each(vmi, function(ref) {
-                              var ip = getValueByJsonPath(ref, 'floating-ip;ip', '');
+                       // _.each(vmi, function(ref) {
+                              var ip = getValueByJsonPath(vmi[0], 'floating-ip;ip', '');
                               if(ip != ''){
-                                  var floatingIp = '<span>'+ ip +'</span>';
-                                  fixedIpList.push(floatingIp); 
+                                  //var floatingIp = '<span>'+ ip +'</span>';
+                                  //fixedIpList.push(floatingIp); 
+                                  var fipHash = '/#p=config_networking_fip';
+                                  var fipUrl = window.location.origin + fipHash;
+                                  return ( '<a href="'+ fipUrl+ '" style="color: #3184c5">' + ip + '</a>');
+                              }else{
+                                  return '-'; 
                               }
-                         });
+                         //});
+                      }else{
+                          return '-'; 
                       }
-                      if(fixedIpList.length > 0){
+                      /*if(fixedIpList.length > 0){
                           for(var j = 0; j < fixedIpList.length; j++){
                               if(fixedIpList[j]) {
                                   returnString += fixedIpList[j] + "<br>";
@@ -772,7 +822,7 @@ define([
                           return returnString;
                       }else{
                           return '-';
-                      }
+                      }*/
                   }
                   if(rowData['name'] === 'Subnet'){
                       var vmiref = val,
