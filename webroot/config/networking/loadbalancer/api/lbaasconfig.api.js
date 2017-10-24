@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Juniper Networks, Inc. All rights reserved.
+ * Copyright (c) 2017 Juniper Networks, Inc. All rights reserved.
  */
 
 /**
@@ -40,9 +40,10 @@ if (!module.parent) {
 }
 
 /**
- * @listLoadBalancers public function 1. URL
- *                    /api/tenants/config/lbaas/load-balancers 2. Gets list of
- *                    load balancer from config api server 3. Needs tenant id
+ * @listLoadBalancers public function 
+ * 1. URL /api/tenants/config/lbaas/load-balancers 
+ * 2. Gets list of load balancer from config api server 
+ * 3. Needs tenant id
  * @param request
  * @param response
  * @param appData
@@ -69,10 +70,10 @@ function listLoadBalancers(request, response, appData) {
 }
 
 /**
- * @getLoadBalancersDetails public function 1. URL
- *                          /api/tenants/config/lbaas/load-balancers-details 2.
- *                          Gets list of load balancer details from config api
- *                          server 3. Needs tenant id
+ * @getLoadBalancersDetails public function 
+ * 1. URL /api/tenants/config/lbaas/load-balancers-details 
+ * 2.Gets list of load balancer details from config api server 
+ * 3. Needs tenant id
  * @param request
  * @param response
  * @param appData
@@ -88,12 +89,12 @@ function getLoadBalancersDetails(request, response, appData) {
 	}
 
 	configApiServer.apiGet(lbListURL, appData, function(error, data) {
-		getLoadBalancersDetailsInfo(error, data, response, appData);
+		getLoadBalancersDetailsCB(error, data, response, appData);
 	});
 }
 
 /**
- * @getLoadBalancersDetailsInfo private function Return back the response of
+ * @getLoadBalancersDetailsCB private function Return back the response of
  *                              load balancers details.
  * @param error
  * @param lbs
@@ -101,7 +102,7 @@ function getLoadBalancersDetails(request, response, appData) {
  * @param appData
  * @returns
  */
-function getLoadBalancersDetailsInfo(error, lbs, response, appData) {
+function getLoadBalancersDetailsCB(error, lbs, response, appData) {
 	var reqUrl = null;
 	var dataObjArr = [];
 	var i = 0, lbLength = 0;
@@ -120,46 +121,31 @@ function getLoadBalancersDetailsInfo(error, lbs, response, appData) {
 					global.HTTP_REQUEST_GET, null, null, null, appData);
 		}
 		if (dataObjArr.length > 0) {
-			async
-					.map(
-							dataObjArr,
-							commonUtils.getAPIServerResponse(
-									configApiServer.apiGet, true),
-							function(error, loadbalancer) {
-								if (error) {
-									commonUtils.handleJSONResponse(error,
-											response, null);
-									return;
+			async.map(
+				dataObjArr,
+				commonUtils.getAPIServerResponse(
+						configApiServer.apiGet, true),
+				function(error, loadbalancer) {
+					if (error) {
+						commonUtils.handleJSONResponse(error,
+								response, null);
+						return;
+					}
+					if (lbs['loadbalancers'].length > 0 && loadbalancer != null) {
+						for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+							lbs['loadbalancers'][j]['loadbalancer'] = {};
+							for (var l = 0; l < loadbalancer.length; l++) {
+								if (lbs['loadbalancers'][j]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
+									lbs['loadbalancers'][j]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
 								}
-								if (lbs['loadbalancers'].length > 0
-										&& loadbalancer != null) {
-									for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-										lbs['loadbalancers'][j]['loadbalancer'] = {};
-										for (var l = 0; l < loadbalancer.length; l++) {
-											if (lbs['loadbalancers'][j]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
-												lbs['loadbalancers'][j]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
-											}
-										}
-									}
-								}
-								var jsonstr = JSON.stringify(lbs);
-								var new_jsonstr = jsonstr.replace(
-										/loadbalancer_listener_back_refs/g,
-										"loadbalancer-listener");
-								lbs = JSON.parse(new_jsonstr);
-								var dataObj = {
-									lbs : lbs,
-									appData : appData
-								};
-								async.waterfall([
-										async.apply(getListenersDetailInfo,
-												appData, lbs),
-										async.apply(getLoadBalancerRefDetails, appData) ], function(error,
-										lbs) {
-									commonUtils.handleJSONResponse(error,
-											response, lbs);
-								});
-							});
+							}
+						}
+					}
+					parseLoadBalancerDetails(lbs, appData, function(error, lbs){
+						commonUtils.handleJSONResponse(error,response, lbs);
+					});
+					
+				});
 		} else {
 			commonUtils.handleJSONResponse(error, response, lbs);
 		}
@@ -168,12 +154,31 @@ function getLoadBalancersDetailsInfo(error, lbs, response, appData) {
 	}
 }
 
+function parseLoadBalancerDetails(lbs, appData, callback){
+	var jsonstr = JSON.stringify(lbs);
+	var new_jsonstr = jsonstr.replace(
+			/loadbalancer_listener_back_refs/g,
+			"loadbalancer-listener");
+	lbs = JSON.parse(new_jsonstr);
+	var dataObj = {
+		lbs : lbs,
+		appData : appData
+	};
+	async.waterfall([
+			async.apply(getListenersDetailInfo,appData, lbs),
+			async.apply(getLoadBalancerRefDetails, appData) ], 
+			function(error, lbs) {
+					callback(error,lbs);
+			});
+	
+}
+
 /**
- * @getLoadBalancersTree public function 1. URL
- *                       /api/tenants/config/lbaas/load-balancers-tree 2. Gets
- *                       list of load balancerss from config api server 3. Needs
- *                       tenant id 4. Calls getLoadBalancersTreeInfo that
- *                       process data from config api server and sends back the
+ * @getLoadBalancersTree public function 
+ * 1. URL /api/tenants/config/lbaas/load-balancers-tree 
+ * 2. Gets list of load balancerss from config api server 
+ * 3. Needs tenant id 
+ * 4. Calls getLoadBalancersTreeInfo that process data from config api server and sends back the
  *                       http response.
  * @param request
  * @param response
@@ -196,12 +201,12 @@ function getLoadBalancersTree(request, response, appData) {
 }
 
 /**
- * @getLoadBalancerbyId public function 1. URL
- *                      /api/tenants/config/lbaas/load-balancer/:uuid 2. Gets of
- *                      load-balancer details from config api server 3. Needs
- *                      loadbalancer uuid 4. async waterfall functions that
- *                      process data from config api server and sends back the
- *                      http response.
+ * @getLoadBalancerbyId public function 
+ * 1. URL /api/tenants/config/lbaas/load-balancer/:uuid 
+ * 2. Gets of load-balancer details from config api server 
+ * 3. Needs loadbalancer uuid 
+ * 4. async waterfall functions that process data from config api 
+ * server and sends back the http response.
  * @param request
  * @param response
  * @param appData
@@ -220,7 +225,10 @@ function getLoadBalancerbyId(request, response, appData) {
 			commonUtils.handleJSONResponse(error, response, null);
 			return;
 		}
-		getLBaaSDetailsbyIdCB(lb, appData, function(error, lbs) {
+		var lbs = {
+			'loadbalancers' : [ lb ]
+		};
+		parseLoadBalancerDetails(lbs, appData, function(error, lbs) {
 			if (error) {
 				commonUtils.handleJSONResponse(error, response, null);
 			} else {
@@ -277,46 +285,45 @@ function getLoadBalancersTreeInfo(error, lbs, response, appData) {
 					global.HTTP_REQUEST_GET, null, null, null, appData);
 		}
 		if (dataObjArr.length > 0) {
-			async
-					.map(
-							dataObjArr,
-							commonUtils.getAPIServerResponse(
-									configApiServer.apiGet, true),
-							function(error, loadbalancer) {
-								if (error) {
-									commonUtils.handleJSONResponse(error,
-											response, null);
-									return;
-								}
-								if (lbs['loadbalancers'].length > 0
-										&& loadbalancer != null) {
-									for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-										lbs['loadbalancers'][j]['loadbalancer'] = {};
-										for (var l = 0; l < loadbalancer.length; l++) {
-											if (lbs['loadbalancers'][j]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
-												lbs['loadbalancers'][j]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
-											}
-										}
+			async.map(
+					dataObjArr,
+					commonUtils.getAPIServerResponse(
+							configApiServer.apiGet, true),
+					function(error, loadbalancer) {
+						if (error) {
+							commonUtils.handleJSONResponse(error,
+									response, null);
+							return;
+						}
+						if (lbs['loadbalancers'].length > 0
+								&& loadbalancer != null) {
+							for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+								lbs['loadbalancers'][j]['loadbalancer'] = {};
+								for (var l = 0; l < loadbalancer.length; l++) {
+									if (lbs['loadbalancers'][j]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
+										lbs['loadbalancers'][j]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
 									}
 								}
-								var jsonstr = JSON.stringify(lbs);
-								var new_jsonstr = jsonstr.replace(
-										/loadbalancer_listener_back_refs/g,
-										"loadbalancer-listener");
-								lbs = JSON.parse(new_jsonstr);
-								var dataObj = {
-									lbs : lbs,
-									appData : appData
-								};
-								async.waterfall([
-												async.apply(getListenersDetailInfo, appData, lbs),			
-												async.apply(getLoadBalancerRefDetails, appData),	
-												async.apply(	getPoolDetailInfo, appData),
-												async.apply(getMemberHealthMonitorInfo, appData) ],
-												function(error, lbs) {
-													commonUtils.handleJSONResponse(error, response, lbs);
-												});
-							});
+							}
+						}
+						var jsonstr = JSON.stringify(lbs);
+						var new_jsonstr = jsonstr.replace(
+								/loadbalancer_listener_back_refs/g,
+								"loadbalancer-listener");
+						lbs = JSON.parse(new_jsonstr);
+						var dataObj = {
+							lbs : lbs,
+							appData : appData
+						};
+						async.waterfall([
+										async.apply(getListenersDetailInfo, appData, lbs),			
+										async.apply(getLoadBalancerRefDetails, appData),	
+										async.apply(	getPoolDetailInfo, appData),
+										async.apply(getMemberHealthMonitorInfo, appData) ],
+										function(error, lbs) {
+											commonUtils.handleJSONResponse(error, response, lbs);
+										});
+					});
 		} else {
 			commonUtils.handleJSONResponse(error, response, lbs);
 		}
@@ -379,8 +386,6 @@ function getServiceInstanceDetailsfromLB(appData, lbs, callback) {
 			callback(null, sviData);
 		});
 }
-
-
 
 function parseServiceInstanceDetailsfromLB(sviData, lbs, callback) {
 	console.log("parseServiceInstanceDetailsfromLB");
@@ -445,17 +450,16 @@ function getFloatingIPfromVMI(appData, lbs, callback) {
 		callback(error, null);
 		return;
 	}
-	async.map( dataObjArr,
-			commonUtils.getAPIServerResponse(configApiServer.apiGet,
-					true),
-			function(error, vmiData) {
-				if (error) {
-					callback(error, null);
-					return;
-				}
-				
-			  callback(null, vmiData);
-			});
+	async.map(dataObjArr,
+			commonUtils.getAPIServerResponse(configApiServer.apiGet, true),
+				function(error, vmiData) {
+					if (error) {
+						callback(error, null);
+						return;
+					}
+					
+				  callback(null, vmiData);
+				});
 }
 
 /**
@@ -590,49 +594,46 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
 		callback(lbs);
 		return;
 	}
-	async
-			.map(
-					dataObjArr,
-					commonUtils.getAPIServerResponse(configApiServer.apiGet,
-							true),
-					function(error, results) {
-						if (error) {
-							callback(error, lbs);
-							return;
-						}
-						if (results != null && results.length > 0) {
-							if (lbs['loadbalancers'].length > 0
-									&& results != null && results.length > 0) {
-								// console.log(JSON.stringify(results));
-								for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-									var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-									if (lbs['loadbalancers'][j]['loadbalancer'] != null
-											&& vmi_refs != null
-											&& vmi_refs.length > 0) {
-										for (i = 0; i < vmi_refs.length; i++) {
-											for (var l = 0; l < results.length; l++) {
-												if (results[l]['virtual-network'] != null) {
-													vmi_refs[i]['virtual-network'] = {};
-													vmi_refs[i]['virtual-network'].uuid = results[l]['virtual-network']['uuid'];
-													vmi_refs[i]['virtual-network'].display_name = results[l]['virtual-network']['display_name'];
-													vmi_refs[i]['virtual-network'].name = results[l]['virtual-network']['name'];
-													vmi_refs[i]['virtual-network'].network_ipam_refs = results[l]['virtual-network']['network_ipam_refs'];
-												}
-											}
-										}
+	async.map(
+		dataObjArr,
+		commonUtils.getAPIServerResponse(configApiServer.apiGet,
+				true),
+		function(error, results) {
+			if (error) {
+				callback(error, lbs);
+				return;
+			}
+			if (results != null && results.length > 0) {
+				if (lbs['loadbalancers'].length > 0
+						&& results != null && results.length > 0) {
+					// console.log(JSON.stringify(results));
+					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
+						if (lbs['loadbalancers'][j]['loadbalancer'] != null
+								&& vmi_refs != null
+								&& vmi_refs.length > 0) {
+							for (i = 0; i < vmi_refs.length; i++) {
+								for (var l = 0; l < results.length; l++) {
+									if (results[l]['virtual-network'] != null) {
+										vmi_refs[i]['virtual-network'] = {};
+										vmi_refs[i]['virtual-network'].uuid = results[l]['virtual-network']['uuid'];
+										vmi_refs[i]['virtual-network'].display_name = results[l]['virtual-network']['display_name'];
+										vmi_refs[i]['virtual-network'].name = results[l]['virtual-network']['name'];
+										vmi_refs[i]['virtual-network'].network_ipam_refs = results[l]['virtual-network']['network_ipam_refs'];
 									}
 								}
 							}
 						}
-						callback(lbs);
-					});
+					}
+				}
+			}
+			callback(lbs);
+		});
 }
+
 /**
  * @getListenersDetailInfo
- * @private function Return call back it process listeners Detail from
- *          loadbalancer-listener_back_refs.
- */
-/**
+ * @private function Return call back it process listeners Detail from loadbalancer-listener_back_refs.
  * @param appData
  * @param lbs
  * @param callback
@@ -953,8 +954,6 @@ function mergeMemberHealthDetailToLB(lbs, results, callback) {
 	callback(lbs);
 }
 
-
-
 function listListenersByLBId(request, response, appData) {
 	var lb_uuid = request.param('lbid');
 	if (!(lb_uuid = request.param('lbid').toString())) {
@@ -1138,8 +1137,6 @@ function getPoolById(request, response, appData) {
 	});
 }
 
-
-
 /**
  * @createLoadBalancer public function 
  * 1. URL /api/tenants/config/lbaas/load-balancer - Post 
@@ -1205,7 +1202,6 @@ function deleteLoadBalancer(request, response, appData) {
 	commonUtils.handleJSONResponse(error, response, null);
 	return;
 }
-
 
 /**
  * @createListener public function 
@@ -1309,9 +1305,6 @@ function deletePool(request, response, appData) {
 	commonUtils.handleJSONResponse(error, response, null);
 	return;
 }
-
-
-
 
 /**
  * @createMember public function 
