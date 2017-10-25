@@ -12,7 +12,7 @@ define([
             "description":"",
             "loadbalancer_provider": "",
             "loadbalancer_properties": {},
-            "admin_state": false,
+            "admin_state": true,
             "fixed_ip": "",
             "associated_ip_address": ""
         },

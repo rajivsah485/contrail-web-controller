@@ -43,16 +43,17 @@ define([
                 kbValidation.unbind(self);
                 $("#" + modalId).modal('hide');
             }});
-
-            self.renderView4Config($("#" + modalId).find(formId),
-                                   this.model,
-                                   poolMemberViewConfig(),
-                                   "",
-                                   null, null, function() {
-                self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
-                Knockback.applyBindings(self.model,
-                                        document.getElementById(modalId));
-                kbValidation.bind(self);
+            self.fetchAllData(self, options, function(allData){
+                self.renderView4Config($("#" + modalId).find(formId),
+                                       self.model,
+                                       poolMemberViewConfig(allData),
+                                       "",
+                                       null, null, function() {
+                    self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
+                    Knockback.applyBindings(self.model,
+                                            document.getElementById(modalId));
+                    kbValidation.bind(self);
+                });
             });
         },
         renderAddPoolMember: function(options) {
@@ -85,19 +86,21 @@ define([
                 kbValidation.unbind(self);
                 $("#" + modalId).modal('hide');
             }});
-
-            self.renderView4Config($("#" + modalId).find(formId),
-                                   this.model,
-                                   poolMemberAddViewConfig(),
-                                   "",
-                                   null, null, function() {
-                self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
-                Knockback.applyBindings(self.model,
-                                        document.getElementById(modalId));
-                kbValidation.bind(self,{collection:
-                    self.model.model().attributes.pool_member});
-                kbValidation.bind(self);
+            self.fetchAllData(self, options, function(allData){
+                self.renderView4Config($("#" + modalId).find(formId),
+                        self.model,
+                        poolMemberAddViewConfig(allData),
+                        "",
+                        null, null, function() {
+                     self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
+                     Knockback.applyBindings(self.model,
+                                             document.getElementById(modalId));
+                     kbValidation.bind(self,{collection:
+                         self.model.model().attributes.pool_member});
+                     kbValidation.bind(self);
+                 });
             });
+                
         },
         renderMultiDeletePoolMember: function(options) {
             var delTemplate =
@@ -138,9 +141,38 @@ define([
             Knockback.applyBindings(self.model,
                                         document.getElementById(modalId));
             kbValidation.bind(self);
+        },
+        fetchAllData : function(self, options, callback) {
+            var getAjaxs = [];
+             getAjaxs[0] = $.ajax({
+                url: ctwc.get(ctwc.URL_CFG_VN_DETAILS) + '?tenant_id=' + options.projectId,
+                type:"GET"
+            });
+            $.when.apply($, getAjaxs).then(
+                function () {
+                    var returnArr = []
+                    var results = arguments, vnList = [], ipamList = [], ipamSubnet = [],
+                    subnetList = [];
+                    var vn = results[0]["virtual-networks"];
+                    _.each(vn, function(obj) {
+                        vnList.push(obj['virtual-network']);
+                    });
+                    _.each(vnList, function(obj) {
+                        ipamList = ipamList.concat(obj['network_ipam_refs']);
+                    });
+                    _.each(ipamList, function(obj) {
+                        ipamSubnet = ipamSubnet.concat(obj['attr']['ipam_subnets']);
+                    });
+                    _.each(ipamSubnet, function(obj) {
+                        subnetList.push({id: obj.subnet_uuid, text:obj.subnet_name});
+                    });
+                    returnArr["subnetList"] = subnetList;
+                    callback(returnArr);
+                }
+            )
         }
     });
-    var poolMemberAddViewConfig = function () {
+    var poolMemberAddViewConfig = function (allData) {
         return {
             elementId: ctwc.CONFIG_LB_POOL_MEMBER_PREFIX_ID,
             view: 'SectionView',
@@ -206,8 +238,7 @@ define([
                                             dataTextField : "text",
                                             dataValueField : "id",
                                             placeholder : 'Select Subnet',
-                                            data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'testOne'},
-                                                {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'test22'}]
+                                            data : allData.subnetList
                                         }
                                     }
                                 },
@@ -218,6 +249,7 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_port",
+                                        type:'number',
                                         label: '',
                                         dataBindValue: "pool_member_port()",
                                         width: 200
@@ -247,7 +279,7 @@ define([
             }
         }
     };
-    var poolMemberViewConfig = function () {
+    var poolMemberViewConfig = function (allData) {
         return {
             elementId: ctwc.CONFIG_LB_POOL_MEMBER_PREFIX_ID,
             view: 'SectionView',
@@ -304,8 +336,7 @@ define([
                                         dataTextField : "text",
                                         dataValueField : "id",
                                         placeholder : 'Select Subnet',
-                                        data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'testOne'},
-                                            {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'test22'}]
+                                        data : allData.subnetList
                                     }
                                 }
                             }
@@ -338,7 +369,7 @@ define([
                     },
                     {
                         columns: [
-                            {
+                            /*{
                                 elementId: "status_description",
                                 view: "FormInputView",
                                 viewConfig: {
@@ -347,7 +378,7 @@ define([
                                     dataBindValue: "status_description",
                                     class: "col-xs-6"
                                 }
-                            },
+                            },*/
                             {
                                 elementId: 'admin_state',
                                 view: "FormCheckboxView",

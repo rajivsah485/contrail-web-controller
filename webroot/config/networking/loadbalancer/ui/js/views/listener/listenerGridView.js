@@ -54,6 +54,7 @@ define([
     function onListenerClick(e, dc) {
         var lbId = this.viewConfig.lbId;
         var lbName = this.viewConfig.lbName;
+        var projectId = this.viewConfig.projectId;
         var listenerRef = this.viewConfig.listenerRef;
         var viewTab = 'config_listener_details';
         var hashP = 'config_load_balancer';
@@ -66,7 +67,8 @@ define([
                     uuid: lbId,
                     tab: viewTab,
                     lbName: lbName,
-                    listenerRef: listenerRef
+                    listenerRef: listenerRef,
+                    projectId : projectId
                 }
             };
         if (contrail.checkIfKeyExistInObject(true,
@@ -211,6 +213,7 @@ define([
                     lbCfgEditView.renderAddLb({
                                               "title": title,
                                               'mode': 'listener',
+                                              'projectId': viewConfig.projectId,
                                               callback: function () {
                     $('#' + ctwc.CONFIG_LB_LISTENER_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});

@@ -64,7 +64,8 @@ define([
                                     },
                                     lbId: viewConfig.lbId,
                                     lbName: viewConfig.lbName,
-                                    listenerRef: viewConfig.listenerRef//,
+                                    listenerRef: viewConfig.listenerRef,
+                                    projectId: viewConfig.projectId//,
                                     //isGlobal: false
                                 }
                             }

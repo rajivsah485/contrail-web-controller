@@ -177,11 +177,11 @@ define([
         this.adminStatusFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;admin_state', false);
             if(adminStatus){
-                return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Yes');
+                return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                //'Yes');
             }else{
-                return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'No');
+                return 'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                //'No');
             }
         };
         
@@ -303,9 +303,9 @@ define([
                     if(listenerProp.admin_state != undefined){
                         status = listenerProp.admin_state;
                         if(status){
-                           state = '<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;Yes';
+                           state = 'Yes';//'<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;Yes';
                         }else{
-                           state = '<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;No';
+                           state = 'No'; //'<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;No';
                         }
                     }else{
                         state = '-';
@@ -534,11 +534,11 @@ define([
         this.listenerAdminStateFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_listener_properties;admin_state', false);
             if(adminStatus){
-                return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Yes');
+                return  'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                //'Yes');
             }else{
-                return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'No');
+                return 'No'; //('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                //'No');
             }
         };
         
@@ -586,11 +586,11 @@ define([
         this.poolAdminStateFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_pool_properties;admin_state', false);
             if(adminStatus){
-                return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Yes');
+                return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                //'Yes');
             }else{
-                return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'No');
+                return  'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                //'No');
             }
         };
         
@@ -624,11 +624,11 @@ define([
         this.poolMemberAdminStateFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_member_properties;admin_state', false);
             if(adminStatus){
-                return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Yes');
+                return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                //'Yes');
             }else{
-                return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'No');
+                return 'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                //'No');
             }
         };
         ///
@@ -680,11 +680,11 @@ define([
         this.monitorAdminStateFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_healthmonitor_properties;admin_state', false);
             if(adminStatus){
-                return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                'Yes');
+                return  'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                //'Yes');
             }else{
-                return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                'No');
+                return  'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                //'No');
             }
         };
 
@@ -737,11 +737,11 @@ define([
                           return '-';
                       }else{
                           if(val.admin_state == true){
-                              return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                              'Yes');
+                              return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                              //'Yes');
                           }else{
-                              return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                              'No');
+                              return 'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                             // 'No');
                           }
                       }
                   }
@@ -779,19 +779,29 @@ define([
                    }
               }
               if('service_instance_refs' === rowData['key']) {
-                  var toList = [];
-                  if(val.length == 0 || val == null || val == undefined){
-                      return '-';
-                  }else{
-                      for(var i = 0; i < val.length; i++){
-                          var to = val[i].to;
-                          toList.push(to[to.length -1]);
-                      } 
-                      var siUuid = toList.join(',');
-                      var siHash = '/#p=config_sc_svcInstances';
-                      var siUrl = window.location.origin + siHash;
-                      return ( '<a href="'+ siUrl + '" style="color: #3184c5">' + siUuid + '</a>');
+                  if(rowData['name'] === 'Service Instance'){
+                      var siName = [];
+                      if(val.length == 0 || val == null || val == undefined){
+                          return '-';
+                      }else{
+                          for(var i = 0; i < val.length; i++){
+                              siName.push(val[i].display_name);
+                          } 
+                          var siDisplayName = siName.join(',');
+                          var siHash = '/#p=config_sc_svcInstances';
+                          var siUrl = window.location.origin + siHash;
+                          return ( '<a href="'+ siUrl + '" style="color: #3184c5">' + siDisplayName + '</a>');
+                      }
                   }
+                  if(rowData['name'] === 'HA Mode'){
+                      var haMode = getValueByJsonPath(val, '0;service_instance_properties;ha_mode', '');
+                      if(haMode !== ''){
+                          return haMode
+                      }else{
+                          return '-';
+                      }
+                  }
+                  
              }
               if('virtual_machine_interface_refs' === rowData['key']) {
                   if(rowData['name'] === 'Floating IPs'){
@@ -864,18 +874,18 @@ define([
                       }
                   }
                   if(rowData['name'] === 'Virtual Machine Interface'){
-                      var toList = [];
+                      var vmiName = [];
                       if(val.length == 0 || val == null || val == undefined){
                           return '-';
                       }else{
                           for(var i = 0; i < val.length; i++){
                               var to = val[i].to;
-                              toList.push(to[to.length -1]);
+                              vmiName.push(val[i].display_name);
                           } 
-                          var vmiUuid = toList.join(',');
+                          var vmiDisplayName = vmiName.join(',');
                           var vmiHash = '/#p=config_net_ports';
                           var vmiUrl = window.location.origin + vmiHash;
-                          return ( '<a href="'+ vmiUrl+ '" style="color: #3184c5">' + vmiUuid + '</a>');
+                          return ( '<a href="'+ vmiUrl+ '" style="color: #3184c5">' + vmiDisplayName + '</a>');
                       } 
                   }
              }
@@ -913,11 +923,11 @@ define([
                         return '-';
                     }else{
                         if(val.admin_state == true){
-                            return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                            'Yes');
+                            return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                            //'Yes');
                         }else{
-                            return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                            'No');
+                            return 'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                            //'No');
                         }
                     }
                 }
@@ -977,11 +987,11 @@ define([
                       return '-';
                   }else{
                       if(val.admin_state == true){
-                          return ('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
-                          'Yes');
+                          return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
+                          //'Yes');
                       }else{
-                          return ('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
-                          'No');
+                          return 'No';//('<div class="status-badge-rounded status-inactive"></div>&nbsp;&nbsp;' +
+                          //'No');
                       }
                   }
               }

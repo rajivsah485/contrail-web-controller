@@ -15,7 +15,7 @@ define([
             'session_persistence': "",
             "status_description":"",
             "loadbalancer_method":"",
-            "admin_state": false
+            "admin_state": true
         },
 
         formatModelConfig: function(modelConfig) {

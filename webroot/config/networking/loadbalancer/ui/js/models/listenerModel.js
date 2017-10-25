@@ -14,7 +14,7 @@ define([
             "loadbalancer_listener_properties": {},
             'connection_limit': "",
             "protocol_port": "",
-            "admin_state": false
+            "admin_state": true
         },
 
         formatModelConfig: function(modelConfig) {

@@ -12,7 +12,7 @@ define([
             "description":"",
             "loadbalancer_listener_properties": {},
             "protocol": "",
-            "admin_state": false,
+            "admin_state": true,
             "connection_limit": "",
             "protocol_port": ""
         },

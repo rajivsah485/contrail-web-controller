@@ -40,8 +40,9 @@ define([
                 $("#" + modalId).find(".contrailWizard").data("contrailWizard").destroy();
                 $("#" + modalId).modal("hide");
             }});
-            self.renderView4Config($("#" + modalId).find("#" + prefixId + "-form"),
-                        self.model, getLoadBalancerViewConfig(self.model, options, self),
+            self.fetchAllData(self, options, function(allData){
+                self.renderView4Config($("#" + modalId).find("#" + prefixId + "-form"),
+                        self.model, getLoadBalancerViewConfig(self.model, options, self, allData),
                         '', null, null,
                         function() {
                     if (!contrail.checkIfKnockoutBindingExist(modalId)) {
@@ -49,20 +50,60 @@ define([
                         Knockback.applyBindings(self.model, document.getElementById(modalId));
                         kbValidation.bind(self);
                     }
-             });
-             $("#wizard_cancel").off('click').on('click', function(){
+               });
+            });
+            $("#wizard_cancel").off('click').on('click', function(){
                  Knockback.release(self.model,
                          document.getElementById(modalId));
                  kbValidation.unbind(self);
                  $("#" + modalId).find(".contrailWizard").data("contrailWizard").destroy();
                  $("#" + modalId).modal("hide");
-             });
+            });
+        },
+        fetchAllData : function(self, options, callback) {
+            var getAjaxs = [];
+            getAjaxs[0] = $.ajax({
+                url: ctwc.get(ctwc.URL_CFG_VN_DETAILS) + '?tenant_id=' + options.projectId,
+                type:"GET"
+            });
+            getAjaxs[1] = $.ajax({
+                url: ctwc.get('/api/tenants/config/service-appliance-sets?detail=true'),
+                type:"GET"
+            });
+            $.when.apply($, getAjaxs).then(
+                function () {
+                    var returnArr = []
+                    var results = arguments, vnList = [], ipamList = [], ipamSubnet = [],
+                    subnetList = [], svcSetList = [], lbProviderList = [];
+                    var vn = results[0][0]["virtual-networks"];
+                    _.each(vn, function(obj) {
+                        vnList.push(obj['virtual-network']);
+                    });
+                    _.each(vnList, function(obj) {
+                        ipamList = ipamList.concat(obj['network_ipam_refs']);
+                    });
+                    _.each(ipamList, function(obj) {
+                        ipamSubnet = ipamSubnet.concat(obj['attr']['ipam_subnets']);
+                    });
+                    _.each(ipamSubnet, function(obj) {
+                        subnetList.push({id: obj.subnet_uuid, text:obj.subnet_name});
+                    });
+                    returnArr["subnetList"] = subnetList;
+                    var svcSet = results[1][0];
+                    _.each(svcSet, function(obj) {
+                        svcSetList.push(obj['service-appliance-set']);
+                    });
+                    _.each(svcSetList, function(obj) {
+                        lbProviderList.push({id: obj.uuid, text:obj.name});
+                    });
+                    returnArr["providerList"] = lbProviderList;
+                    callback(returnArr);
+                }
+            )
         }
     });
-    function subnetFormatter(model){
-        console.log(model);
-    }
-    function getLoadBalancerControl(options){
+
+    function getLoadBalancerControl(options, allData){
         return {
                 rows: [
                     {
@@ -111,16 +152,7 @@ define([
                                               placeholder : 'Select Subnet',
                                               dataTextField : "text",
                                               dataValueField : "id",
-                                              //defaultValueId : 0,
-                                              data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'testOne'},
-                                                  {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'test22'}]
-                                              /*dataSource : {
-                                                  type: 'remote',
-                                                  requestType: 'POST',
-                                                  postData: JSON.stringify({data: [{type: "subnets"}]}),
-                                                  url: ctwc.URL_GET_CONFIG_DETAILS,
-                                                  parse: subnetFormatter
-                                              }*/
+                                              data : allData.subnetList
                                           }
                                       }
                                   }
@@ -140,8 +172,7 @@ define([
                                                 placeholder : 'Select Loadbalancer Provider',
                                                 dataTextField : "text",
                                                 dataValueField : "id",
-                                                data : [{id: 'b87d85e1-5789-4b9c-a484-1b36e8c0600d', text:'native'},
-                                                    {id: '11ebe43e-13cc-4667-a50c-86cb184a38dc', text:'opencontrail'}]
+                                                data : allData.providerList
                                             }
                                         }
                                     },
@@ -217,6 +248,7 @@ define([
                                     view: "FormInputView",
                                     viewConfig: {
                                         path: "listener_port",
+                                        type:'number',
                                         label: 'Port',
                                         dataBindValue: "listener_port",
                                         class: "col-xs-6"
@@ -291,6 +323,25 @@ define([
                                      }
                                  },
                                  {
+                                     elementId: 'pool_protocol',
+                                     view: "FormDropdownView",
+                                     viewConfig: {
+                                         label: 'Protocol',
+                                         path : 'pool_protocol',
+                                         class: 'col-xs-6',
+                                         dataBindValue :
+                                             'pool_protocol',
+                                         elementConfig : {
+                                             dataTextField : "text",
+                                             dataValueField : "id",
+                                             placeholder : 'Select Protocol',
+                                             data : [{id: 'HTTP', text:'HTTP'},
+                                                     {id: 'HTTPS', text:'HTTPS'},
+                                                     {id: 'TCP', text:'TCP'}]
+                                         }
+                                     }
+                                 }
+                                 /*{
                                      elementId: "pool_status",
                                      view: "FormInputView",
                                      viewConfig: {
@@ -299,30 +350,11 @@ define([
                                          dataBindValue: "pool_status",
                                          class: "col-xs-6"
                                      }
-                                 }
+                                 }*/
                                ]
                        },
                        {
                            columns: [
-                                   {
-                                       elementId: 'pool_protocol',
-                                       view: "FormDropdownView",
-                                       viewConfig: {
-                                           label: 'Protocol',
-                                           path : 'pool_protocol',
-                                           class: 'col-xs-6',
-                                           dataBindValue :
-                                               'pool_protocol',
-                                           elementConfig : {
-                                               dataTextField : "text",
-                                               dataValueField : "id",
-                                               placeholder : 'Select Protocol',
-                                               data : [{id: 'HTTP', text:'HTTP'},
-                                                       {id: 'HTTPS', text:'HTTPS'},
-                                                       {id: 'TCP', text:'TCP'}]
-                                           }
-                                       }
-                                   },
                                    {
                                        elementId: 'pool_session_persistence',
                                        view: "FormDropdownView",
@@ -341,10 +373,23 @@ define([
                                                        {id: 'APP_COOKIE', text:'APP_COOKIE'}]
                                            }
                                        }
+                                   },
+                                   {
+                                       elementId: 'pool_admin_state',
+                                       view: "FormCheckboxView",
+                                       viewConfig : {
+                                           path : 'pool_admin_state',
+                                           class : "col-xs-6",
+                                           label:'Admin State',
+                                           dataBindValue : 'pool_admin_state',
+                                           elementConfig : {
+                                               isChecked:false
+                                           }
+                                       }
                                    }
                                  ]
-                         },
-                         {
+                         }
+                         /*{
                              columns: [
                                  {
                                      elementId: 'pool_admin_state',
@@ -360,7 +405,7 @@ define([
                                      }
                                  }
                               ]
-                          }
+                         }*/
                  ]
              }
      }
@@ -460,6 +505,7 @@ define([
                                  viewConfig: {
                                      path: "monitor_http_status_code",
                                      visible: 'field_disable',
+                                     type:'number',
                                      label: 'Expected HTTP Status Code',
                                      dataBindValue: "monitor_http_status_code",
                                      class: "col-xs-6"
@@ -485,7 +531,7 @@ define([
                  ]
              }
      }
-    function getPoolMemberControl(options){
+    function getPoolMemberControl(options, allData){
         return {
             rows: [{
                     columns: [{
@@ -547,8 +593,7 @@ define([
                                             dataTextField : "text",
                                             dataValueField : "id",
                                             placeholder : 'Select Subnet',
-                                            data : [{id: 'c4b529b7-87ae-4ec3-8c17-a592c3a45dcb', text:'testOne'},
-                                                {id: 'd800a8fb-3d7e-4ecf-a0a6-e19f6701dfc5', text:'test22'}]
+                                            data : allData.subnetList
                                         }
                                     }
                                 },
@@ -559,6 +604,7 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_port",
+                                        type:'number',
                                         label: '',
                                         dataBindValue: "pool_member_port()",
                                         width: 200
@@ -587,7 +633,7 @@ define([
                 }]
             };
      }
-    function getCreateLBViewConfig(lbModel, options) {
+    function getCreateLBViewConfig(lbModel, options, allData) {
         var gridPrefix = "add-loadbalancer",
             addLBViewConfig = {
             elementId:  cowu.formatElementId([prefixId, ctwl.CFG_LB_TITLE]),
@@ -598,7 +644,7 @@ define([
                         elementId:  cowu.formatElementId([prefixId, ctwl.CFG_LB_TITLE]),
                         title: ctwl.CFG_LB_TITLE,
                         view: "SectionView",
-                        viewConfig: getLoadBalancerControl(options),
+                        viewConfig: getLoadBalancerControl(options, allData),
                         stepType: "step",
                         onInitRender: true,
                         buttons: {
@@ -688,7 +734,7 @@ define([
         return addPoolViewConfig;
     }
     
-    function getCreatePoolMemberViewConfig(lbModel, options) {
+    function getCreatePoolMemberViewConfig(lbModel, options, allData) {
         var gridPrefix = "add-poolmember",
             addPoolViewConfig = {
             elementId:  cowu.formatElementId([prefixId, 'poolmember']),
@@ -699,7 +745,7 @@ define([
                         elementId:  cowu.formatElementId([prefixId, 'poolmember']),
                         title: 'pool Member',
                         view: "SectionView",
-                        viewConfig: getPoolMemberControl(options),
+                        viewConfig: getPoolMemberControl(options, allData),
                         stepType: "step",
                         onInitRender: true,
                         buttons: {
@@ -744,7 +790,20 @@ define([
                             }
                         },
                         onNext: function(params) {
-                            return true;
+                            return params.model.configureLoadBalancer({
+                                success: function () {
+                                    if($("#" + modalId).find(".contrailWizard").data("contrailWizard")){
+                                        $("#" + modalId).find(".contrailWizard").data("contrailWizard").destroy();
+                                    }
+                                    $("#" + modalId).modal("hide");
+                                    
+                                },
+                                error: function (error) {
+                                    //$('#applicationpolicyset_policy_wizard .alert-error span').text(error.responseText);
+                                    //$('#applicationpolicyset_policy_wizard .alert-error').show();
+                                }
+                            }, options);
+                            //return true;
                         },
                         onPrevious: function(params) {
                             return true;
@@ -755,7 +814,7 @@ define([
         };
         return addPoolViewConfig;
     }
-    function getLoadBalancerViewConfig(lbModel, options, self) {
+    function getLoadBalancerViewConfig(lbModel, options, self, allData) {
         var addLB1ViewConfig = {
                 elementId: cowu.formatElementId([prefixId, 'loadbalancer_wizard']),
                 view: "WizardView",
@@ -778,7 +837,7 @@ define([
             /*
               Appending create LB Steps
             */
-            createLB = $.extend(true, {}, getCreateLBViewConfig(lbModel, options).viewConfig).steps;
+            createLB = $.extend(true, {}, getCreateLBViewConfig(lbModel, options, allData).viewConfig).steps;
     
             createLB[0].title = 'Load Balancer';
             createLB[0].onPrevious = function() {
@@ -800,7 +859,7 @@ define([
         /*
            Appending create Listener Steps
         */
-        createListener = $.extend(true, {}, getCreateListenerViewConfig(lbModel, options).viewConfig).steps;
+        createListener = $.extend(true, {}, getCreateListenerViewConfig(lbModel, options, allData).viewConfig).steps;
     
         createListener[0].title = 'Listener';
         createListener[0].onPrevious = function() {
@@ -820,7 +879,7 @@ define([
         /*
           Appending create Pool Steps
         */
-         createPool = $.extend(true, {}, getCreatePoolViewConfig(lbModel, options).viewConfig).steps;
+         createPool = $.extend(true, {}, getCreatePoolViewConfig(lbModel, options, allData).viewConfig).steps;
  
          createPool[0].title = 'Pool';
          createPool[0].onPrevious = function() {
@@ -840,7 +899,7 @@ define([
          /*
           Appending create Pool Steps
          */
-         createPoolMembers = $.extend(true, {}, getCreatePoolMemberViewConfig(lbModel, options).viewConfig).steps;
+         createPoolMembers = $.extend(true, {}, getCreatePoolMemberViewConfig(lbModel, options, allData).viewConfig).steps;
 
          createPoolMembers[0].title = 'Pool Member';
          createPoolMembers[0].onPrevious = function() {
@@ -860,7 +919,7 @@ define([
         /*
         Appending create Pool Steps
        */
-        createMoniter = $.extend(true, {}, getCreateMonitorViewConfig(lbModel, options, self).viewConfig).steps;
+        createMoniter = $.extend(true, {}, getCreateMonitorViewConfig(lbModel, options, self, allData).viewConfig).steps;
 
         createMoniter[0].title = 'Monitor';
         createMoniter[0].onPrevious = function() {

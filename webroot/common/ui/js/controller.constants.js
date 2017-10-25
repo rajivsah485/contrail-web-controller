@@ -1304,6 +1304,7 @@ define([
             {'key': 'loadbalancer_properties', 'name': 'Fixed IPs'},
             {'key': 'virtual_machine_interface_refs', 'name': 'Floating IPs'},
             {'key': 'loadbalancer-listener', 'name': 'Listener Count'},
+            {'key': 'service_instance_refs', 'name': 'HA Mode'},
             {'key': 'service_instance_refs', 'name': 'Service Instance'},
             {'key': 'virtual_machine_interface_refs', 'name': 'Virtual Machine Interface'}
         ];

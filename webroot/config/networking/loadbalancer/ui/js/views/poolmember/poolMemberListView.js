@@ -21,6 +21,7 @@ define([
                 listenerName = currentHashParams.focusedElement.listenerName,
                 listenerId = currentHashParams.focusedElement.listenerId,
                 poolId = currentHashParams.focusedElement.poolId;
+                viewConfig.projectId = currentHashParams.focusedElement.projectId;
             if($('#breadcrumb').children().length === 4){
                 $('#breadcrumb li').last().remove();
             }
@@ -38,7 +39,7 @@ define([
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getPoolMemberGridViewConfig());
+                    contrailListModel, getPoolMemberGridViewConfig(viewConfig));
         },
 
         parseLoadbalancersData : function(response) {
@@ -53,7 +54,7 @@ define([
         }
     });
 
-    var getPoolMemberGridViewConfig = function () {
+    var getPoolMemberGridViewConfig = function (viewConfig) {
         return {
             elementId: cowu.formatElementId([ctwc.CONFIG_LB_POOL_MEMBER_SECTION_ID]),
             view: "SectionView",
@@ -72,7 +73,8 @@ define([
                                             pageSize: 10,
                                             pageSizeSelect: [10, 50, 100]
                                         }
-                                    }//,
+                                    },
+                                    projectId: viewConfig.projectId//,
                                     //isGlobal: false
                                 }
                             }

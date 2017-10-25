@@ -172,7 +172,7 @@ define([
                     },
                     {
                         columns: [
-                            {
+                            /*{
                                 elementId: "status_description",
                                 view: "FormInputView",
                                 viewConfig: {
@@ -181,7 +181,7 @@ define([
                                     dataBindValue: "status_description",
                                     class: "col-xs-6"
                                 }
-                            },
+                            },*/
                             {
                                 elementId: 'loadbalancer_method',
                                 view: "FormDropdownView",
@@ -200,9 +200,23 @@ define([
                                                 {id: 'ROUND_ROBIN', text:'ROUND_ROBIN'},{id: 'SOURCE_IP', text:'SOURCE_IP'}]
                                     }
                                 }
+                            },
+                            {
+                                elementId: 'admin_state',
+                                view: "FormCheckboxView",
+                                viewConfig : {
+                                    path : 'admin_state',
+                                    class : "col-xs-6",
+                                    label:'Admin State',
+                                    dataBindValue : 'admin_state',
+                                    elementConfig : {
+                                        isChecked:false
+                                    }
+                                }
                             }
+                            
                         ]
-                    },
+                    }/*,
                     {
                         columns: [
                             {
@@ -219,7 +233,7 @@ define([
                                 }
                             }
                         ]
-                    }
+                    }*/
                 ]
             }
         }

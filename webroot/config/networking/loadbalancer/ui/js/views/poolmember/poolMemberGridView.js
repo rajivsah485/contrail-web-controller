@@ -58,7 +58,7 @@ define([
                 defaultControls: {
                     //columnPickable:true
                  },
-                advanceControls: getHeaderActionConfig(),
+                advanceControls: getHeaderActionConfig(viewConfig),
             },
             body: {
                 options: {
@@ -72,7 +72,7 @@ define([
                             $('#poolMemberDelete').removeClass('disabled-link');
                         }
                     },
-                    actionCell: getRowActionConfig,
+                    actionCell: getRowActionConfig(viewConfig),
                     detail: {
                         noCache: true,
                         template: cowu.generateDetailTemplateHTML(
@@ -143,7 +143,7 @@ define([
         return gridElementConfig
     };
     
-    function getHeaderActionConfig() {
+    function getHeaderActionConfig(viewConfig) {
         var headerActionConfig = [
             {
                 "type": "link",
@@ -170,6 +170,7 @@ define([
                     poolMemberEditView.model = new PoolMemberModel();
                     poolMemberEditView.renderAddPoolMember({
                                               "title": 'Create Pool Member',
+                                              'projectId': viewConfig.projectId,
                                               callback: function () {
                     $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});
@@ -180,13 +181,14 @@ define([
         return headerActionConfig;
     }
 
-    function  getRowActionConfig (dc) {
+    function  getRowActionConfig (viewConfig) {
         rowActionConfig = [
             ctwgc.getEditConfig('Edit Pool Member', function(rowIndex) {
                 dataView = $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView;
                 poolMemberEditView.model = new PoolMemberModel(dataView.getItem(rowIndex));
                 poolMemberEditView.renderEditPoolMember({
                                       "title": 'Edit Pool Member',
+                                      'projectId': viewConfig.projectId,
                                       callback: function () {
                                           dataView.refreshData();
                 }});

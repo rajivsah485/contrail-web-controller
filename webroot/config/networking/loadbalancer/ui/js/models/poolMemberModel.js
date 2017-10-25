@@ -15,7 +15,7 @@ define([
             "description":"",
             "port":"80",
             "weight":"1",
-            "admin_state":false,
+            "admin_state": true,
             "status_description": "",
             "loadbalancer_member_properties": {},
             'pool_member': []

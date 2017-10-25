@@ -12,7 +12,7 @@ define([
             "delay":"5",
             "description":"",
             "max_retries":"3",
-            "admin_state":false,
+            "admin_state": true,
             "timeout": "5",
             "monitor_type":"",
             "loadbalancer_healthmonitor_properties": {},
