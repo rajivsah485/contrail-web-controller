@@ -171,6 +171,7 @@ define([
                                 view: "FormInputView",
                                 viewConfig: {
                                     path: "connection_limit",
+                                    type:'number',
                                     label: 'Connection Limit',
                                     dataBindValue: "connection_limit",
                                     class: "col-xs-6"

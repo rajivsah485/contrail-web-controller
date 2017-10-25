@@ -19,6 +19,7 @@ define([
             loadBalancer = currentHashParams.focusedElement.loadBalancer,
             lbId = currentHashParams.focusedElement.uuid;
             viewConfig.lbId = lbId;
+            viewConfig.projectId = currentHashParams.focusedElement.projectId;
             self.renderView4Config(self.$el, null,
                   getLoadBalancerDetails(viewConfig));
         },

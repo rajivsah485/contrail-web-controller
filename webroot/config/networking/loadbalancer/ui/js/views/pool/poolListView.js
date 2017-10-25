@@ -24,6 +24,7 @@ define([
                 viewConfig.lbId = currentHashParams.focusedElement.uuid;
                 viewConfig.lbName = currentHashParams.focusedElement.lbName;
                 viewConfig.listenerId = currentHashParams.focusedElement.listenerId;
+                viewConfig.projectId = currentHashParams.focusedElement.projectId;
                 
             var breadcrumbCount = $('#breadcrumb').children().length;
             if(breadcrumbCount === 3){
@@ -82,7 +83,8 @@ define([
                                     listener: viewConfig.listener,
                                     lbId: viewConfig.lbId,
                                     lbName: viewConfig.lbName,
-                                    listenerId: viewConfig.listenerId
+                                    listenerId: viewConfig.listenerId,
+                                    projectId: viewConfig.projectId
                                 }
                             }
                         ]

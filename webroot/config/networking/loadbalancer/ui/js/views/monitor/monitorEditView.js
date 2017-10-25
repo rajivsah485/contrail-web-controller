@@ -236,6 +236,7 @@ define([
                                 view: "FormInputView",
                                 viewConfig: {
                                     path: "expected_codes",
+                                    type:'number',
                                     visible: 'field_disable',
                                     label: 'Expected HTTP Status Code',
                                     dataBindValue: "expected_codes",

@@ -55,6 +55,7 @@ define([
         var poolRef = this.viewConfig.poolRef;
         var listenerName = this.viewConfig.listener;
         var listenerId = this.viewConfig.listenerId;
+        var projectId =  this.viewConfig.projectId;
         var viewTab = 'config_pool_details';
         var hashP = 'config_load_balancer';
         var hashParams = null,
@@ -69,7 +70,8 @@ define([
                     poolRef: poolRef,
                     listenerName: listenerName,
                     listenerId: listenerId,
-                    poolId: dc.uuid
+                    poolId: dc.uuid,
+                    projectId: projectId
                     
                 }
             };

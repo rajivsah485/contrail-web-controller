@@ -64,7 +64,7 @@ define([
                 defaultControls: {
                     //columnPickable:true
                  },
-                advanceControls: getHeaderActionConfig(),
+                advanceControls: getHeaderActionConfig(viewConfig),
             },
             body: {
                 options: {
@@ -182,6 +182,7 @@ define([
     
     function onLoadBalancerClick(e, dc) {
         var viewTab = 'config_loadbalancer_details';
+        var projectId = this.viewConfig.selectedProjId;
         var hashP = 'config_load_balancer';
         var hashParams = null,
             hashObj = {
@@ -189,7 +190,8 @@ define([
                 focusedElement: {
                     loadBalancer: dc.loadbalancer.display_name,
                     uuid: dc.uuid,
-                    tab: viewTab
+                    tab: viewTab,
+                    projectId: projectId
                 }
             };
         if (contrail.checkIfKeyExistInObject(true,
@@ -206,7 +208,7 @@ define([
         });
     };
 
-    function getHeaderActionConfig() {
+    function getHeaderActionConfig(viewConfig) {
         var headerActionConfig = [
             {
                 "type": "link",
@@ -235,6 +237,7 @@ define([
                     lbCfgEditView.renderAddLb({
                                               "title": 'Create Loadbalancer',
                                               'mode': 'loadbalancer',
+                                              'projectId': viewConfig.selectedProjId,
                                               callback: function () {
                     $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});
@@ -497,7 +500,7 @@ define([
                                                     valueClass:'col-xs-9'
                                                 },
                                                 {
-                                                    label: 'Ha Mode',
+                                                    label: 'HA Mode',
                                                     key: 'loadbalancer',
                                                     templateGeneratorConfig: {
                                                         formatter: 'haModeFormatter'

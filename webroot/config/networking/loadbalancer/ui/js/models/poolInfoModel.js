@@ -12,7 +12,7 @@ define([
             "loadbalancer_pool_properties": {},
             "protocol": "",
             "description":"",
-            "admin_state": false,
+            "admin_state": true,
             "session_persistence": "",
             "persistence_cookie_name": "",
             "status_description": "",
