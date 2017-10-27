@@ -5,10 +5,11 @@
 define([
     'underscore',
     'contrail-config-model',
-    'config/networking/loadbalancer/ui/js/models/poolMemberCollectionModel'
-], function (_, ContrailConfigModel, PoolMemberCollectionModel) {
+    'config/networking/loadbalancer/ui/js/models/poolMemberCollectionModel',
+    'config/networking/loadbalancer/ui/js/views/lbCfgFormatters'
+], function (_, ContrailConfigModel, PoolMemberCollectionModel, LbCfgFormatters) {
+    var lbCfgFormatters = new LbCfgFormatters();
     var lbCfgModel = ContrailConfigModel.extend({
-
         defaultConfig: {
             'name': 'Load balancer 1',
             'display_name': '',
@@ -43,7 +44,10 @@ define([
             'monitor_http_method': 'GET',
             'monitor_http_status_code':'200',
             'monitor_url_path':'/',
-            'field_disable': false
+            'field_disable': false,
+            'existing_port' :'',
+            'virtual_machine_interface_refs': [],
+            'service_instance_refs': []
             
         },
 
@@ -68,7 +72,52 @@ define([
                 delMember = member.model();
             memberCollection.remove(delMember);
         },
-        configureLoadBalancer: function(callbackObj, options){
+        validations: {
+            loadBalancerValidation: {
+                'name' : function(value, attr, data) {
+                   if(value === ''){
+                       return "Enter the name.";
+                   }
+                },
+                'ip_address' : function(value, attr, data) {
+                    if(!lbCfgFormatters.validateIP(value)){
+                        return "The IP address is not valid.";
+                    }
+                 },
+                 'listener_name' : function(value, attr, data) {
+                     if(value === ''){
+                         return "Enter the name.";
+                     }
+                },
+                'listener_port': function(value, attr, data) {
+                   var port = Number(value);
+                   if(data.existing_port.length > 0){
+                       if(data.existing_port.indexOf(port) !== -1){
+                           return "The port must be unique among all listeners attached to this load balancer";
+                       }  
+                   }
+                },
+                'pool_name' : function(value, attr, data) {
+                    if(value === ''){
+                        return "Enter the name.";
+                    }
+               }
+             }
+        },
+        isValidIP: function(ipAddress){
+            if(ipAddress == null)
+                return false;
+            var IP = new v4.Address(ipAddress); 
+            if(IP.isValid() === true){
+                return true;
+            }
+            IP = new v6.Address(ipAddress); 
+            if(IP.isValid() === true){
+                return true;
+            }
+            return false;
+        },
+        configureLoadBalancer: function(callbackObj, options, allData, isListener){
             var ajaxConfig = {}, returnFlag = true,updatedVal = {}, postFWRuleData = {};
             var postFWPolicyData = {}, newFWPolicyData, attr;
             var updatedModel = {},policyList = [];
@@ -77,24 +126,55 @@ define([
             var model = $.extend(true,{},this.model().attributes);
             var poolMember = $.extend(true,{},model.pool_member).toJSON();
             var obj = {};
-            // Load Balancer
-            var loadbalancer = {};
-            loadbalancer.name = model.name;
-            var fqName = [];
-            fqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
-            fqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
-            fqName.push(model.name);
-            loadbalancer.fq_name = fqName;
-            loadbalancer["parent_type"] = "project";
-            loadbalancer.loadbalancer_provider = model.lb_provider;
-            loadbalancer.loadbalancer_properties = {};
-            loadbalancer.loadbalancer_properties['admin_state'] = model.lb_admin_state;
-            loadbalancer.loadbalancer_properties['vip_address'] = model.ip_address;
-            loadbalancer.loadbalancer_properties['subnet'] = model.lb_subnet;
-            loadbalancer.id_perms = {};
-            loadbalancer.id_perms.description = model.description;
-            obj.loadbalancer = loadbalancer;
-            
+            if(!isListener){
+             // Load Balancer
+                var loadbalancer = {};
+                loadbalancer.name = model.name;
+                loadbalancer.display_name = model.name;
+                var fqName = [];
+                fqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
+                fqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
+                fqName.push(model.name);
+                loadbalancer.fq_name = fqName;
+                loadbalancer["parent_type"] = "project";
+                if(model.lb_provider !== ''){
+                    var providerRef = model.lb_provider.split(';');
+                    var providerName = providerRef[1];
+                    
+                    loadbalancer.loadbalancer_provider = providerName;
+                    loadbalancer.service_appliance_set_refs = [];
+                    var providerObj = {};
+                    providerObj.to = providerRef;
+                    loadbalancer.service_appliance_set_refs.push(providerObj);
+                }
+                if(model.virtual_machine_interface_refs !== ''){
+                    var ref = model.virtual_machine_interface_refs.split(';');
+                    var refList = [];
+                    for(var i = 0; i < ref.length; i++){
+                        var vmiObj = {};
+                        vmiObj.to = ref[i].split(':');
+                        refList.push(vmiObj);
+                    }
+                    loadbalancer.virtual_machine_interface_refs = refList;
+                }
+                if(model.service_instance_refs !== ''){
+                    var ref = model.service_instance_refs.split(';');
+                    var refList = [];
+                    for(var i = 0; i < ref.length; i++){
+                        var siObj = {};
+                        siObj.to = ref[i].split(':');
+                        refList.push(siObj);
+                    }
+                    loadbalancer.service_instance_refs = refList;
+                }
+                loadbalancer.loadbalancer_properties = {};
+                loadbalancer.loadbalancer_properties['admin_state'] = model.lb_admin_state;
+                loadbalancer.loadbalancer_properties['vip_address'] = model.ip_address;
+                loadbalancer.loadbalancer_properties['vip_subnet_id'] = model.lb_subnet;
+                loadbalancer.id_perms = {};
+                loadbalancer.id_perms.description = model.description;
+                obj.loadbalancer = loadbalancer; 
+            }
             // Listeners
             var listener = {};
             listener.name = model.listener_name;
@@ -145,7 +225,7 @@ define([
                     obj.loadbalancer_member_properties['address'] = poolObj.pool_member_ip_address();
                     obj.loadbalancer_member_properties['protocol_port'] = Number(poolObj.pool_member_port());
                     obj.loadbalancer_member_properties['weight'] = Number(poolObj.pool_member_weight());
-                    obj.loadbalancer_member_properties['subnet'] = poolObj.pool_member_subnet();
+                    obj.loadbalancer_member_properties['vip_subnet_id'] = poolObj.pool_member_subnet();
                     poolStack.push(obj);
                 });
                 obj['loadbalancer-member'] = poolStack;
@@ -160,13 +240,15 @@ define([
             monitor.fq_name = monitorFqName;
             monitor["parent_type"] = "project";
             monitor.loadbalancer_healthmonitor_properties = {};
-            monitor.loadbalancer_healthmonitor_properties['delay'] = Number(model.retry_count);
-            monitor.loadbalancer_healthmonitor_properties['expected_codes'] = model.monitor_http_status_code;
-            monitor.loadbalancer_healthmonitor_properties['http_method'] = model.monitor_http_method;
-            monitor.loadbalancer_healthmonitor_properties['max_retries'] = Number(model.health_check_interval);
+            monitor.loadbalancer_healthmonitor_properties['delay'] = Number(model.health_check_interval);
+            monitor.loadbalancer_healthmonitor_properties['max_retries'] = Number(model.retry_count);
             monitor.loadbalancer_healthmonitor_properties['monitor_type'] = model.monitor_type;
             monitor.loadbalancer_healthmonitor_properties['timeout'] = Number(model.timeout);
-            monitor.loadbalancer_healthmonitor_properties['url_path'] = model.monitor_url_path;
+            if(model.monitor_type === 'HTTP'){
+                monitor.loadbalancer_healthmonitor_properties['url_path'] = model.monitor_url_path;
+                monitor.loadbalancer_healthmonitor_properties['expected_codes'] = model.monitor_http_status_code;
+                monitor.loadbalancer_healthmonitor_properties['http_method'] = model.monitor_http_method;
+            }
             obj['loadbalancer-healthmonitor'] = monitor;
             console.log(obj);
         }

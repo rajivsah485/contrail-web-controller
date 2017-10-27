@@ -163,7 +163,7 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": ctwl.CFG_LB_TITLE_DELETE,
+                "title": 'Delete Monitor',
                 "iconClass": "fa fa-trash",
                 "linkElementId": "monitorDelete",
                 "onClick": function () {

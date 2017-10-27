@@ -7,16 +7,19 @@ define([
     'contrail-view',
     'contrail-list-model'
 ], function (_, ContrailView, ContrailListModel) {
+    var self;
     var listenerListView = ContrailView.extend({
         el: $(contentContainer),
         render: function () {
-            var self = this,
-                viewConfig = this.attributes.viewConfig,
+                self = this;
+                var viewConfig = this.attributes.viewConfig,
                 currentHashParams = layoutHandler.getURLHashParams(),
                 loadBalancer = currentHashParams.focusedElement.loadBalancer,
                 loadBalancerId = currentHashParams.focusedElement.uuid;
                 viewConfig.lbName = loadBalancer;
                 viewConfig.listenerRef = window.location.href;
+                self.port = {};
+                self.port.list = [];
             var breadcrumbCount = $('#breadcrumb').children().length;
             if(breadcrumbCount === 3){
                 pushBreadcrumb([loadBalancer]); 
@@ -32,17 +35,24 @@ define([
             };
             var contrailListModel = new ContrailListModel(listModelConfig);
             this.renderView4Config(this.$el,
-                    contrailListModel, getListenerGridViewConfig(viewConfig));
+                    contrailListModel, getListenerGridViewConfig(viewConfig, self.port));
         },
 
         parseLoadbalancersData : function(response) {
-           //var listenerList = getValueByJsonPath(response,
-                        //"loadbalancer;loadbalancer-listener", [], false);
+            var portList = [];
+            _.each(response, function(obj) {
+                var port = getValueByJsonPath(obj,
+                        "loadbalancer_listener_properties;protocol_port", '');
+                if(port != ''){
+                    portList  .push(port);
+                }
+            });
+            self.port.list = portList;
            return response;
         }
     });
 
-    var getListenerGridViewConfig = function (viewConfig) {
+    var getListenerGridViewConfig = function (viewConfig, port) {
         return {
             elementId: cowu.formatElementId([ctwc.CONFIG_LB_LISTENER_SECTION_ID]),
             view: "SectionView",
@@ -65,7 +75,8 @@ define([
                                     lbId: viewConfig.lbId,
                                     lbName: viewConfig.lbName,
                                     listenerRef: viewConfig.listenerRef,
-                                    projectId: viewConfig.projectId//,
+                                    projectId: viewConfig.projectId,
+                                    port: port//,
                                     //isGlobal: false
                                 }
                             }

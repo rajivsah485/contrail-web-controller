@@ -106,7 +106,7 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": 'Edit Listener',
+                "title": 'Edit Pool Details',
                 "iconClass": 'fa fa-pencil-square-o',
                 "onClick": function() {
                     poolInfoEditView.model = new PoolInfoModel(viewConfig.pool.list);

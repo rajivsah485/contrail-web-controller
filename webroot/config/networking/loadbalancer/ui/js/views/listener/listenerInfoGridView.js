@@ -106,7 +106,7 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": 'Edit Listener',
+                "title": 'Edit Listener Details',
                 "iconClass": 'fa fa-pencil-square-o',
                 "onClick": function() {
                     listenerInfoEditView.model = new ListenerInfoModel(viewConfig.listener.list);
