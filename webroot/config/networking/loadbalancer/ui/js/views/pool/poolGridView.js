@@ -199,7 +199,7 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": ctwl.CFG_LB_TITLE_DELETE,
+                "title": 'Delete Pool',
                 "iconClass": "fa fa-trash",
                 "linkElementId": "poolDelete",
                 "onClick": function () {
@@ -243,7 +243,26 @@ define([
             }));
         return rowActionConfig;
     };
-    
+
+    function getHealthMonitorExpandDetailsTmpl() {
+        return {
+            title: "Health Monitor Details",
+            templateGenerator: 'BlockListTemplateGenerator',
+            templateGeneratorConfig: [
+                {
+                    label: 'Health Monitor',
+                    key: 'uuid',
+                    templateGenerator: 'TextGenerator',
+                    templateGeneratorConfig: {
+                        formatter: 'healthMonitorFormatterList'
+                    },
+                    keyClass:'col-xs-3',
+                    valueClass:'col-xs-9'
+                }
+            ]
+        }
+    };
+
     function getPoolDetailsTemplateConfig() {
         return {
             templateGenerator: 'RowSectionTemplateGenerator',
@@ -344,6 +363,7 @@ define([
                                                 }
                                             ]
                                         },
+                                        getHealthMonitorExpandDetailsTmpl(),
                                         ctwu.getRBACPermissionExpandDetails('col-xs-3')
                                     ]
                                 }
@@ -384,5 +404,10 @@ define([
         return lbCfgFormatters.listenerDescriptionFormatter(null,
                 null, null, null, dc);
     };
+
+    this.healthMonitorFormatterList = function(v, dc){
+        return lbCfgFormatters.healthMonitorFormatterList(null,
+                null, null, null, dc);
+    }
     return poolGridView;
 });

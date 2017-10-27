@@ -21,6 +21,9 @@
 #associated_ip_address .select2-container ul li input{
 	width: 100% !important;
 }
+#virtual_machine_interface_refs .select2-container ul li input{
+	width: 100% !important;
+}
 /* Service Instances page*/
 .padingTop6{
     padding-top:6px;

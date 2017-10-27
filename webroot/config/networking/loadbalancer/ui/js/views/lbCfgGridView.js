@@ -238,6 +238,7 @@ define([
                                               "title": 'Create Loadbalancer',
                                               'mode': 'loadbalancer',
                                               'projectId': viewConfig.selectedProjId,
+                                              'vmiList': viewConfig.vmiList,
                                               callback: function () {
                     $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});
@@ -304,7 +305,7 @@ define([
 
     function getSubnetExpandDetailsTmpl() {
         return {
-            title: "Subnets",
+            title: "Subnets Details",
             templateGenerator: 'BlockListTemplateGenerator',
             templateGeneratorConfig: [
                 {
@@ -323,7 +324,7 @@ define([
 
     function getListenersExpandDetailsTmpl() {
         return {
-            title: "Listeners",
+            title: "Listeners Details",
             templateGenerator: 'BlockListTemplateGenerator',
             templateGeneratorConfig: [
                 {

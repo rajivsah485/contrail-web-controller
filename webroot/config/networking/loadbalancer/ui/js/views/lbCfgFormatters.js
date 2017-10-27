@@ -184,7 +184,34 @@ define([
                 //'No');
             }
         };
-        
+        this.validateIP = function(ip){
+            //Check Format
+            var ip = ip.split(".");
+         
+            if(ip.length != 4){
+                return false;
+            }
+         
+            //Check Numbers
+            for(var c = 0; c < 4; c++){
+                //Perform Test
+                if( !(1/ip[c] > 0) ||
+                            ip[c] > 255 ||
+                            isNaN(parseFloat(ip[c])) ||
+                            !isFinite(ip[c])  ||
+                            ip[c].indexOf(" ") !== -1){
+         
+                            return false;
+                }
+            }
+         
+            //Invalidate addresses that start with 192.168
+            if( ip[0] == 192 && ip[1] == 168 ){
+                return false;
+            }
+         
+            return true;
+        };
         this.subnetFormatter = function(d, c, v, cd, dc){
             var vmiref = getValueByJsonPath(dc, 'loadbalancer;virtual_machine_interface_refs', []),
             subnetList = [], returnString = '';
@@ -321,6 +348,145 @@ define([
                     <th style='width:30%'>Protocol</th>\
                     <th style='width:30%'>Port</th>\
                     <th style='width:30%'>Admin State</th>\
+                    </tr></thead><tbody>";
+                returnString += subnetString;
+                returnString += "</tbody></table>";
+                return returnString;
+            }else{
+               return '-'; 
+            }
+        };
+
+        this.poolFormatterList = function(d, c, v, cd, dc){
+            var subnetString = "", protocol, lbMethod, state, cookieName, returnString = '',
+            pool = getValueByJsonPath(dc, 'loadbalancer-pool', []);
+            if(pool.length > 0){
+                _.each(pool, function(poolObj) {
+                    var poolProp = getValueByJsonPath(poolObj, 'loadbalancer_pool_properties', {});
+                    if(poolProp.protocol != undefined){
+                        protocol = poolProp.protocol;
+                    }else{
+                        protocol = '-';
+                    }
+                    if(poolProp.loadbalancer_method != undefined){
+                        var splitedMethod = poolProp.loadbalancer_method.split('_'), textList = [];
+                        _.each(splitedMethod, function(text) {
+                            var mText = text.toLocaleLowerCase();
+                            textList.push(cowl.getFirstCharUpperCase(mText));
+                         });
+                        lbMethod = textList.join(' ');
+                    }else{
+                        lbMethod = '-';
+                    }
+                    if(poolProp.persistence_cookie_name != undefined){
+                        cookieName = poolProp.persistence_cookie_name;
+                    }else{
+                        cookieName = '-';
+                    }
+                    if(poolProp.admin_state != undefined){
+                        status = poolProp.admin_state;
+                        if(status){
+                           state = 'Yes';
+                        }else{
+                           state = 'No';
+                        }
+                    }else{
+                        state = '-';
+                    }
+                    subnetString += "<tr style='vertical-align:top'><td>";
+                    subnetString += protocol + "</td><td>";
+                    subnetString += lbMethod + "</td><td>";
+                    subnetString += cookieName + "</td><td>";
+                    subnetString += state + "</td>";
+                    subnetString += "</tr>";
+                });
+                returnString =
+                    "<table style='width:100%'><thead><tr>\
+                    <th style='width:25%'>Protocol</th>\
+                    <th style='width:25%'>Loadbalancer Method</th>\
+                    <th style='width:25%'>Persistence Cookie Name</th>\
+                    <th style='width:25%'>Admin State</th>\
+                    </tr></thead><tbody>";
+                returnString += subnetString;
+                returnString += "</tbody></table>";
+                return returnString;
+            }else{
+               return '-'; 
+            }
+        };
+
+        this.healthMonitorFormatterList = function(d, c, v, cd, dc){
+            var subnetString = "", code, delay, state, retries, method, timeout, path, type, returnString = '',
+            monitor = getValueByJsonPath(dc, 'loadbalancer-healthmonitor', []);
+            if(monitor.length > 0){
+                _.each(monitor, function(monitorObj) {
+                    var monitorProp = getValueByJsonPath(monitorObj, 'loadbalancer_healthmonitor_properties', {});
+                    if(monitorProp.expected_codes != undefined){
+                        code = monitorProp.expected_codes;
+                    }else{
+                        code = '-';
+                    }
+                    if(monitorProp.delay != undefined){
+                        delay = monitorProp.delay;
+                    }else{
+                        delay = '-';
+                    }
+                    if(monitorProp.max_retries != undefined){
+                        retries = monitorProp.max_retries;
+                    }else{
+                        retries = '-';
+                    }
+                    if(monitorProp.http_method != undefined){
+                        method = monitorProp.http_method;
+                    }else{
+                        method = '-';
+                    }
+                    if(monitorProp.timeout != undefined){
+                        timeout = monitorProp.timeout;
+                    }else{
+                        timeout = '-';
+                    }
+                    if(monitorProp.url_path != undefined){
+                        path = monitorProp.url_path;
+                    }else{
+                        path = '-';
+                    }
+                    if(monitorProp.monitor_type != undefined){
+                        type = monitorProp.monitor_type;
+                    }else{
+                        type = '-';
+                    }
+                    if(monitorProp.admin_state != undefined){
+                        status = monitorProp.admin_state;
+                        if(status){
+                           state = 'Yes';
+                        }else{
+                           state = 'No';
+                        }
+                    }else{
+                        state = '-';
+                    }
+                    subnetString += "<tr style='vertical-align:top'><td>";
+                    subnetString += code + "</td><td>";
+                    subnetString += delay + "</td><td>";
+                    subnetString += retries + "</td><td>";
+                    subnetString += method + "</td><td>";
+                    subnetString += timeout + "</td><td>";
+                    subnetString += path + "</td><td>";
+                    subnetString += type + "</td><td>";
+                    subnetString += state + "</td>";
+                    subnetString += "</tr>";
+                });
+                returnString =
+                    "<table style='width:100%'><thead><tr>\
+                    <th style='width:12%'>Expected Codes</th>\
+                    <th style='width:12%'>Delay</th>\
+                    <th style='width:12%'>Max Retries</th>\
+                    <th style='width:12%'>Http Method</th>\
+                    <th style='width:12%'>Timeout</th>\
+                    <th style='width:12%'>URL Path</th>\
+                    <th style='width:12%'>Monitor Type</th>\
+                    <th style='width:12%'>Admin State</th>\
                     </tr></thead><tbody>";
                 returnString += subnetString;
                 returnString += "</tbody></table>";
@@ -1021,7 +1187,12 @@ define([
                   if(val.loadbalancer_method == '' || val.loadbalancer_method == null){
                       return '-';
                   }else{
-                      return val.loadbalancer_method;
+                      var splitedMethod = val.loadbalancer_method.split('_'), textList = [];
+                      _.each(splitedMethod, function(text) {
+                          var mText = text.toLocaleLowerCase();
+                          textList.push(cowl.getFirstCharUpperCase(mText));
+                       });
+                      return textList.join(' ');
                   }
               }
           }

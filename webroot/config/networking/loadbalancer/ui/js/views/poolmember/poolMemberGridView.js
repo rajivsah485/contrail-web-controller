@@ -147,7 +147,7 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": ctwl.CFG_LB_TITLE_DELETE,
+                "title": 'Delete Pool Members',
                 "iconClass": "fa fa-trash",
                 "linkElementId": "poolMemberDelete",
                 "onClick": function () {

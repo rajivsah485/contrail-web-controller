@@ -318,6 +318,7 @@ define([
                                 viewConfig: {
                                     path: "ip_address",
                                     label: 'IP Address',
+                                    disabled: true,
                                     placeholder:"xx.xx.xx.xx",
                                     dataBindValue: "ip_address",
                                     class: "col-xs-6"

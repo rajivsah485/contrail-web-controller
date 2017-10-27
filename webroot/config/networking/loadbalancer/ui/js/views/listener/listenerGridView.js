@@ -187,7 +187,7 @@ define([
         var headerActionConfig = [
             {
                 "type": "link",
-                "title": ctwl.CFG_LB_TITLE_DELETE,
+                "title": 'Delete Listeners',
                 "iconClass": "fa fa-trash",
                 "linkElementId": "listenerDelete",
                 "onClick": function () {
@@ -208,7 +208,7 @@ define([
                 "iconClass": "fa fa-plus",
                 "onClick": function () {
                     var title = viewConfig.lbName + ' > '+ 'Create Listener'
-                    var lbodel = new LbCfgModel();
+                    var lbodel = new LbCfgModel({'existing_port': viewConfig.port.list});
                     lbCfgEditView.model = lbodel;
                     lbCfgEditView.renderAddLb({
                                               "title": title,
@@ -248,7 +248,26 @@ define([
             }));
         return rowActionConfig;
     };
-    
+
+    function getPoolExpandDetailsTmpl() {
+        return {
+            title: "Pool Details",
+            templateGenerator: 'BlockListTemplateGenerator',
+            templateGeneratorConfig: [
+                {
+                    label: 'Pool',
+                    key: 'uuid',
+                    templateGenerator: 'TextGenerator',
+                    templateGeneratorConfig: {
+                        formatter: 'poolFormatterList'
+                    },
+                    keyClass:'col-xs-3',
+                    valueClass:'col-xs-9'
+                }
+            ]
+        }
+    };
+
     function getListenerDetailsTemplateConfig() {
         return {
             templateGenerator: 'RowSectionTemplateGenerator',
@@ -339,6 +358,7 @@ define([
                                                 }
                                             ]
                                         },
+                                        getPoolExpandDetailsTmpl(),
                                         ctwu.getRBACPermissionExpandDetails('col-xs-3')
                                     ]
                                 }
@@ -373,7 +393,12 @@ define([
     this.listenerDescription = function(v, dc){
         return lbCfgFormatters.listenerDescriptionFormatter(null,
                 null, null, null, dc);
-    }
+    };
+
+    this.poolFormatterList = function(v, dc){
+        return lbCfgFormatters.poolFormatterList(null,
+                null, null, null, dc);
+    };
 
     return listenerGridView;
 });

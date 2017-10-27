@@ -8,6 +8,7 @@ define([
     'contrail-list-model',
     'config/networking/loadbalancer/ui/js/views/lbCfgFormatters'
 ], function (_, ContrailView, ContrailListModel, LbCfgFormatters) {
+    //var self;
     var lbCfgFormatter = new LbCfgFormatters();
     var lbCfgListView = ContrailView.extend({
         el: $(contentContainer),
@@ -32,21 +33,32 @@ define([
                     }
                 };
                 var contrailListModel = new ContrailListModel(listModelConfig);
-                this.renderView4Config(this.$el,
-                       contrailListModel, getLbCfgListViewConfig(viewConfig));
+                var getAjaxs = [];
+                getAjaxs[0] = $.ajax({
+                    url: ctwc.get(ctwc.URL_GET_PORT_UUID, currentProject.value),
+                    type:"GET"
+                });
+                $.when.apply($, getAjaxs).then(
+                        function () {
+                            var results = arguments;
+                            self.renderView4Config(self.$el,
+                                   contrailListModel, getLbCfgListViewConfig(viewConfig, results[0]));     
+                });
+                
         },
         parseLoadbalancersData : function(response){
-            //var dataItems = [],
-               var lbList = getValueByJsonPath(response, "loadbalancers", []);
-               /* _.each(tagData, function(val){
-                        if("loadbalancer" in val) {
-                            dataItems.push(val["loadbalancer"]);
-                        }
-                }); */
-            return lbList;
+             var lbList = getValueByJsonPath(response, "loadbalancers", []), listnerList = [], portList = [];
+             /*_.each(lbList, function(obj) {
+                 listnerList = listnerList.concat(obj['loadbalancer']['loadbalancer-listener']);
+             });
+             _.each(listnerList, function(obj) {
+                 portList.push(obj['loadbalancer_listener_properties']['protocol_port']);
+             });
+             self.listener.port = portList;*/
+             return lbList;
         }
     });
-    var getLbCfgListViewConfig = function (viewConfig) {
+    var getLbCfgListViewConfig = function (viewConfig, vmiList) {
         return {
             elementId: cowu.formatElementId([ctwl.CFG_LB_LIST_ID]),
             view: "SectionView",
@@ -63,7 +75,8 @@ define([
                                 app: cowc.APP_CONTRAIL_CONTROLLER,
                                 viewConfig: {
                                     selectedProjId:
-                                      viewConfig.projectSelectedValueData.value
+                                      viewConfig.projectSelectedValueData.value,
+                                      vmiList: vmiList
                                 }
                             }
                         ]
