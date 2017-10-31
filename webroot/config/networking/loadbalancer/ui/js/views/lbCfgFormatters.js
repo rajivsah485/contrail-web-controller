@@ -938,7 +938,7 @@ define([
                   }
               }
               if('loadbalancer-listener' === rowData['key']) {
-                   if(val.length == 0 || val == null || val == undefined){
+                   if( val == undefined || val.length == 0 || val == null) {
                        return '-';
                    }else{
                        return val.length; 
@@ -947,7 +947,7 @@ define([
               if('service_instance_refs' === rowData['key']) {
                   if(rowData['name'] === 'Service Instance'){
                       var siName = [];
-                      if(val.length == 0 || val == null || val == undefined){
+                      if(val == undefined || val.length == 0 || val == null ){
                           return '-';
                       }else{
                           for(var i = 0; i < val.length; i++){
@@ -973,7 +973,7 @@ define([
                   if(rowData['name'] === 'Floating IPs'){
                       var vmi = val,
                       fixedIpList = [], returnString = '';
-                      if(vmi.length > 0){
+                      if(vmi!= undefined && vmi.length > 0){
                        // _.each(vmi, function(ref) {
                               var ip = getValueByJsonPath(vmi[0], 'floating-ip;ip', '');
                               if(ip != ''){
@@ -1041,7 +1041,7 @@ define([
                   }
                   if(rowData['name'] === 'Virtual Machine Interface'){
                       var vmiName = [];
-                      if(val.length == 0 || val == null || val == undefined){
+                      if(val == undefined || val.length == 0 || val == null ){
                           return '-';
                       }else{
                           for(var i = 0; i < val.length; i++){
@@ -1113,7 +1113,7 @@ define([
                 }
             }
             if('loadbalancer-pool' === rowData['key']) {
-                 if(val.length == 0 || val == null || val == undefined){
+                 if(val == undefined || val.length == 0 || val == null ){
                      return '-';
                  }else{
                      return val.length; 
@@ -1197,7 +1197,7 @@ define([
               }
           }
           if('loadbalancer-healthmonitor' === rowData['key']) {
-               if(val.length == 0 || val == null || val == undefined){
+               if(val == undefined || val.length == 0 || val == null ){
                    return '-';
                }else{
                    return val.length; 

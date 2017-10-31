@@ -161,7 +161,7 @@
           <url>/api/tenants/config/lbaas/listener/:uuid</url>
           <method>delete</method>
           <feature>lbaasconfig</feature>
-          <callback>lbaasconfigapi.deleteListenerById</callback>
+          <callback>lbaasconfigapi.deleteListener</callback>
       </item>
 
 <!--
@@ -311,7 +311,7 @@
     attached to is not in an ACTIVE provisioning_status.
 
     27: Delete a Health Monitor: DELETE
-            /api/tenants/config/lbaas/health-monitor/:id
+            /api/tenants/config/lbaas/health-monitor/:uuid
                                         deleteHealthMonitor
     Note: A Health Monitor cannot be deleted if the load balancer it is
     attached to is not in an ACTIVE provisioning_status.
@@ -343,7 +343,7 @@
           <callback>lbaasconfigapi.updateHealthMonitor</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/health-monitor/:id</url>
+          <url>/api/tenants/config/lbaas/health-monitor/:uuid</url>
           <method>delete</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deleteHealthMonitor</callback>
