@@ -70,32 +70,6 @@ define([
                 url: ctwc.get('/api/tenants/config/service-appliance-sets?detail=true'),
                 type:"GET"
             });
-            if(options.vmiList !== undefined){
-                if(options.vmiList.length > 0){
-                    var vmiUUIDObj = {};
-                    vmiUUIDObj.type = "virtual-machine-interface";
-                    vmiUUIDObj.uuidList = options.vmiList.slice(0, 50);
-                    getAjaxs[2] = $.ajax({
-                        url: ctwc.get(ctwc.URL_GET_PORT),
-                        type:"POST",
-                        data: JSON.stringify(vmiUUIDObj),
-                        dataType: "json",
-                        contentType: "application/json; charset=utf-8",
-                    }); 
-                } 
-            }
-            if(options.vmiList === undefined){
-                getAjaxs[2] = $.ajax({
-                    url: ctwc.get(ctwc.URL_GET_LIST_SERVICE_INSTS_CONFIG, options.projectId),
-                    type:"GET"
-                });
-            }else{
-                getAjaxs[3] = $.ajax({
-                    url: ctwc.get(ctwc.URL_GET_LIST_SERVICE_INSTS_CONFIG, options.projectId),
-                    type:"GET"
-                });
-            }
-            
             $.when.apply($, getAjaxs).then(
                 function () {
                     var returnArr = []
@@ -126,30 +100,6 @@ define([
                         }
                     });
                     returnArr["providerList"] = lbProviderList;
-                    if(results[2][0]['aggSIData'] === undefined){
-                        var vmiSet = results[2][0];
-                        _.each(vmiSet, function(obj) {
-                            var fqName = obj['virtual-machine-interface']['fq_name'];
-                            vmiSetList.push({id: fqName.join(':'), text: fqName[fqName.length - 1]});
-                        });
-                        returnArr["vmiSetList"] = vmiSetList;
-                    }else{
-                        var siSet = results[2][0]['aggSIData'];
-                        _.each(siSet, function(obj) {
-                            var fqName = obj['service-instance']['fq_name'];
-                            siSetList.push({id: fqName.join(':'), text: fqName[fqName.length - 1]});
-                        });
-                        returnArr["siSetList"] = siSetList;
-                    }
-                    
-                    if(results[3] !== undefined){
-                        var siSet = results[3][0]['aggSIData'];
-                        _.each(siSet, function(obj) {
-                            var fqName = obj['service-instance']['fq_name'];
-                            siSetList.push({id: fqName.join(':'), text: fqName[fqName.length - 1]});
-                        });
-                        returnArr["siSetList"] = siSetList;
-                    }
                     callback(returnArr);
                 }
             )
@@ -231,59 +181,21 @@ define([
                                         }
                                     },
                                     {
-                                        elementId: 'virtual_machine_interface_refs',
-                                        view: 'FormMultiselectView',
-                                        viewConfig: {
-                                            label: 'Virtual Machine Interface',
-                                            path: 'virtual_machine_interface_refs',
-                                            class: 'col-xs-6',
-                                            dataBindValue: 'virtual_machine_interface_refs',
-                                            elementConfig: {
-                                                placeholder: 'Select Virtual Machine Interface',
-                                                dataTextField: "text",
-                                                dataValueField: "id",
-                                                separator: cowc.DROPDOWN_VALUE_SEPARATOR,
-                                                data : allData.vmiSetList
-                                             }
-                                        }
-                                   }
-                            ]
-                     },
-                     {
-                         columns: [
-                                   {
-                                       elementId: 'service_instance_refs',
-                                       view: 'FormMultiselectView',
-                                       viewConfig: {
-                                           label: 'Service Instance',
-                                           path: 'service_instance_refs',
-                                           class: 'col-xs-6',
-                                           dataBindValue: 'service_instance_refs',
-                                           elementConfig: {
-                                               placeholder: 'Select Service Instance',
-                                               dataTextField: "text",
-                                               dataValueField: "id",
-                                               separator: cowc.DROPDOWN_VALUE_SEPARATOR,
-                                               data : allData.siSetList
+                                        elementId: 'lb_admin_state',
+                                        view: "FormCheckboxView",
+                                        viewConfig : {
+                                            path : 'lb_admin_state',
+                                            class : "col-xs-6",
+                                            label:'Admin State',
+                                            dataBindValue : 'lb_admin_state',
+                                            elementConfig : {
+                                                isChecked:false
                                             }
-                                       }
-                                  },
-                                   {
-                                       elementId: 'lb_admin_state',
-                                       view: "FormCheckboxView",
-                                       viewConfig : {
-                                           path : 'lb_admin_state',
-                                           class : "col-xs-6",
-                                           label:'Admin State',
-                                           dataBindValue : 'lb_admin_state',
-                                           elementConfig : {
-                                               isChecked:false
-                                           }
-                                       }
-                                   }
-                           ]
-                    }
-                ]
+                                        }
+                                    }
+                            ]
+                       }
+                  ]
             }
     }
 
@@ -433,16 +345,6 @@ define([
                                          }
                                      }
                                  }
-                                 /*{
-                                     elementId: "pool_status",
-                                     view: "FormInputView",
-                                     viewConfig: {
-                                         path: "pool_status",
-                                         label: 'Status',
-                                         dataBindValue: "pool_status",
-                                         class: "col-xs-6"
-                                     }
-                                 }*/
                                ]
                        },
                        {
@@ -481,23 +383,6 @@ define([
                                    }
                                  ]
                          }
-                         /*{
-                             columns: [
-                                 {
-                                     elementId: 'pool_admin_state',
-                                     view: "FormCheckboxView",
-                                     viewConfig : {
-                                         path : 'pool_admin_state',
-                                         class : "col-xs-6",
-                                         label:'Admin State',
-                                         dataBindValue : 'pool_admin_state',
-                                         elementConfig : {
-                                             isChecked:false
-                                         }
-                                     }
-                                 }
-                              ]
-                         }*/
                  ]
              }
      }
@@ -748,7 +633,7 @@ define([
                             }
                         },
                         onNext: function(params) {
-                            if(params.model.name() !== '' && params.model.ip_address() !== '' && params.model.lb_provider() !== ''){
+                            if(params.model.lb_subnet() !== '' && params.model.name() !== '' && params.model.ip_address() !== '' && params.model.lb_provider() !== ''){
                                 $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
                                 $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
                                 $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
@@ -937,7 +822,7 @@ define([
                                                 $("#" + modalId).find(".contrailWizard").data("contrailWizard").destroy();
                                             }
                                             $("#" + modalId).modal("hide");
-                                            
+                                            options['callback']();
                                         },
                                         error: function (error) {
                                             //$('#applicationpolicyset_policy_wizard .alert-error span').text(error.responseText);
@@ -958,7 +843,7 @@ define([
                                                 $("#" + modalId).find(".contrailWizard").data("contrailWizard").destroy();
                                             }
                                             $("#" + modalId).modal("hide");
-                                            
+                                            options['callback']();
                                         },
                                         error: function (error) {
                                             //$('#applicationpolicyset_policy_wizard .alert-error span').text(error.responseText);

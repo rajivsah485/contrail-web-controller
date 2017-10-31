@@ -66,7 +66,7 @@ define([
                              'title': options['title'], 'btnName': 'Confirm',
                              'body': delLayout,
                'onSave': function () {
-                /*self.model.multiDeleteVNCfg(options['checkedRows'], {
+                self.model.multiDeleteListener(options['checkedRows'], {
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -82,7 +82,7 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
+                });
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model,

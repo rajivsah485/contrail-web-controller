@@ -44,6 +44,29 @@ define([
                 modelConfig["description"] = description;
             }
             return modelConfig;
+        },
+
+        multiDeleteListener: function (checkedRows, callbackObj) {
+            var ajaxConfig = {}, that = this;
+            var uuidList = [];
+            $.each(checkedRows, function (checkedRowsKey, checkedRowsValue) {
+                uuidList.push(checkedRowsValue.uuid);
+            });
+            ajaxConfig.type = "DELETE";
+            ajaxConfig.url = '/api/tenants/config/lbaas/listener/' + uuidList[0];
+            contrail.ajaxHandler(ajaxConfig, function () {
+                if (contrail.checkIfFunction(callbackObj.init)) {
+                    callbackObj.init();
+                }
+            }, function (response) {
+                if (contrail.checkIfFunction(callbackObj.success)) {
+                    callbackObj.success();
+                }
+            }, function (error) {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(error);
+                }
+            });
         }
     });
     return listenerModel;

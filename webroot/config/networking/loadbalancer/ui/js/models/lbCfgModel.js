@@ -45,10 +45,7 @@ define([
             'monitor_http_status_code':'200',
             'monitor_url_path':'/',
             'field_disable': false,
-            'existing_port' :'',
-            'virtual_machine_interface_refs': [],
-            'service_instance_refs': []
-            
+            'existing_port' :''
         },
 
         formatModelConfig: function (modelConfig) {
@@ -56,22 +53,26 @@ define([
             modelConfig["pool_member"] = new Backbone.Collection(poolMemberCollection);
             return modelConfig;
         },
+
         addPoolMember: function() {
             var poolMember = this.model().attributes['pool_member'],
                 newPoolMember = new PoolMemberCollectionModel();
             poolMember.add([newPoolMember]);
         },
+
         addPoolMemberByIndex: function(data, member) {
             var selectedRuleIndex = data.model().collection.indexOf(member.model());
             var poolMember = this.model().attributes['pool_member'],
                 newPoolMember = new PoolMemberCollectionModel();
             poolMember.add([newPoolMember],{at: selectedRuleIndex+1});
         },
+
         deletePoolMember: function(data, member) {
             var memberCollection = data.model().collection,
                 delMember = member.model();
             memberCollection.remove(delMember);
         },
+
         validations: {
             loadBalancerValidation: {
                 'name' : function(value, attr, data) {
@@ -104,19 +105,7 @@ define([
                }
              }
         },
-        isValidIP: function(ipAddress){
-            if(ipAddress == null)
-                return false;
-            var IP = new v4.Address(ipAddress); 
-            if(IP.isValid() === true){
-                return true;
-            }
-            IP = new v6.Address(ipAddress); 
-            if(IP.isValid() === true){
-                return true;
-            }
-            return false;
-        },
+
         configureLoadBalancer: function(callbackObj, options, allData, isListener){
             var ajaxConfig = {}, returnFlag = true,updatedVal = {}, postFWRuleData = {};
             var postFWPolicyData = {}, newFWPolicyData, attr;
@@ -147,33 +136,18 @@ define([
                     providerObj.to = providerRef;
                     loadbalancer.service_appliance_set_refs.push(providerObj);
                 }
-                if(model.virtual_machine_interface_refs !== ''){
-                    var ref = model.virtual_machine_interface_refs.split(';');
-                    var refList = [];
-                    for(var i = 0; i < ref.length; i++){
-                        var vmiObj = {};
-                        vmiObj.to = ref[i].split(':');
-                        refList.push(vmiObj);
-                    }
-                    loadbalancer.virtual_machine_interface_refs = refList;
-                }
-                if(model.service_instance_refs !== ''){
-                    var ref = model.service_instance_refs.split(';');
-                    var refList = [];
-                    for(var i = 0; i < ref.length; i++){
-                        var siObj = {};
-                        siObj.to = ref[i].split(':');
-                        refList.push(siObj);
-                    }
-                    loadbalancer.service_instance_refs = refList;
-                }
                 loadbalancer.loadbalancer_properties = {};
                 loadbalancer.loadbalancer_properties['admin_state'] = model.lb_admin_state;
                 loadbalancer.loadbalancer_properties['vip_address'] = model.ip_address;
                 loadbalancer.loadbalancer_properties['vip_subnet_id'] = model.lb_subnet;
-                loadbalancer.id_perms = {};
-                loadbalancer.id_perms.description = model.description;
+                if(model.description !== ''){
+                    loadbalancer.id_perms = {};
+                    loadbalancer.id_perms.description = model.description; 
+                }
                 obj.loadbalancer = loadbalancer; 
+            }else{
+                var lbObj = options.lbObj;
+                obj.loadbalancer = lbObj;
             }
             // Listeners
             var listener = {};
@@ -184,8 +158,10 @@ define([
             listenerfqName.push(model.listener_name);
             listener.fq_name = listenerfqName;
             listener["parent_type"] = "project";
-            listener.id_perms = {};
-            listener.id_perms.description = model.listener_description;
+            if(model.listener_description !== ''){
+                listener.id_perms = {};
+                listener.id_perms.description = model.listener_description;
+            }
             listener.loadbalancer_listener_properties = {};
             listener.loadbalancer_listener_properties['admin_state'] = model.listener_admin_state;
             listener.loadbalancer_listener_properties['protocol'] = model.listener_protocol;
@@ -201,13 +177,19 @@ define([
             poolfqName.push(model.pool_name);
             pool.fq_name = poolfqName;
             pool["parent_type"] = "project";
-            pool.id_perms = {};
-            pool.id_perms.description = model.pool_description;
+            if(model.pool_description !== ''){
+                pool.id_perms = {};
+                pool.id_perms.description = model.pool_description;
+            }
             pool.loadbalancer_pool_properties = {};
             pool.loadbalancer_pool_properties['admin_state'] = model.pool_admin_state;
             pool.loadbalancer_pool_properties['loadbalancer_method'] = model.pool_method;
-            pool.loadbalancer_pool_properties['session_persistence'] = model.pool_session_persistence;
-            pool.loadbalancer_pool_properties['protocol'] = model.pool_protocol;
+            if(model.pool_session_persistence !== ''){
+                pool.loadbalancer_pool_properties['session_persistence'] = model.pool_session_persistence;
+            }
+            if(model.pool_protocol !== ''){
+                pool.loadbalancer_pool_properties['protocol'] = model.pool_protocol;
+            }
             obj['loadbalancer-pool'] = pool;
             
             if(poolMember.length > 0){
@@ -250,7 +232,29 @@ define([
                 monitor.loadbalancer_healthmonitor_properties['http_method'] = model.monitor_http_method;
             }
             obj['loadbalancer-healthmonitor'] = monitor;
-            console.log(obj);
+            
+            if(isListener){
+                ajaxConfig.url = '/api/tenants/config/lbaas/listener';
+            }else{
+                ajaxConfig.url = '/api/tenants/config/lbaas/load-balancer';
+            }
+            ajaxConfig.type  = 'POST';
+            ajaxConfig.data  = JSON.stringify(obj);
+            contrail.ajaxHandler(ajaxConfig, function () {
+                if (contrail.checkIfFunction(callbackObj.init)) {
+                    callbackObj.init();
+                }
+            }, function (response) {
+                if (contrail.checkIfFunction(callbackObj.success)) {
+                    callbackObj.success();
+                }
+                returnFlag = true;
+            }, function (error) {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(error);
+                }
+                returnFlag = false;
+            });
         }
     });
     return lbCfgModel;

@@ -209,11 +209,17 @@ define([
                 "onClick": function () {
                     var title = viewConfig.lbName + ' > '+ 'Create Listener'
                     var lbodel = new LbCfgModel({'existing_port': viewConfig.port.list});
+                    var lbObj = {
+                        'fq_name':  viewConfig.lbFqName,
+                        'uuid': viewConfig.lbId,
+                        'parent_type': 'project'
+                    }
                     lbCfgEditView.model = lbodel;
                     lbCfgEditView.renderAddLb({
                                               "title": title,
                                               'mode': 'listener',
                                               'projectId': viewConfig.projectId,
+                                              'lbObj': lbObj,
                                               callback: function () {
                     $('#' + ctwc.CONFIG_LB_LISTENER_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});
