@@ -257,7 +257,7 @@ define([
                         formatter: 'healthMonitorFormatterList'
                     },
                     keyClass:'col-xs-3',
-                    valueClass:'col-xs-9'
+                    valueClass:'col-xs-9 pool-health-monitors-details'
                 }
             ]
         }

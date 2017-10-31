@@ -16,6 +16,7 @@ define([
                 currentHashParams = layoutHandler.getURLHashParams(),
                 loadBalancer = currentHashParams.focusedElement.loadBalancer,
                 loadBalancerId = currentHashParams.focusedElement.uuid;
+                viewConfig.lbFqName = currentHashParams.focusedElement.lbFqName.reverse();
                 viewConfig.lbName = loadBalancer;
                 viewConfig.listenerRef = window.location.href;
                 self.port = {};
@@ -44,7 +45,7 @@ define([
                 var port = getValueByJsonPath(obj,
                         "loadbalancer_listener_properties;protocol_port", '');
                 if(port != ''){
-                    portList  .push(port);
+                    portList.push(port);
                 }
             });
             self.port.list = portList;
@@ -74,6 +75,7 @@ define([
                                     },
                                     lbId: viewConfig.lbId,
                                     lbName: viewConfig.lbName,
+                                    lbFqName: viewConfig.lbFqName,
                                     listenerRef: viewConfig.listenerRef,
                                     projectId: viewConfig.projectId,
                                     port: port//,

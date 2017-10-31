@@ -21,7 +21,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-560',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                /*self.model.configureForwardingOptions({
+                self.model.updateLoadBalancer({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -36,7 +36,7 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
+                });
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model, document.getElementById(modalId));
@@ -57,7 +57,6 @@ define([
         },
         renderMultiDeleteLb: function(options) {
             var delTemplate =
-                //Fix the template to be common delete template
                 contrail.getTemplate4Id('core-generic-delete-form-template');
             var self = this;
 
@@ -66,7 +65,7 @@ define([
                              'title': options['title'], 'btnName': 'Confirm',
                              'body': delLayout,
                'onSave': function () {
-                /*self.model.multiDeleteVNCfg(options['checkedRows'], {
+                self.model.multiDeleteLB(options['checkedRows'], {
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -82,8 +81,7 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
-                // TODO: Release binding on successful configure
+                });
             }, 'onCancel': function () {
                 Knockback.release(self.model,
                                     document.getElementById(modalId));

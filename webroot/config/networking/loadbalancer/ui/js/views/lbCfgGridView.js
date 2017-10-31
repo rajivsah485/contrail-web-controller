@@ -191,7 +191,8 @@ define([
                     loadBalancer: dc.loadbalancer.display_name,
                     uuid: dc.uuid,
                     tab: viewTab,
-                    projectId: projectId
+                    projectId: projectId,
+                    lbFqName : dc.loadbalancer.fq_name
                 }
             };
         if (contrail.checkIfKeyExistInObject(true,
@@ -238,8 +239,7 @@ define([
                                               "title": 'Create Loadbalancer',
                                               'mode': 'loadbalancer',
                                               'projectId': viewConfig.selectedProjId,
-                                              'vmiList': viewConfig.vmiList,
-                                              callback: function () {
+                                               callback: function () {
                     $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});
                 }
@@ -565,7 +565,7 @@ define([
     };
 
     this.floatingIps = function(v, dc){
-        return lbCfgFormatters.floatingIpFormatter(null,
+        return lbCfgFormatters.floatingIpFormatterWithUrl(null,
                 null, null, null, dc);
     };
 

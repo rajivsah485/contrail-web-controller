@@ -46,7 +46,9 @@ define([
         this.serviceInstanceFormatter = function(d, c, v, cd, dc){
             var si = getValueByJsonPath(dc, 'loadbalancer;service_instance_refs;0;display_name', '');
             if(si !== ''){
-                return si;
+                var siHash = '/#p=config_sc_svcInstances';
+                var siUrl = window.location.origin + siHash;
+                return ( '<a href="'+ siUrl + '" style="color: #3184c5">' + si + '</a>');
             }else{
                 return '-';
             }
@@ -54,7 +56,9 @@ define([
         this.virtualMachineFormatter = function(d, c, v, cd, dc){
             var vmi = getValueByJsonPath(dc, 'loadbalancer;virtual_machine_interface_refs;0;display_name', '');
             if(vmi !== ''){
-                return vmi;
+                var vmiHash = '/#p=config_net_ports';
+                var vmiUrl = window.location.origin + vmiHash;
+                return ( '<a href="'+ vmiUrl+ '" style="color: #3184c5">' + vmi + '</a>');
             }else{
                 return '-';
             }
@@ -138,7 +142,9 @@ define([
         this.loadbalancerProviderFormatter = function(d, c, v, cd, dc) {
             var provider = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_provider', '');
             if (provider !== '') {
-                return provider;
+                var providerHash = '/#p=config_infra_sapset';
+                var providerUrl = window.location.origin + providerHash;
+                return ( '<a href="'+ providerUrl + '" style="color: #3184c5">' + provider + '</a>');
             }else{
                 return '-'; 
             } 
@@ -174,6 +180,32 @@ define([
             }
         };
         
+        this.floatingIpFormatterWithUrl = function(d, c, v, cd, dc) {
+            var vmi = getValueByJsonPath(dc, 'loadbalancer;virtual_machine_interface_refs', []),
+            fixedIpList = [], returnString = '';
+            if(vmi.length > 0){
+              _.each(vmi, function(ref) {
+                    var ip = getValueByJsonPath(ref, 'floating-ip;ip', '');
+                    if(ip != ''){
+                        var floatingIp = '<span>'+ ip +'</span>';
+                        fixedIpList.push(floatingIp); 
+                    }
+               });
+            }
+            if(fixedIpList.length > 0){
+                for(var j = 0; j< fixedIpList.length,j < 2; j++){
+                    if(fixedIpList[j]) {
+                        returnString += fixedIpList[j] + "<br>";
+                    }
+                }
+                var fipHash = '/#p=config_networking_fip';
+                var fipUrl = window.location.origin + fipHash;
+                return ( '<a href="'+ fipUrl+ '" style="color: #3184c5">' + returnString + '</a>');
+            }else{
+                return '-';
+            }
+        };
+
         this.adminStatusFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer;loadbalancer_properties;admin_state', false);
             if(adminStatus){
@@ -378,8 +410,13 @@ define([
                     }else{
                         lbMethod = '-';
                     }
-                    if(poolProp.persistence_cookie_name != undefined){
-                        cookieName = poolProp.persistence_cookie_name;
+                    if(poolProp.session_persistence != undefined){
+                        var splitedCookie = poolProp.session_persistence.split('_'), textList = [];
+                        _.each(splitedCookie, function(text) {
+                            var mText = text.toLocaleLowerCase();
+                            textList.push(cowl.getFirstCharUpperCase(mText));
+                         });
+                        cookieName = textList.join(' ');
                     }else{
                         cookieName = '-';
                     }
@@ -404,7 +441,7 @@ define([
                     "<table style='width:100%'><thead><tr>\
                     <th style='width:25%'>Protocol</th>\
                     <th style='width:25%'>Loadbalancer Method</th>\
-                    <th style='width:25%'>Persistence Cookie Name</th>\
+                    <th style='width:25%'>Session Persistence</th>\
                     <th style='width:25%'>Admin State</th>\
                     </tr></thead><tbody>";
                 returnString += subnetString;
@@ -876,7 +913,9 @@ define([
                    if(val == '' || val == null){
                        return '-';
                    }else{
-                       return val; 
+                       var providerHash = '/#p=config_infra_sapset';
+                       var providerUrl = window.location.origin + providerHash;
+                       return ( '<a href="'+ providerUrl + '" style="color: #3184c5">' + val + '</a>');
                    }
                }
                if('loadbalancer_properties' === rowData['key']){
