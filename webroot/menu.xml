@@ -282,7 +282,7 @@ and need to add the iconClass tag wherever we need to show some icons
                             <searchStrings>Monitor Projects</searchStrings>
                         </item>
                         <item>
-                            <label>Load Balancers</label>
+                            <label>Load Balancing</label>
                             <hash>mon_networking_loadbalancer</hash>
                             <access>
                                 <roles>
@@ -299,7 +299,7 @@ and need to add the iconClass tag wherever we need to show some icons
                                 <view>list</view>
                                 <type>loadbalancers</type>
                             </queryParams>
-                            <searchStrings>Monitor Load Balancer</searchStrings>
+                            <searchStrings>Monitor Load Balancing</searchStrings>
                         </item>
                         <item>
                             <access>
@@ -1082,7 +1082,7 @@ and need to add the iconClass tag wherever we need to show some icons
                     <iconClass>menu-icon fa fa-sitemap</iconClass>
                     <items>
                         <item>
-                          <label>Load Balancers</label>
+                          <label>Load Balancing</label>
                           <hash>config_load_balancer</hash>
                           <resources>
                               <resource>
