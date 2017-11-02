@@ -45,10 +45,9 @@ Members are the actual IP addresses that receive traffic from the load balancer.
 Members may go offline from time to time and health monitors diverts traffic away from members that are not responding properly. Health monitors are associated with pools.
 
 ###3.2 Monitor Load Balancer:
-It is to provide overview of all Load Balancers in the system, including HAProxy Load Balancing (Active-Standby or Active-Active), and Native (ECMP) Load Balancing.
+It is to provide overview of all Load Balancers in the system, including HAProxy Load Balancing (Active-Standby or Active-Active).
 
 * Each HAProxy Load Balancer can have multiple pools, with one or more listeners for every pool. Traffic and Latency Information can be collected from a HAProxy instance (L4 and L7), or from the vRouter on a Floating IP basis. Client Information can be collected from the vRouter.
-* Each Native Load Balancer has a single pool, shared among multiple listeners. Traffic and Latency Information can be collected from the vRouters Floating IP stats, in addition to Client information.
 
 ###3.3 Alternatives considered
 TBD
@@ -190,17 +189,12 @@ Additional Operations
   * Associated floating IP address.
 
 ###4.3 Monitor Load Balancers
-This is an overview of all Load Balancers (IPs) in the system, including Proxy Load Balancers (Active-Standby or Active-Active), and Native (ECMP) Load Balancers.
+This is an overview of all Load Balancers (IPs) in the system, including Proxy Load Balancers (Active-Standby or Active-Active).
 
 ![image](images/LBaaS_Monitor_DB.png)
 ####4.3.1
 This is a summary of one particular Proxy Load Balancing Instance.
 ![image](images/LBaaS_Monitor_Proxy.png)
-####4.3.2
-This is a summary of one particular Native Load Balancing  (ECMP) Instance.
-
-![image](images/LBaaS_Monitor_Native.png)
-
 
 ###4.4 Work items
 
@@ -242,3 +236,4 @@ UI documentation needs to be updated to provide information on usage of LBaaS.
 
 #11. References
 https://docs.openstack.org/horizon/latest/user/manage-lbaasv2.html
+https://wiki.openstack.org/wiki/Neutron/LBaaS
