@@ -46,17 +46,11 @@ define([
         },
 
         parsePoolinfoData : function(response) {
-            /*var listener = getValueByJsonPath(response,
-                         "loadbalancer;loadbalancer-listener", [], false), dataItems = [],
-                         poolList = [];
-            _.each(listener, function(obj) {
-                var pool = getValueByJsonPath(obj, 'loadbalancer-pool', []);
-                if(pool.length > 0){
-                  poolList = poolList.concat(pool);   
-                }
-            });*/
-            var dataItems = [];
+           var dataItems = [];
             self.pool.list = response[0];
+            if(response[0].loadbalancer_pool_properties.persistence_cookie_name == undefined){
+                ctwc.POOL_INFO_OPTIONS_MAP.splice(5, 1);
+            }
             _.each(ctwc.POOL_INFO_OPTIONS_MAP, function(poolOption){
                 dataItems.push({ name: poolOption.name,
                     value: response[0][poolOption.key], key: poolOption.key});

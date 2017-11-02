@@ -23,11 +23,8 @@ define([
             if(protocol != ''){
                 modelConfig["protocol"] = protocol;
             }
-            var adminState = getValueByJsonPath(modelConfig,
+            modelConfig["admin_state"] = getValueByJsonPath(modelConfig,
                     "loadbalancer_listener_properties;admin_state", false);
-            if(adminState){
-                modelConfig["admin_state"] = adminState;
-            }
             var conLimit = getValueByJsonPath(modelConfig,
                     "loadbalancer_listener_properties;connection_limit", '');
             if(conLimit != ''){
@@ -44,6 +41,40 @@ define([
                 modelConfig["description"] = description;
             }
             return modelConfig;
+        },
+
+        updateListener: function(callbackObj){
+            var ajaxConfig = {};
+            var self = this;
+            var model = $.extend(true,{},this.model().attributes);
+            var obj = {};
+            obj['loadbalancer-listener'] = {};
+            obj['loadbalancer-listener']['fq_name'] = model.fq_name;
+            obj['loadbalancer-listener']['display_name'] = model.display_name;
+            obj['loadbalancer-listener']['uuid'] = model.uuid;
+            model.id_perms.description = model.description;
+            obj['loadbalancer-listener'].id_perms = model.id_perms;
+            model.loadbalancer_listener_properties.admin_state = model.admin_state;
+            model.loadbalancer_listener_properties.connection_limit = Number(model.connection_limit);
+            obj['loadbalancer-listener']['loadbalancer_listener_properties'] = model.loadbalancer_listener_properties;
+            ajaxConfig.url = '/api/tenants/config/lbaas/listener/'+ model.uuid;
+            ajaxConfig.type  = 'PUT';
+            ajaxConfig.data  = JSON.stringify(obj);
+            contrail.ajaxHandler(ajaxConfig, function () {
+                if (contrail.checkIfFunction(callbackObj.init)) {
+                    callbackObj.init();
+                }
+            }, function (response) {
+                if (contrail.checkIfFunction(callbackObj.success)) {
+                    callbackObj.success();
+                }
+                returnFlag = true;
+            }, function (error) {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(error);
+                }
+                returnFlag = false;
+            });
         },
 
         multiDeleteListener: function (checkedRows, callbackObj) {

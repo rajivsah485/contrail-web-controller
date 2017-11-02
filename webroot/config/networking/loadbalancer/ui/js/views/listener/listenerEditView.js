@@ -21,7 +21,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-560',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                self.model.configureForwardingOptions({
+                self.model.updateListener({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },

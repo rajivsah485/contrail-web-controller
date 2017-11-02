@@ -158,14 +158,14 @@ define([
                          },
                          formatter: lbCfgFormatters.operatingStatusFormatter
                      },
-                     {
+                     /*{
                          field:  'loadbalancer',
                          name:   'Provisioning Status',
                          formatter: lbCfgFormatters.provisioningStatusFormatter,
                          sortable: {
                             sortBy: 'formattedValue'
                          }
-                     },
+                     },*/
                      {
                          field:  'loadbalancer',
                          name:   'Admin State',
@@ -257,7 +257,7 @@ define([
                 lbInfoEditView.renderEditLb({
                                       "title": 'Edit Load Balancer',
                                       callback: function () {
-                         ('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
+                         $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.refreshData();
                 }});
             })
         ];

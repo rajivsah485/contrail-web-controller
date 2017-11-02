@@ -501,7 +501,7 @@ define([
                            state = 'No';
                         }
                     }else{
-                        state = '-';
+                        state = 'No';
                     }
                     subnetString += "<tr style='vertical-align:top'><td>";
                     subnetString += code + "</td><td>";
@@ -939,7 +939,7 @@ define([
                   }
                   if(rowData['name'] === 'Admin State'){
                       if(val.admin_state == '' || val.admin_state == null){
-                          return '-';
+                          return 'No';
                       }else{
                           if(val.admin_state == true){
                               return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
@@ -1125,7 +1125,7 @@ define([
                 }
                 if(rowData['name'] === 'Admin State'){
                     if(val.admin_state == '' || val.admin_state == null){
-                        return '-';
+                        return 'No';
                     }else{
                         if(val.admin_state == true){
                             return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +
@@ -1140,7 +1140,11 @@ define([
                     if(val.connection_limit == '' || val.connection_limit == null){
                         return '-';
                     }else{
-                        return val.connection_limit;
+                        if(val.connection_limit == -1){
+                            return 'UnLimited';
+                        }else{
+                            return val.connection_limit; 
+                        }
                     }
                 }
                 if(rowData['name'] === 'Protocol Port'){
@@ -1189,7 +1193,7 @@ define([
               }
               if(rowData['name'] === 'Admin State'){
                   if(val.admin_state == '' || val.admin_state == null){
-                      return '-';
+                      return 'No';
                   }else{
                       if(val.admin_state == true){
                           return 'Yes';//('<div class="status-badge-rounded status-active"></div>&nbsp;&nbsp;' +

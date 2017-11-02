@@ -18,11 +18,8 @@ define([
         },
 
         formatModelConfig: function(modelConfig) {
-            var adminState = getValueByJsonPath(modelConfig,
+            modelConfig["admin_state"] = getValueByJsonPath(modelConfig,
                     "loadbalancer_properties;admin_state", false);
-            if(adminState){
-                modelConfig["admin_state"] = adminState;
-            }
             var ips = getValueByJsonPath(modelConfig,
                     "loadbalancer_properties;vip_address", '');
             if(ips != ''){
@@ -43,6 +40,8 @@ define([
             obj.loadbalancer = {};
             obj.loadbalancer.display_name = model.display_name;
             obj.loadbalancer.uuid = model.uuid;
+            model.id_perms.description = model.description;
+            obj.loadbalancer.id_perms = model.id_perms;
             ajaxConfig.url = ' /api/tenants/config/lbaas/load-balancer/'+ model.uuid;
             ajaxConfig.type  = 'PUT';
             ajaxConfig.data  = JSON.stringify(obj);

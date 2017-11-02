@@ -15,7 +15,7 @@ define([
             'display_name': '',
             'description': '',
             'ip_address': '',
-            'lb_provider': '',
+            'lb_provider': 'default-global-system-config;opencontrail',
             'lb_status':'',
             'lb_provisioning_status':'',
             'lb_vipaddress': '',
@@ -35,6 +35,8 @@ define([
              //'pool_status':'',
             'pool_protocol':'',
             'pool_session_persistence':'',
+            'persistence_cookie_name':'',
+            'persistence_cookie_visible': false,
             'pool_subnet_id':'',
             'pool_admin_state': true,
             'monitor_type':'',
@@ -185,6 +187,11 @@ define([
             pool.loadbalancer_pool_properties['admin_state'] = model.pool_admin_state;
             pool.loadbalancer_pool_properties['loadbalancer_method'] = model.pool_method;
             if(model.pool_session_persistence !== ''){
+                if(model.pool_session_persistence === 'APP_COOKIE'){
+                    if(model.persistence_cookie_name !== ''){
+                        pool.loadbalancer_pool_properties['persistence_cookie_name'] = model.persistence_cookie_name;
+                    }
+                }
                 pool.loadbalancer_pool_properties['session_persistence'] = model.pool_session_persistence;
             }
             if(model.pool_protocol !== ''){

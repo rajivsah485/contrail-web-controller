@@ -1326,6 +1326,7 @@ define([
             {'key': 'id_perms', 'name': 'Description'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Protocol'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Session Persistence'},
+            {'key': 'loadbalancer_pool_properties', 'name': 'Persistence Cookie Name'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Status Description'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Loadbalancer Method'},
             {'key': 'loadbalancer_pool_properties', 'name': 'Admin State'},

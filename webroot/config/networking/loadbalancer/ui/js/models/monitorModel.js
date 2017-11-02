@@ -29,11 +29,9 @@ define([
             if(delay != ''){
                 modelConfig["delay"] = delay;
             }
-            var adminState = getValueByJsonPath(modelConfig,
+            modelConfig["admin_state"] = getValueByJsonPath(modelConfig,
                     "loadbalancer_healthmonitor_properties;admin_state", false);
-            if(adminState){
-                modelConfig["admin_state"] = adminState;
-            }
+
             var retries = getValueByJsonPath(modelConfig,
                     "loadbalancer_healthmonitor_properties;max_retries", '');
             if(retries != ''){
@@ -70,6 +68,70 @@ define([
                 modelConfig["description"] = description;
             }
             return modelConfig;
+        },
+        
+        updateMonitor: function(callbackObj){
+            var ajaxConfig = {};
+            var self = this;
+            var model = $.extend(true,{},this.model().attributes);
+            var obj = {};
+            obj['loadbalancer-healthmonitor'] = {};
+            obj['loadbalancer-healthmonitor']['fq_name'] = model.fq_name;
+            obj['loadbalancer-healthmonitor']['display_name'] = model.display_name;
+            obj['loadbalancer-healthmonitor']['uuid'] = model.uuid;
+            model.id_perms.description = model.description;
+            obj['loadbalancer-healthmonitor'].id_perms = model.id_perms;
+            if(model.monitor_type === 'HTTP'){
+                model.loadbalancer_healthmonitor_properties['url_path'] = model.url_path;
+                model.loadbalancer_healthmonitor_properties['expected_codes'] = Number(model.expected_codes);
+                model.loadbalancer_healthmonitor_properties['http_method'] = model.http_method;
+            }else{
+                delete model.loadbalancer_healthmonitor_properties['url_path'];
+                delete model.loadbalancer_healthmonitor_properties['expected_codes'];
+                delete model.loadbalancer_healthmonitor_properties['http_method'];
+            }
+            obj['loadbalancer-healthmonitor']['loadbalancer_healthmonitor_properties'] = model.loadbalancer_healthmonitor_properties;
+            ajaxConfig.url = '/api/tenants/config/lbaas/health-monitor/'+ model.uuid;
+            ajaxConfig.type  = 'PUT';
+            ajaxConfig.data  = JSON.stringify(obj);
+            contrail.ajaxHandler(ajaxConfig, function () {
+                if (contrail.checkIfFunction(callbackObj.init)) {
+                    callbackObj.init();
+                }
+            }, function (response) {
+                if (contrail.checkIfFunction(callbackObj.success)) {
+                    callbackObj.success();
+                }
+                returnFlag = true;
+            }, function (error) {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(error);
+                }
+                returnFlag = false;
+            });
+        },
+        
+        multiDeleteMonitor: function (checkedRows, callbackObj) {
+            var ajaxConfig = {}, that = this;
+            var uuidList = [];
+            $.each(checkedRows, function (checkedRowsKey, checkedRowsValue) {
+                uuidList.push(checkedRowsValue.uuid);
+            });
+            ajaxConfig.type = "DELETE";
+            ajaxConfig.url = '/api/tenants/config/lbaas/health-monitor/' + uuidList[0];
+            contrail.ajaxHandler(ajaxConfig, function () {
+                if (contrail.checkIfFunction(callbackObj.init)) {
+                    callbackObj.init();
+                }
+            }, function (response) {
+                if (contrail.checkIfFunction(callbackObj.success)) {
+                    callbackObj.success();
+                }
+            }, function (error) {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(error);
+                }
+            });
         }
     });
     return MonitorModel;

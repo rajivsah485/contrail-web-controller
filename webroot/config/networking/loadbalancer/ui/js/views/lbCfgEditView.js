@@ -280,7 +280,7 @@ define([
                 ]
             }
     }
-    function getPoolControl(options){
+    function getPoolControl(options, self){
         return {
                  rows: [
                      {
@@ -361,6 +361,13 @@ define([
                                            elementConfig : {
                                                dataTextField : "text",
                                                dataValueField : "id",
+                                               change: function(data) {
+                                                   if(data.val === 'APP_COOKIE'){
+                                                       self.model.persistence_cookie_visible(true);
+                                                   }else{
+                                                       self.model.persistence_cookie_visible(false);
+                                                   }
+                                               },
                                                placeholder : 'Select Session Persistence',
                                                data : [{id: 'SOURCE_IP', text:'SOURCE_IP'},
                                                        {id: 'HTTP_COOKIE', text:'HTTP_COOKIE'},
@@ -382,6 +389,21 @@ define([
                                        }
                                    }
                                  ]
+                         },
+                         {
+                             columns: [
+                                 {
+                                     elementId: "persistence_cookie_name",
+                                     view: "FormInputView",
+                                     viewConfig: {
+                                         path: "persistence_cookie_name",
+                                         visible: 'persistence_cookie_visible',
+                                         label: 'Persistence Cookie Name',
+                                         dataBindValue: "persistence_cookie_name",
+                                         class: "col-xs-6"
+                                     }
+                                 }
+                             ]
                          }
                  ]
              }
@@ -633,7 +655,7 @@ define([
                             }
                         },
                         onNext: function(params) {
-                            if(params.model.lb_subnet() !== '' && params.model.name() !== '' && params.model.ip_address() !== '' && params.model.lb_provider() !== ''){
+                            if(params.model.lb_subnet() !== '' && params.model.name() !== '' && params.model.lb_provider() !== ''){
                                 $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
                                 $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
                                 $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
@@ -704,7 +726,7 @@ define([
         return addListenerViewConfig;
     }
     
-    function getCreatePoolViewConfig(lbModel, options) {
+    function getCreatePoolViewConfig(lbModel, options, self) {
         var gridPrefix = "add-pool",
             addPoolViewConfig = {
             elementId:  cowu.formatElementId([prefixId, 'pool']),
@@ -715,7 +737,7 @@ define([
                         elementId:  cowu.formatElementId([prefixId, 'pool']),
                         title: 'pool',
                         view: "SectionView",
-                        viewConfig: getPoolControl(options),
+                        viewConfig: getPoolControl(options, self),
                         stepType: "step",
                         onInitRender: true,
                         buttons: {
@@ -930,7 +952,7 @@ define([
         /*
           Appending create Pool Steps
         */
-         createPool = $.extend(true, {}, getCreatePoolViewConfig(lbModel, options, allData).viewConfig).steps;
+         createPool = $.extend(true, {}, getCreatePoolViewConfig(lbModel, options, self, allData).viewConfig).steps;
  
          createPool[0].title = 'Pool';
          createPool[0].onPrevious = function() {
