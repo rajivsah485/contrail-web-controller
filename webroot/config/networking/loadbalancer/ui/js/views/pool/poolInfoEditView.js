@@ -21,7 +21,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-560',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                /*self.model.configureForwardingOptions({
+                self.model.updatePool({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -36,7 +36,7 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
+                });
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model, document.getElementById(modalId));
@@ -46,7 +46,7 @@ define([
 
             self.renderView4Config($("#" + modalId).find(formId),
                                    this.model,
-                                   poolInfoViewConfig(),
+                                   poolInfoViewConfig(self),
                                    "",
                                    null, null, function() {
                 self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
@@ -57,7 +57,7 @@ define([
         }
     });
 
-    var poolInfoViewConfig = function () {
+    var poolInfoViewConfig = function (self) {
         return {
             elementId: ctwc.CONFIG_POOL_INFO_PREFIX_ID,
             view: 'SectionView',
@@ -122,6 +122,13 @@ define([
                                     elementConfig : {
                                         dataTextField : "text",
                                         dataValueField : "id",
+                                        change: function(data) {
+                                            if(data.val === 'APP_COOKIE'){
+                                                self.model.persistence_cookie_visible(true);
+                                            }else{
+                                                self.model.persistence_cookie_visible(false);
+                                            }
+                                        },
                                         placeholder : 'Select Session Persistence',
                                         data : [{id: 'SOURCE_IP', text:'SOURCE_IP'},
                                                 {id: 'HTTP_COOKIE', text:'HTTP_COOKIE'},
@@ -176,24 +183,22 @@ define([
                                 }
                             }
                         ]
-                    }/*,
+                    },
                     {
                         columns: [
                             {
-                                elementId: 'admin_state',
-                                view: "FormCheckboxView",
-                                viewConfig : {
-                                    path : 'admin_state',
-                                    class : "col-xs-6",
-                                    label:'Admin State',
-                                    dataBindValue : 'admin_state',
-                                    elementConfig : {
-                                        isChecked:false
-                                    }
+                                elementId: "persistence_cookie_name",
+                                view: "FormInputView",
+                                viewConfig: {
+                                    path: "persistence_cookie_name",
+                                    visible: 'persistence_cookie_visible',
+                                    label: 'Persistence Cookie Name',
+                                    dataBindValue: "persistence_cookie_name",
+                                    class: "col-xs-6"
                                 }
                             }
                         ]
-                    }*/
+                    }
                 ]
             }
         }

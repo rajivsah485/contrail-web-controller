@@ -157,12 +157,12 @@ var configJsonModifyObj = {
     },
     'loadbalancer-pool': {
         'isConfig': true,
-        'optFields': ['loadbalancer_pool_properties','display_name'],
+        'optFields': ['loadbalancer_pool_properties','display_name', 'id_perms'],
         'mandateFields': ['fq_name', 'uuid', 'name']
     },
     'loadbalancer-healthmonitor': {
         'isConfig': true,
-        'optFields': ['loadbalancer_healthmonitor_properties','display_name'],
+        'optFields': ['loadbalancer_healthmonitor_properties','display_name', 'id_perms'],
         'mandateFields': ['fq_name', 'uuid', 'name']
     },
     'loadbalancer-member': {

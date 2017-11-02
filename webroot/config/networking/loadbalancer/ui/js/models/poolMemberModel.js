@@ -30,11 +30,8 @@ define([
             if(protocolPort != ''){
                 modelConfig["port"] = protocolPort;
             }
-            var adminState = getValueByJsonPath(modelConfig,
+            modelConfig["admin_state"] = getValueByJsonPath(modelConfig,
                     "loadbalancer_member_properties;admin_state", false);
-            if(adminState){
-                modelConfig["admin_state"] = adminState;
-            }
             var address = getValueByJsonPath(modelConfig,
                     "loadbalancer_member_properties;address", '');
             if(address != ''){
