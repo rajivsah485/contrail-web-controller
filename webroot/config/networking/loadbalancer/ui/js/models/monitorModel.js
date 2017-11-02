@@ -83,7 +83,7 @@ define([
             obj['loadbalancer-healthmonitor'].id_perms = model.id_perms;
             if(model.monitor_type === 'HTTP'){
                 model.loadbalancer_healthmonitor_properties['url_path'] = model.url_path;
-                model.loadbalancer_healthmonitor_properties['expected_codes'] = Number(model.expected_codes);
+                model.loadbalancer_healthmonitor_properties['expected_codes'] = model.expected_codes;
                 model.loadbalancer_healthmonitor_properties['http_method'] = model.http_method;
             }else{
                 delete model.loadbalancer_healthmonitor_properties['url_path'];

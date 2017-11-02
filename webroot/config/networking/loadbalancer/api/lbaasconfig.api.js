@@ -1100,58 +1100,6 @@ function parsePoolsbyListenerId(l_uuid, lb, callback) {
 	callback(null, poolList);
 }
 
-function getPoolById(request, response, appData) {
-	console.log('getPoolById');
-	var lb_uuid = request.param('lbid');
-	var l_uuid = request.param('lid');
-	var p_uuid = request.param('pid');
-	if (!(lb_uuid = request.param('lbid').toString())) {
-		error = new appErrors.RESTServerError('Loadbalancer uuid is missing');
-		commonUtils.handleJSONResponse(error, response, null);
-		return;
-	}
-	if (!(l_uuid = request.param('lid').toString())) {
-		error = new appErrors.RESTServerError('Listener uuid is missing');
-		commonUtils.handleJSONResponse(error, response, null);
-		return;
-	}
-
-	if (!(p_uuid = request.param('pid').toString())) {
-		error = new appErrors.RESTServerError('Pool uuid is missing');
-		commonUtils.handleJSONResponse(error, response, null);
-		return;
-	}
-
-	var lbListURL = '/loadbalancer/' + lb_uuid;
-	configApiServer.apiGet(lbListURL, appData, function(error, lb) {
-		if (error) {
-			commonUtils.handleJSONResponse(error, response, null);
-			return;
-		}
-		getLBaaSDetailsbyIdCB(lb, appData, function(error, lbs) {
-			if (error) {
-				commonUtils.handleJSONResponse(error, response, null);
-			} else {
-				var lb = lbs['loadbalancers'][0];
-				parseListenerbyId(l_uuid, lb, function(error, listener) {
-					poolList = commonUtils.getValueByJsonPath(listener[0],
-							'loadbalancer-pool', [], false);
-
-					var reLis = [];
-					_.each(poolList, function(pool) {
-						if (pool.uuid == p_uuid) {
-							reLis.push(pool);
-						}
-					});
-					commonUtils.handleJSONResponse(error, response, reLis);
-				});
-
-			}
-		});
-
-	});
-}
-
 /**
  * @createLoadBalancer public function 
  * 1. URL /api/tenants/config/lbaas/load-balancer - POST 
@@ -1709,23 +1657,73 @@ function deleteListenerRefs(llIds, appData, callback){
 	});	
 }
 
-/**
- * @createPool 
- * public function 
- * 1. URL /api/tenants/config/lbaas/pool - POST 
- * 2. Sets Post Data and sends back the Pool config to client
- * 
- * @param request
- * @param response
- * @param appData
- * @returns
- */
-function createPool(request, response, appData) {
-	console.log('createPool');
-	createPoolValidate(request, request.body, appData, function(error, results) {
+function getPoolByListenerId(request, response, appData) {
+	console.log('getPoolById');
+	var lb_uuid = request.param('lbid');
+	var l_uuid = request.param('lid');
+	var p_uuid = request.param('pid');
+	if (!(lb_uuid = request.param('lbid').toString())) {
+		error = new appErrors.RESTServerError('Loadbalancer uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+	if (!(l_uuid = request.param('lid').toString())) {
+		error = new appErrors.RESTServerError('Listener uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+
+	if (!(p_uuid = request.param('pid').toString())) {
+		error = new appErrors.RESTServerError('Pool uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+
+	var lbListURL = '/loadbalancer/' + lb_uuid;
+	configApiServer.apiGet(lbListURL, appData, function(error, lb) {
+		if (error) {
+			commonUtils.handleJSONResponse(error, response, null);
+			return;
+		}
+		getLBaaSDetailsbyIdCB(lb, appData, function(error, lbs) {
+			if (error) {
+				commonUtils.handleJSONResponse(error, response, null);
+			} else {
+				var lb = lbs['loadbalancers'][0];
+				parseListenerbyId(l_uuid, lb, function(error, listener) {
+					poolList = commonUtils.getValueByJsonPath(listener[0],
+							'loadbalancer-pool', [], false);
+
+					var reLis = [];
+					_.each(poolList, function(pool) {
+						if (pool.uuid == p_uuid) {
+							reLis.push(pool);
+						}
+					});
+					commonUtils.handleJSONResponse(error, response, reLis);
+				});
+			}
+		});
+	});
+}
+
+
+function getPoolById(request, response, appData) {
+	console.log('getPoolById');
+	if (!(p_uuid = request.param('uuid').toString())) {
+		error = new appErrors.RESTServerError('Pool uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+	readPoolwithUUID(p_uuid, appData, function(err, results) {
+		if (err) {
+			callback(err, results);
+			return;
+		}
 	    commonUtils.handleJSONResponse(error, response, results);
 	}) ;
 }
+
 
 /**
 * @createPoolMembers
@@ -1769,7 +1767,23 @@ function createPoolMember(appData, postData, callback){
      });
 }
 
-
+/**
+ * @createPool 
+ * public function 
+ * 1. URL /api/tenants/config/lbaas/pool - POST 
+ * 2. Sets Post Data and sends back the Pool config to client
+ * 
+ * @param request
+ * @param response
+ * @param appData
+ * @returns
+ */
+function createPool(request, response, appData) {
+	console.log('createPool');
+	createPoolValidate(request, request.body, appData, function(error, results) {
+	    commonUtils.handleJSONResponse(error, response, results);
+	}) ;
+}
 /**
 * createPoolValidate
 * private function
@@ -1829,7 +1843,6 @@ function createPoolValidate (appData, postData, callback){
 				callback(error, null);
 				return;
 			}
-			
 			var pId = pData['loadbalancer-pool']['uuid'];
 			readPoolwithUUID(pId, appData, function(err, pData) {
 				if (err) {
@@ -1893,7 +1906,11 @@ function updatePool(request, response, appData) {
  */
 function updatePoolCB (request, appData, callback){
 	console.log('updatePoolCB');
-	var poolId = request.param('uuid');
+	if (!(poolId = request.param('uuid').toString())) {
+		error = new appErrors.RESTServerError('Pooluuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
     var poolPutData= request.body;
     var poolPutURL = '/loadbalancer-pool/';
     if (!('loadbalancer-pool' in poolPutData) ||
@@ -2048,6 +2065,22 @@ function deletePoolsByUUIDList(appData, pIds, message, callback) {
 	
 }
 
+function getMemberById(request, response, appData) {
+	console.log('getMemberByPoolId');
+	if (!(m_uuid = request.param('uuid').toString())) {
+		error = new appErrors.RESTServerError('Member uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+	readMemberwithUUID(m_uuid, appData, function(err, results) {
+		if (err) {
+			callback(err, results);
+			return;
+		}
+	    commonUtils.handleJSONResponse(error, response, results);
+	}) ;
+}
+
 /**
  * @createMember public function 
  * 1. URL /api/tenants/config/lbaas/:pid/member - POST 
@@ -2066,14 +2099,37 @@ function createMember(request, response, appData) {
         callback(error, null);
         return;
     }
-	var dataObj=[];
-	var mObj = {};
-	mObj['loadbalancer-member'] = postData;
-    mObj['appData'] = appData;
-    dataObj.push(mObj);
-	createMemberValidate(dataObj, function(error, results) {
-	    commonUtils.handleJSONResponse(error, response, results);
-	}) ;
+	if (!(p_uuid = request.param('pid').toString())) {
+		error = new appErrors.RESTServerError('Pool uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+	if (!('loadbalancer-member' in postData)) {
+        error = new appErrors.RESTServerError('Load Balancer Members object missing ');
+        callback(error, postData);
+        return;
+    }
+	readPoolwithUUID(pId, appData, function(error, poolData){
+		if (error) {
+			callback(error, null);
+			return;
+		}
+		var members= postData['loadbalancer-member'];
+		var allDataObj =[];
+		if(members.length > 0 ){
+			for(i=0; i<members.length; i++){
+				members['loadbalancer-member'][i]['fq_name'][2] = poolData['loadbalancer-pool']['name'];
+				members['loadbalancer-member'][i]['parent_type'] = 'loadbalancer-pool';
+				var mObj = {};
+				mObj['loadbalancer-member'] = members[i];
+			    mObj['appData'] = appData;
+			    allDataObj.push(mObj);
+			}
+		}
+		createMemberValidate(dataObj, function(error, results) {
+		    commonUtils.handleJSONResponse(error, response, results);
+		}) ;
+	});
 }
 
 /**
@@ -2181,7 +2237,11 @@ function updateMember(request, response, appData) {
  */
 function updateMemberCB(request, appData, callback){
 	console.log('updateMemberCB');
-	var memId = request.param('uuid');
+	if (!(memId = request.param('uuid').toString())) {
+		error = new appErrors.RESTServerError('Member uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
     var memPutURL = '/loadbalancer-member/';
     var memPutData = request.body;
     if (!('loadbalancer-member' in memPutData) ||
@@ -2269,9 +2329,27 @@ function deleteMembersByUUIDList(mIds, appData, callback) {
 	});
 }
 
+
+function getHealthMonitorById(request, response, appData) {
+	console.log('getHealthMonitorById');
+	if (!(hm_uuid = request.param('uuid').toString())) {
+		error = new appErrors.RESTServerError('Health Monitor uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
+	readHMwithUUID(hm_uuid, appData, function(err, results) {
+		if (err) {
+			callback(err, results);
+			return;
+		}
+	    commonUtils.handleJSONResponse(error, response, results);
+	}) ;
+}
+
+
 /**
  * @createHealthMonitor public function 
- * 1. URL /api/tenants/config/lbaas/:pid/health-monitor - POST 
+ * 1. URL /api/tenants/config/lbaas/health-monitor - POST 
  * 2. Sets Post Data and sends back the Health Monitor config to client
  * 
  * @param request
@@ -2280,7 +2358,7 @@ function deleteMembersByUUIDList(mIds, appData, callback) {
  * @returns
  */
 function createHealthMonitor(request, response, appData) {
-	createHealthMonitorValidate(request.body, appData, function(error, results) {
+	createHealthMonitorValidate( appData, request.body,function(error, results) {
 	    commonUtils.handleJSONResponse(error, response, results);
 	}) ;
 }
@@ -2413,7 +2491,11 @@ function updateHealthMonitor(request, response, appData) {
  */
 function updateHealthMonitorCB (request, appData, callback){
 	console.log('updateHealthMonitorCB');
-	var hmId = request.param('uuid');
+	if (!(hmId = request.param('uuid').toString())) {
+		error = new appErrors.RESTServerError('Health Monitor uuid is missing');
+		commonUtils.handleJSONResponse(error, response, null);
+		return;
+	}
     var hmPutData= request.body;
     var hmPutURL = '/loadbalancer-healthmonitor/';
     if (!('loadbalancer-healthmonitor' in hmPutData) ||
@@ -2635,32 +2717,36 @@ function appendMessage(newMessage, existingMessage) {
       }
       return existingMessage;
   }
-exports.listLoadBalancers = listLoadBalancers;
-exports.getLoadBalancersTree = getLoadBalancersTree;
-exports.getLoadBalancersDetails = getLoadBalancersDetails;
-exports.getLoadBalancerbyId = getLoadBalancerbyId;
 
-exports.getListenerById = getListenerById;
 exports.listListenersByLBId = listListenersByLBId;
 exports.listPoolsByListernerId = listPoolsByListernerId;
-exports.getPoolById = getPoolById;
+exports.listLoadBalancers = listLoadBalancers;
 
+exports.getLoadBalancersTree = getLoadBalancersTree;
+exports.getLoadBalancersDetails = getLoadBalancersDetails;
+
+exports.getLoadBalancerbyId = getLoadBalancerbyId;
 exports.createLoadBalancer = createLoadBalancer;
 exports.updateLoadBalancer = updateLoadBalancer;
 exports.deleteLoadBalancer = deleteLoadBalancer;
 
+exports.getListenerById = getListenerById;
 exports.createListener = createListener;
 exports.updateListener = updateListener;
 exports.deleteListener = deleteListener;
 
+exports.getPoolByListenerId = getPoolByListenerId;
+exports.getPoolById = getPoolById;
 exports.createPool = createPool;
 exports.updatePool = updatePool;
 exports.deletePool = deletePool;
 
+exports.getMemberById = getMemberById;
 exports.createMember = createMember;
 exports.updateMember = updateMember;
 exports.deleteMember = deleteMember;
 
+exports.getHealthMonitorById = getHealthMonitorById;
 exports.createHealthMonitor = createHealthMonitor;
 exports.updateHealthMonitor = updateHealthMonitor;
 exports.deleteHealthMonitor = deleteHealthMonitor;
