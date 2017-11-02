@@ -220,13 +220,13 @@
           <callback>lbaasconfigapi.creatPool</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id</url>
+          <url>/api/tenants/config/lbaas/pool/:uuid</url>
           <method>put</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.updatePool</callback>
       </item>
       <item>
-          <url>/api/tenants/config/lbaas/pool/:id</url>
+          <url>/api/tenants/config/lbaas/pool/:uuid</url>
           <method>delete</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deletePoolById</callback>

@@ -197,7 +197,7 @@ define([
                 _.each(poolMember, function(poolObj) {
                     var obj = {};
                     obj.name = poolObj.pool_name();
-                    obj.parent_type = "project";
+                    obj.parent_type = "loadbalancer-pool";
                     var memberfqName = [];
                     memberfqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
                     memberfqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
