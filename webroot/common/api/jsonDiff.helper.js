@@ -167,7 +167,7 @@ var configJsonModifyObj = {
     },
     'loadbalancer-member': {
         'isConfig': true,
-        'optFields': ['loadbalancer_member_properties','display_name'],
+        'optFields': ['loadbalancer_member_properties','display_name', 'id_perms'],
         'mandateFields': ['fq_name', 'uuid', 'name']
     },
     'bgp-as-a-service': {

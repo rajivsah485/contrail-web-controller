@@ -815,6 +815,24 @@ define([
             }
         };
         
+        this.poolSessionPersistence = function(d, c, v, cd, dc){
+            var session = getValueByJsonPath(dc, 'loadbalancer_pool_properties;session_persistence', '');
+            if(session !== ''){
+               return session;
+            }else{
+                return '-';
+            }
+        };
+        
+        this.poolPersistenceCookie = function(d, c, v, cd, dc){
+            var cookie = getValueByJsonPath(dc, 'loadbalancer_pool_properties;persistence_cookie_name', '');
+            if(cookie !== ''){
+               return cookie;
+            }else{
+                return '-';
+            }
+        };
+
         this.poolMemberWeightFormatter = function(d, c, v, cd, dc){
             var weight = getValueByJsonPath(dc, 'loadbalancer_member_properties;weight', 0);
             if(weight !== 0){

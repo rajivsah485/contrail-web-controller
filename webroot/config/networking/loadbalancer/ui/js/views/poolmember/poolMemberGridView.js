@@ -171,6 +171,7 @@ define([
                     poolMemberEditView.renderAddPoolMember({
                                               "title": 'Create Pool Member',
                                               'projectId': viewConfig.projectId,
+                                               'poolId': viewConfig.poolId,
                                               callback: function () {
                     $('#' + ctwc.CONFIG_LB_POOL_MEMBER_GRID_ID).data("contrailGrid")._dataView.refreshData();
                     }});

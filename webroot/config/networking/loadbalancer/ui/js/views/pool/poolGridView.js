@@ -322,6 +322,26 @@ define([
                                                     valueClass:'col-xs-9'
                                                 },
                                                 {
+                                                    label: 'Session Persistence',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'poolSessionPersistence'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
+                                                    label: 'Persistence Cookie Name',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'poolPersistenceCookie'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
                                                     label: 'Load Balancer Method',
                                                     key: 'uuid',
                                                     templateGeneratorConfig: {
@@ -408,6 +428,16 @@ define([
     this.healthMonitorFormatterList = function(v, dc){
         return lbCfgFormatters.healthMonitorFormatterList(null,
                 null, null, null, dc);
-    }
+    };
+    
+    this.poolSessionPersistence = function(v, dc){
+        return lbCfgFormatters.poolSessionPersistence(null,
+                null, null, null, dc);
+    };
+    
+    this.poolPersistenceCookie = function(v, dc){
+        return lbCfgFormatters.poolPersistenceCookie(null,
+                null, null, null, dc);
+    };
     return poolGridView;
 });

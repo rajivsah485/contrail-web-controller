@@ -22,6 +22,7 @@ define([
                 listenerId = currentHashParams.focusedElement.listenerId,
                 poolId = currentHashParams.focusedElement.poolId;
                 viewConfig.projectId = currentHashParams.focusedElement.projectId;
+                viewConfig.poolId = poolId;
             if($('#breadcrumb').children().length === 4){
                 $('#breadcrumb li').last().remove();
             }
@@ -74,7 +75,8 @@ define([
                                             pageSizeSelect: [10, 50, 100]
                                         }
                                     },
-                                    projectId: viewConfig.projectId//,
+                                    projectId: viewConfig.projectId,
+                                    poolId: viewConfig.poolId//,
                                     //isGlobal: false
                                 }
                             }
