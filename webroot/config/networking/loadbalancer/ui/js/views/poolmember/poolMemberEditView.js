@@ -21,7 +21,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-560',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                /*self.model.configureForwardingOptions({
+                self.model.updateMember({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -36,7 +36,7 @@ define([
                                                      error.responseText);
                         });
                     } 
-                });*/
+                });
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model, document.getElementById(modalId));
@@ -64,7 +64,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-700',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                /*self.model.configureForwardingOptions({
+                self.model.createPoolMember({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -79,7 +79,7 @@ define([
                                                      error.responseText);
                         });
                     } 
-                });*/
+                }, options);
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model, document.getElementById(modalId));
@@ -113,7 +113,7 @@ define([
                              'title': options['title'], 'btnName': 'Confirm',
                              'body': delLayout,
                'onSave': function () {
-                /*self.model.multiDeleteVNCfg(options['checkedRows'], {
+                self.model.multiDeleteMember(options['checkedRows'], {
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -129,7 +129,7 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
+                });
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model,
@@ -217,7 +217,7 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_ip_address",
-                                        placeholder : 'xx.xx.xx.xx',
+                                        placeholder : 'xxx.xxx.xxx.xxx',
                                         label: '',
                                         dataBindValue: "pool_member_ip_address()",
                                         width: 200,

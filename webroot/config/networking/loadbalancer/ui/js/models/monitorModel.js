@@ -90,6 +90,11 @@ define([
                 delete model.loadbalancer_healthmonitor_properties['expected_codes'];
                 delete model.loadbalancer_healthmonitor_properties['http_method'];
             }
+            model.loadbalancer_healthmonitor_properties['admin_state'] = model.admin_state;
+            model.loadbalancer_healthmonitor_properties['delay'] = model.delay;
+            model.loadbalancer_healthmonitor_properties['monitor_type'] = model.monitor_type;
+            model.loadbalancer_healthmonitor_properties['timeout'] = model.timeout;
+            model.loadbalancer_healthmonitor_properties['max_retries'] = model.max_retries;
             obj['loadbalancer-healthmonitor']['loadbalancer_healthmonitor_properties'] = model.loadbalancer_healthmonitor_properties;
             ajaxConfig.url = '/api/tenants/config/lbaas/health-monitor/'+ model.uuid;
             ajaxConfig.type  = 'PUT';
