@@ -10,7 +10,7 @@
 var rest = require(process.mainModule.exports['corePath']
 		+ '/src/serverroot/common/rest.api');
 var async = require('async');
-var vnconfigapi = module.exports;
+var lbconfigapi = module.exports;
 var logutils = require(process.mainModule.exports['corePath']
 		+ '/src/serverroot/utils/log.utils');
 var commonUtils = require(process.mainModule.exports['corePath']
@@ -30,6 +30,7 @@ var jsonDiff = require(process.mainModule.exports['corePath']
 		+ '/src/serverroot/common/jsondiff');
 var _ = require('underscore');
 var jsonPath = require('JSONPath').eval;
+var portConfig = require('../../../networking/port/api/portsconfig.api');
 
 /**
  * Bail out if called directly as 'nodejs lbaasconfig.api.js'
@@ -338,18 +339,21 @@ function getLoadBalancersTreeInfo(error, lbs, response, appData) {
 }
 
 function getLoadBalancerRefDetails(appData, lbs, callback){
+	console.log('getLoadBalancerRefDetails');
 	async.parallel([
 			async.apply(getServiceInstanceDetailsfromLB, appData,lbs),
-			async.apply(getFloatingIPfromVMI, appData,lbs)],
+			async.apply(getVMIDetailsfromLB, appData,lbs)],
 	 function(err, results) {
 		var sviData = results[0];
 		var vmiData= results[1];
-		console.log('getLoadBalancerRefDetails');
-		parseServiceInstanceDetailsfromLB(sviData, lbs, function(error,lbs){
-				parseFloatingIps(lbs, vmiData, appData, function(lbs) {
-						callback(null, lbs);
-				});
-		});
+		
+		async.waterfall([
+			async.apply(parseServiceInstanceDetailsfromLB, sviData, lbs),		
+			async.apply(parseInstanceIps, vmiData, appData),
+			async.apply(parseFloatingIps, vmiData, appData) ],
+			function(error, results) {
+				callback(null, results);
+			});
 	});
 }
 
@@ -425,18 +429,18 @@ function parseServiceInstanceDetailsfromLB(sviData, lbs, callback) {
 }
 
 /**
- * @getFloatingIPfromVMI
+ * @getVMIDetailsfromLB
  * @private function
  * @param appData
  * @param lbs
  * @param callback
  * @returns call back the process FloatingIPs from virtual-machine-interfaces
  */
-function getFloatingIPfromVMI(appData, lbs, callback) {
+function getVMIDetailsfromLB(appData, lbs, callback) {
 	var reqUrl = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
-	console.log('getFloatingIPfromVMI');
+	console.log('getVMIDetailsfromLB');
 	var vimUUID = [];
 	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
 		var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
@@ -448,7 +452,7 @@ function getFloatingIPfromVMI(appData, lbs, callback) {
 		}
 	}
 	var lisLength = vimUUID.length;
-	console.log('getFloatingIPfromVMI-lisLength-'+lisLength);
+	console.log('getVMIDetailsfromLB-lisLength-'+lisLength);
 	if(vimUUID.length < 1){
 		callback(null,{});
 		return;
@@ -466,15 +470,36 @@ function getFloatingIPfromVMI(appData, lbs, callback) {
 		return;
 	}
 	async.map(dataObjArr,
-			commonUtils.getAPIServerResponse(configApiServer.apiGet, true),
-				function(error, vmiData) {
-					if (error) {
-						callback(error, null);
-						return;
+		commonUtils.getAPIServerResponse(configApiServer.apiGet, true),
+			function(error, vmiData) {
+				if (error) {
+					callback(error, null);
+					return;
+				}
+				if (lbs['loadbalancers'].length > 0
+						&& vmiData != null && vmiData.length > 0) {
+					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
+						if (lbs['loadbalancers'][j]['loadbalancer'] != null
+								&& vmi_refs != null
+								&& vmi_refs.length > 0) {
+							for (i = 0; i < vmi_refs.length; i++) {
+								for (var l = 0; l < vmiData.length; l++) {
+									vmi=vmiData[l]['virtual-machine-interface']
+									if (vmi_refs[i]['uuid'] == vmi['uuid']) {
+										vmi_refs[i]['name'] = vmi['name'];
+										vmi_refs[i]['display_name'] = vmi['display_name'];
+										vmi_refs[i]['floating-ip'] ={};
+										vmi_refs[i]['instance-ip'] ={};
+									}
+								}
+
+							}
+						}
 					}
-					
-				  callback(null, vmiData);
-				});
+				}
+			  callback(null, vmiData);
+			});
 }
 
 /**
@@ -486,96 +511,154 @@ function getFloatingIPfromVMI(appData, lbs, callback) {
  * @param callback
  * @returns
  */
-function parseFloatingIps(lbs, vmiData, appData, callback) {
+function parseFloatingIps(vmiData, appData, lbs, callback) {
 	console.log('parseFloatingIps');
-		if (lbs['loadbalancers'].length > 0
-				&& vmiData != null && vmiData.length > 0) {
-			for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-				var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-				if (lbs['loadbalancers'][j]['loadbalancer'] != null
-						&& vmi_refs != null
-						&& vmi_refs.length > 0) {
-					for (i = 0; i < vmi_refs.length; i++) {
-						for (var l = 0; l < vmiData.length; l++) {
-							if (vmi_refs[i]['uuid'] == vmiData[l]['virtual-machine-interface']['uuid']) {
-								vmi_refs[i]['name'] = vmiData[l]['virtual-machine-interface']['name'];
-								vmi_refs[i]['display_name'] = vmiData[l]['virtual-machine-interface']['display_name'];
-								vmi_refs[i]['floating-ip'] ={};
-							}
-						}
-
-					}
-				}
-			}
-		}
-		var reqUrlfp = null;
-		var dataObjArr = [];
-		var i = 0, lisLength = 0;
-		vmi = vmiData[0];
-		var floatingipPoolRef = [], floatingipPoolRefsLen = 0;
-		if(vmiData != null && vmiData.length > 0){
+	var reqUrlfp = null;
+	var dataObjArr = [];
+	var i = 0, lisLength = 0;
+	var fIPRef = [], fIPRefsLen = 0;
+	if(vmiData != null && vmiData.length > 0){
+		for(i= 0;i < vmiData.length; i++){
+			vmi = vmiData[i];
 			if ('floating_ip_back_refs' in vmi['virtual-machine-interface']) {
-				floatingipPoolRef = vmi['virtual-machine-interface']['floating_ip_back_refs'];
-				floatingipPoolRefsLen = floatingipPoolRef.length;
+				fIPRef = vmi['virtual-machine-interface']['floating_ip_back_refs'];
+				fIPRefsLen = fIPRef.length;
 			}
 		}
-		for (i = 0; i < floatingipPoolRefsLen; i++) {
-			floatingipObj = floatingipPoolRef[i];
-			reqUrl = '/floating-ip/' + floatingipObj['uuid']
-					+ '?exclude_hrefs=true';
-			commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
-					null, null, null, appData);
-		}
-	
-		if (!dataObjArr.length) {
-			callback(lbs);
-			return;
-		}
-		async
-				.map(
-						dataObjArr,
-						commonUtils.getAPIServerResponse(configApiServer.apiGet,
-								true),
-						function(error, results) {
-							if (error) {
-								callback(error, lbs);
-								return;
-							}
-							if (results != null && results.length > 0) {
-								if (lbs['loadbalancers'].length > 0
-										&& results != null && results.length > 0) {
-									for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-										var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-										if (vmi_refs != null && vmi_refs.length > 0) {
-											for (i = 0; i < vmi_refs.length; i++) {
-												for (var l = 0; l < results.length; l++) {
-													if (results[l]['floating-ip'] != null) {
-														var vmi_ref_fip = results[l]['floating-ip']['virtual_machine_interface_refs']
-														var vmi_ref_fip_len = vmi_ref_fip.length;
-														for (q = 0; q < vmi_ref_fip_len; q++) {
-															if (vmi_refs[i]['uuid'] == vmi_ref_fip[q]['uuid']) {
-																vmi_refs[i]['floating-ip'].ip = results[l]['floating-ip']['floating_ip_address'];
-																vmi_refs[i]['floating-ip'].uuid = results[l]['floating-ip']['uuid'];
-																vmi_refs[i]['floating-ip'].floating_ip_fixed_ip_address = results[l]['floating-ip']['floating_ip_fixed_ip_address'];
-															}
-														}
-	
-													}
-												}
+	}
+	for (i = 0; i < fIPRefsLen; i++) {
+		floatingipObj = fIPRef[i];
+		reqUrl = '/floating-ip/' + floatingipObj['uuid']
+				+ '?exclude_hrefs=true';
+		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
+				null, null, null, appData);
+	}
+
+	if (!dataObjArr.length) {
+		callback(null, lbs);
+		return;
+	}
+	async.map(dataObjArr,
+		commonUtils.getAPIServerResponse(configApiServer.apiGet,
+				true),
+		function(error, results) {
+			if (error) {
+				callback(error, lbs);
+				return;
+			}
+			if (results != null && results.length > 0) {
+				if (lbs['loadbalancers'].length > 0
+						&& results != null && results.length > 0) {
+					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
+						if (vmi_refs != null && vmi_refs.length > 0) {
+							for (i = 0; i < vmi_refs.length; i++) {
+								for (var l = 0; l < results.length; l++) {
+									if (results[l]['floating-ip'] != null) {
+										var vmi_ref_fip = results[l]['floating-ip']['virtual_machine_interface_refs']
+										var vmi_ref_fip_len = vmi_ref_fip.length;
+										for (q = 0; q < vmi_ref_fip_len; q++) {
+											if (vmi_refs[i]['uuid'] == vmi_ref_fip[q]['uuid']) {
+												vmi_refs[i]['floating-ip'].ip = results[l]['floating-ip']['floating_ip_address'];
+												vmi_refs[i]['floating-ip'].uuid = results[l]['floating-ip']['uuid'];
+												vmi_refs[i]['floating-ip'].floating_ip_fixed_ip_address = results[l]['floating-ip']['floating_ip_fixed_ip_address'];
 											}
 										}
+
 									}
 								}
 							}
-							parseVNSubnets(lbs, vmiData, appData, function(lbs) {
-								callback(lbs);
-							});
-						});
+						}
+					}
+				}
+			}
+			parseVNSubnets(lbs, vmiData, appData, function(error, lbs) {
+				callback(error,lbs);
+			});
+		});
 }
 
 /**
- * @parseFloatingIps
- * @private function Return call back it parse the floating-ips.
+ * parseInstanceIps
+ * @private function Return call back it parse the instance-ips.
+ * @param lbs
+ * @param vmiData
+ * @param appData
+ * @param callback
+ * @returns
+ */
+function parseInstanceIps(vmiData, appData, lbs, callback) {
+	console.log('parseInstanceIps');
+	var reqUrlfp = null;
+	var dataObjArr = [];
+	var i = 0, lisLength = 0;
+	var instanceipPoolRef = [], instanceipPoolRefsLen = 0;
+	if(vmiData != null && vmiData.length > 0){
+		for(i= 0;i < vmiData.length; i++){
+			vmi = vmiData[i];
+			if ('instance_ip_back_refs' in vmi['virtual-machine-interface']) {
+				instanceipPoolRef = vmi['virtual-machine-interface']['instance_ip_back_refs'];
+				instanceipPoolRefsLen = instanceipPoolRef.length;
+			}
+		}
+	}
+//	console.log("instance_ip_back_refs:",instanceipPoolRef);
+	for (i = 0; i < instanceipPoolRefsLen; i++) {
+		instanceipObj = instanceipPoolRef[i];
+		reqUrl = '/instance-ip/' + instanceipObj['uuid']
+				+ '?exclude_hrefs=true';
+		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
+				null, null, null, appData);
+	}
+
+	if (!dataObjArr.length) {
+		callback(null, lbs);
+		return;
+	}
+	async.map(dataObjArr,
+		commonUtils.getAPIServerResponse(configApiServer.apiGet,
+				true),
+		function(error, results) {
+			if (error) {
+				callback(error, lbs);
+				return;
+			}
+			//console.log(JSON.stringify(results));
+			if (results != null && results.length > 0) {
+				if (lbs['loadbalancers'].length > 0
+						&& results != null && results.length > 0) {
+					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
+						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
+						if (vmi_refs != null && vmi_refs.length > 0) {
+							//console.log(j+":vmi_refs",vmi_refs);
+							for (i = 0; i < vmi_refs.length; i++) {
+								for (var l = 0; l < results.length; l++) {
+									if (results[l]['instance-ip'] != null) {
+										var vmi_ref_instanceIP = results[l]['instance-ip']['virtual_machine_interface_refs']
+										var vmi_ref_instanceIP_len = vmi_ref_instanceIP.length;
+										for (q = 0; q < vmi_ref_instanceIP_len; q++) {
+											//console.log("vmi_ref_instanceIP",vmi_ref_instanceIP);
+											if (vmi_refs[i]['uuid'] == vmi_ref_instanceIP[q]['uuid']) {
+												vmi_refs[i]['instance-ip'].instance_ip_address = results[l]['instance-ip']['instance_ip_address'];
+												vmi_refs[i]['instance-ip'].uuid = results[l]['instance-ip']['uuid'];
+												vmi_refs[i]['instance-ip'].instance_ip_mode = results[l]['instance-ip']['instance_ip_mode'];
+											}
+										}
+
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			callback(null,lbs);
+		});
+}
+
+/**
+ * parseVNSubnets
+ * @private function Return call back it parse the subnet info.
  * @param lbs
  * @param vmiData
  * @param appData
@@ -587,11 +670,13 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
-	vmi = vmiData[0];
 	var vrPoolRef = [], vrPoolRefsLen = 0;
-	if ('virtual_network_refs' in vmi['virtual-machine-interface']) {
-		vrPoolRef = vmi['virtual-machine-interface']['virtual_network_refs'];
-		vrPoolRefsLen = vrPoolRef.length;
+	for(i= 0;i < vmiData.length; i++){
+		vmi = vmiData[i];
+		if ('virtual_network_refs' in vmi['virtual-machine-interface']) {
+			vrPoolRef = vmi['virtual-machine-interface']['virtual_network_refs'];
+			vrPoolRefsLen = vrPoolRef.length;
+		}
 	}
 	for (i = 0; i < vrPoolRefsLen; i++) {
 		vrObj = vrPoolRef[i];
@@ -601,10 +686,7 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
 	}
 
 	if (!dataObjArr.length) {
-		// var error = new appErrors.RESTServerError('Invalid virtual-network
-		// Data');
-		// callback(error, null);
-		callback(lbs);
+		callback(null,lbs);
 		return;
 	}
 	async.map(
@@ -640,7 +722,7 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
 					}
 				}
 			}
-			callback(lbs);
+			callback(null,lbs);
 		});
 }
 
@@ -1118,17 +1200,22 @@ function createLoadBalancer(request, response, appData) {
         return;
     }
 	async.waterfall([
-		async.apply(createLoadBalancerValidate, appData, postData),
+		async.apply(createNewVMIObject, request, response, appData, postData),
+		async.apply(createLoadBalancerValidate, appData),
 		async.apply(createListenerValidate, appData),
-		async.apply(createPoolMembers, appData) 
-		
+		async.apply(createPoolMembers, appData)
 		], 
 		function(error, postData) {
+			if (error) {
+				commonUtils.handleJSONResponse(error, response, null);
+				return;
+			}
 		 	var lbId = postData["loadbalancer"]["uuid"];
 			readLBwithUUID(lbId, appData, function(error, results){
 				commonUtils.handleJSONResponse(error, response, results);
 			});
 		});
+
 }
 
 
@@ -1139,7 +1226,7 @@ function createLoadBalancer(request, response, appData) {
 * 1. Basic validation before creating the Load Balancer
 */
 function createLoadBalancerValidate (appData, postData, callback){
-	console.log('createLoadBalancerValidate');
+	console.log('createLoadBalancerValidate', postData);
 	if (!('loadbalancer' in postData)) {
         error = new appErrors.RESTServerError('Load Balancer object missing ');
         callback(error, postData);
@@ -1191,7 +1278,7 @@ function createLoadBalancerValidate (appData, postData, callback){
 				callback(error, null);
 				return;
 			}
-			//console.log('lbData:'+ JSON.stringify(lbData));
+			console.log('lbData:'+ JSON.stringify(lbData));
 			var lbId = lbData['loadbalancer']['uuid'];
 			readLBwithUUID(lbId, appData, function(err, lbData) {
 				if (err) {
@@ -1602,9 +1689,20 @@ function deleteListenerCB(uuid, appData, callback){
 }
 
 function deleteListenerByUUIDList(llIds, appData, callback) {
+	console.log('deleteListenerByUUIDList:');
 	var dataObjArr = [];
-	var rowsCnt = llIds.length;
-	deleteListenerRefs(llIds, appData, function(err, outputs) {
+	
+	var allDataArr = [];
+	for(i=0; i< llIds.length; i++){
+        if(llIds[i]['uuid']!=null){
+			 allDataArr.push({
+			        uuid: llIds[i]['uuid'],
+			        appData: appData
+			    });
+        }
+	}
+	async.mapSeries(allDataArr, deleteListenerRefs, function(error, outputs){
+		var rowsCnt = llIds.length;
 		for (var i = 0; i < rowsCnt; i++) {
 			reqUrl = '/loadbalancer-listener/' + llIds[i]['uuid']
 			commonUtils.createReqObj(dataObjArr, reqUrl,
@@ -1616,22 +1714,23 @@ function deleteListenerByUUIDList(llIds, appData, callback) {
 				callback(error, null);
 				return;
 			}
+			lastMessage= printMessage(outputs);
 			var newMessage={};
 			newMessage.message="All Listener are deleted....";
-			callback(null,appendMessage(newMessage, outputs));
+			callback(null,appendMessage(newMessage, lastMessage));
 		});
 	});
 }
 
-function deleteListenerRefs(llIds, appData, callback){
+function deleteListenerRefs(pDataObj, callback){
 	console.log('deleteListenerRefs');	
 	var dataObjArr = [];
-	var rowsCnt = llIds.length;
-	for (var i = 0; i < rowsCnt; i++) {
-		reqUrl = '/loadbalancer-listener/' + llIds[i]['uuid'];
-		commonUtils.createReqObj(dataObjArr, reqUrl,
-				global.HTTP_REQUEST_GET, null, null, null, appData);
-	}
+	var appData= pDataObj['appData'];
+	var lId =  pDataObj['uuid'];	
+	reqUrl = '/loadbalancer-listener/' + lId;
+	commonUtils.createReqObj(dataObjArr, reqUrl,
+			global.HTTP_REQUEST_GET, null, null, null, appData);
+	
 	async.map(dataObjArr, commonUtils.getAPIServerResponse(
 	  configApiServer.apiGet, true), function(error, results) {
 		if (error) {
@@ -1648,11 +1747,24 @@ function deleteListenerRefs(llIds, appData, callback){
 			return;
 		}
 		getPoolListbyIds(p_back_refs, appData, function(error, pLists){
-			deletePoolMembers(pLists, appData, function(error, results) {
+			var allDataArr = [];
+			for(i=0; i< pLists.length; i++){
+		        if(pLists[i]['loadbalancer-pool']!=null){
+		        		var ref={};	
+		        		ref['loadbalancer-pool'] = pLists[i]['loadbalancer-pool'];
+					 allDataArr.push({
+					        pData: ref,
+					        appData: appData
+					    });
+		        }
+			}
+			async.mapSeries(allDataArr, deletePoolMembers, function(error, results){
+				lastMessage= printMessage(results);
 				var newMessage={};
 				newMessage.message="All Listener refs are deleted....";
-				callback(null,appendMessage(newMessage, results));
-			});
+				console.log("............"+lastMessage);
+				callback(null,appendMessage(newMessage, lastMessage));
+			 });
 		});
 	});	
 }
@@ -2004,17 +2116,16 @@ function deletePoolCB(uuid, callback){
 	     });
 }
 
-function deletePoolMembers(pLists, appData, callback){
-	console.log('deletePoolMembers');
+function deletePoolMembers(pDataObj, callback){
 	async.waterfall([
-		async.apply(deleteMembersbypList, appData, pLists),
-		async.apply(deletePoolsByUUIDList, appData, pLists),
-		async.apply(deleteHealthMonitorsbypList, appData, pLists),
+		async.apply(deleteMembersbypData, pDataObj),
+		async.apply(deletePoolsBypData, pDataObj),
+		async.apply(deleteHealthMonitorsbypData, pDataObj),
 		],
 	 function(err, results) {
 		if(err){
 			callback(err, null);
-		}
+		}	
 		callback(null, results);	
 	});
 }
@@ -2043,15 +2154,23 @@ function getPoolListbyIds(pIds, appData, callback){
 	
 }
 
-function deletePoolsByUUIDList(appData, pIds, message, callback) {
-	console.log('deletePoolsByUUIDList');	
+function deletePoolsBypData(pDataObj, message, callback) {
+	console.log('deletePoolsBypData');	
+	var appData= pDataObj['appData'];
+	var pId =  pDataObj['pData'];
+	//console.log('deletePoolsBypData', pId);	
+	
 	var dataObjArr = [];
-	var rowsCnt = pIds.length;
+	/*var rowsCnt = pIds.length;
 	for (var i = 0; i < rowsCnt; i++) {
 		reqUrl = '/loadbalancer-pool/' + pIds[i]['loadbalancer-pool']['uuid']
 		commonUtils.createReqObj(dataObjArr, reqUrl,
 				global.HTTP_REQUEST_DELETE, null, null, null, appData);
-	}
+	}*/
+	reqUrl = '/loadbalancer-pool/' + pId['loadbalancer-pool']['uuid']
+	commonUtils.createReqObj(dataObjArr, reqUrl,
+			global.HTTP_REQUEST_DELETE, null, null, null, appData);
+	
 	async.map(dataObjArr, commonUtils.getAPIServerResponse(
 			configApiServer.apiDelete, true), function(error, results) {
 		if (error) {
@@ -2099,7 +2218,7 @@ function createMember(request, response, appData) {
         callback(error, null);
         return;
     }
-	if (!(p_uuid = request.param('pid').toString())) {
+	if (!(p_uuid = request.param('uuid').toString())) {
 		error = new appErrors.RESTServerError('Pool uuid is missing');
 		commonUtils.handleJSONResponse(error, response, null);
 		return;
@@ -2109,26 +2228,30 @@ function createMember(request, response, appData) {
         callback(error, postData);
         return;
     }
-	readPoolwithUUID(pId, appData, function(error, poolData){
+	readPoolwithUUID(p_uuid, appData, function(error, poolData){
 		if (error) {
 			callback(error, null);
 			return;
 		}
-		var members= postData['loadbalancer-member'];
+		
+		var members= commonUtils.cloneObj(postData);
+		console.log(members);
 		var allDataObj =[];
-		if(members.length > 0 ){
-			for(i=0; i<members.length; i++){
+		if(members['loadbalancer-member'].length > 0 ){
+			for(i=0; i< members['loadbalancer-member'].length; i++){
 				members['loadbalancer-member'][i]['fq_name'][2] = poolData['loadbalancer-pool']['name'];
 				members['loadbalancer-member'][i]['parent_type'] = 'loadbalancer-pool';
 				var mObj = {};
-				mObj['loadbalancer-member'] = members[i];
+				mObj['loadbalancer-member'] = members['loadbalancer-member'][i];
+				console.log('mObj:'+ JSON.stringify(mObj));
 			    mObj['appData'] = appData;
 			    allDataObj.push(mObj);
 			}
 		}
-		createMemberValidate(dataObj, function(error, results) {
-		    commonUtils.handleJSONResponse(error, response, results);
-		}) ;
+		async.mapSeries(allDataObj, createMemberValidate, function(err, data) {
+			 postData['loadbalancer-member']= data;
+			 commonUtils.handleJSONResponse(error, response, postData);
+	     });
 	});
 }
 
@@ -2292,20 +2415,19 @@ function deleteMember(request, response, appData) {
      });
 }
 
-function deleteMembersbypList(appData, pIds, callback){
-	console.log('deleteMembersbypList');	
-		var mIds=[];
-		for(i=0; i<pIds.length; i++){
-			var memberRef= pIds[i]['loadbalancer-pool']['loadbalancer_members'];
-			if(memberRef!= undefined && memberRef.length > 0){
-				for(j=0; j< memberRef.length; j++){
-					mIds.push(memberRef[j]);
-				}
-			}
+function deleteMembersbypData(pDataObj, callback){
+	var appData= pDataObj['appData'];
+	var pId =  pDataObj['pData'];
+	var memberRef= pId['loadbalancer-pool']['loadbalancer_members'];
+	var mIds=[];
+	if(memberRef!= undefined && memberRef.length > 0){
+		for(j=0; j< memberRef.length; j++){
+			mIds.push(memberRef[j]);
 		}
-		deleteMembersByUUIDList(mIds,appData, function(error, results){
-			callback(null, results);
-		});
+	}
+	deleteMembersByUUIDList(mIds,appData, function(error, results){
+		callback(null, results);
+	});
 }
 
 function deleteMembersByUUIDList(mIds, appData, callback) {
@@ -2571,36 +2693,42 @@ function deleteHealthMonitorCB(uuid, appData, callback){
 	     });
 }
 
-function deleteHealthMonitorsbypList(appData, pIds, message, callback){
-	console.log('deleteHealthMonitorsbypList');	
-	var hmIds=[];
-	for(i=0; i< pIds.length; i++){
-        if(pIds[i]['loadbalancer-pool']!=null){
-			var ref= pIds[i]['loadbalancer-pool']['loadbalancer_healthmonitor_refs'];
-			if(ref.length > 0){
-				for(j=0; j< ref.length; j++){
-					hmIds.push(ref[j]);
-				}
-			}
-        }
-		
+function deleteHealthMonitorsbypData(pDataObj, message, callback){
+	console.log('deleteHealthMonitorsbypData');	
+	var appData= pDataObj['appData'];
+	var pId =  pDataObj['pData'];
+	var allDataArr = [];
+	var ref= pId['loadbalancer-pool']['loadbalancer_healthmonitor_refs'];
+	if(ref.length > 0){
+		for(j=0; j< ref.length; j++){
+			 allDataArr.push({
+			        hmData: ref[j],
+			        appData: appData,
+			        message:message
+			    });
+		}
 	}
-	//console.log("hmIds:", hmIds);
-	deleteHealthMonitorsByUUIDList(hmIds,appData,message, function(error, results){
-		callback(null, results);
-	});
+	async.mapSeries(allDataArr, deleteHealthMonitorsById, function(error, message){
+         if(error){
+         		callback(error, null);
+             return;
+         }
+         message= printMessage(message);
+         callback(null, message);
+	 });
+	
 }
 
-
-function deleteHealthMonitorsByUUIDList(hmIds, appData, message, callback) {
-	console.log('deleteHealthMonitorsByUUIDList');	
+function deleteHealthMonitorsById(pDataObj, callback) {
+	console.log('deleteHealthMonitorsById');	
+	var appData= pDataObj['appData'];
+	var hmId =  pDataObj['hmData'];	
+	var message = pDataObj['message'];	
 	var dataObjArr = [];
-	var rowsCnt = hmIds.length;
-	for (var i = 0; i < rowsCnt; i++) {
-		reqUrl = '/loadbalancer-healthmonitor/' + hmIds[i]['uuid']
-		commonUtils.createReqObj(dataObjArr, reqUrl,
-				global.HTTP_REQUEST_DELETE, null, null, null, appData);
-	}
+	reqUrl = '/loadbalancer-healthmonitor/' + hmId['uuid']
+	commonUtils.createReqObj(dataObjArr, reqUrl,
+			global.HTTP_REQUEST_DELETE, null, null, null, appData);
+	
 	async.map(dataObjArr, commonUtils.getAPIServerResponse(
 			configApiServer.apiDelete, true), function(error, results) {
 		if (error) {
@@ -2613,95 +2741,88 @@ function deleteHealthMonitorsByUUIDList(hmIds, appData, message, callback) {
 	});
 }
 
-/**
- * @createPortValidate
- * private function
- * 1. Basic validation before creating the port(VMI)
- */
-function createPortValidate (request, data, appData, callback)
-{	
-    var portsCreateURL = '/virtual-machine-interfaces';
-    var portPostData = data;
-    var orginalPortData = commonUtils.cloneObj(data);
-
-    if (typeof(portPostData) != 'object') {
-        error = new appErrors.RESTServerError('Invalid Post Data');
-        callback(error, null);
-        return;
-    }
-
-   
-
-    if ('instance_ip_back_refs' in portPostData['virtual-machine-interface']) {
-        delete portPostData['virtual-machine-interface']['instance_ip_back_refs'];
-    }
-
-    if ('virtual_machine_refs' in portPostData['virtual-machine-interface']){
-        delete portPostData['virtual-machine-interface']['virtual_machine_refs'];
-    }
-    
-/*    if ('virtual_machine_interface_refs' in portPostData['virtual-machine-interface']){
-        delete portPostData['virtual-machine-interface']['virtual_machine_interface_refs'];
-    }*/
-    
-    var lrUUID = '';
-    if ('logical_router_back_refs' in portPostData['virtual-machine-interface']) {
-        if (portPostData['virtual-machine-interface']['logical_router_back_refs'].length === 1) {
-            lrUUID = portPostData['virtual-machine-interface']['logical_router_back_refs'][0]['uuid'];
-        }
-        delete portPostData['virtual-machine-interface']['logical_router_back_refs'];
-    }
-    if (('virtual_machine_interface_device_owner' in portPostData['virtual-machine-interface']) && 
-        (portPostData['virtual-machine-interface']['virtual_machine_interface_device_owner']).substring(0,7) == 'compute'){
-        //portPostData['virtual-machine-interface']['virtual_machine_interface_device_owner'] = '';
-        delete portPostData['virtual-machine-interface']['virtual_machine_interface_device_owner'];
-    }
-    configApiServer.apiPost(portsCreateURL, portPostData, appData,
-                            function(error, vmisData) {
-        if (error) {
-            callback(error, null);
+function createNewVMIObject(request, response, appData, postData, callback){
+	  	console.log('createNewVMIObject');	
+		var vmi={};
+		vmi['virtual-machine-interface'] = {};
+		vmi['virtual-machine-interface'].parent_type = postData['loadbalancer']['parent_type'];
+		vmi['virtual-machine-interface'].virtual_machine_interface_device_owner = 'neutron:LOADBALANCER';
+		
+		var fqName=[];
+		fqName.push(postData['loadbalancer']['fq_name'][0]);
+		fqName.push(postData['loadbalancer']['fq_name'][1]);
+		
+		vmi['virtual-machine-interface']['fq_name'] = fqName
+		
+		var secGrp =[];
+		secGrp.push(postData['loadbalancer']['fq_name'][0]);
+		secGrp.push(postData['loadbalancer']['fq_name'][1]);
+		secGrp.push('default');
+		
+		vmi['virtual-machine-interface']['security_group_refs'] =  [{'to' : secGrp}];
+		
+		var vnRef =[];
+		vnRef.push(postData['loadbalancer']['fq_name'][0]);
+		vnRef.push(postData['loadbalancer']['fq_name'][1]);
+		vnRef.push('testvn1');
+		vmi['virtual-machine-interface']['virtual_network_refs'] =  [{'to' : vnRef}];
+		
+		var instanceIp= '{"instance_ip_address":[ {  '+
+	                    // '   "fixedIp":"'+postData['loadbalancer']['loadbalancer_properties']['vip_address']+'",'+
+	                     '   "fixedIp":"",'+
+	                     '   "domain":"'+postData['loadbalancer']['fq_name'][0]+'",'+
+	                     '   "project":"'+postData['loadbalancer']['fq_name'][1]+'"}],'+
+	                     ' "subnet_uuid":"'+postData['loadbalancer']['loadbalancer_properties']['vip_subnet_id']+'"}';
+		
+		vmi['virtual-machine-interface']['instance_ip_back_refs'] =  [JSON.parse(instanceIp)];
+		var allDataArr = [];
+	  allDataArr.push({
+          request: request,
+          vmidata: vmi,
+          response: response,
+          appData: appData
+      });
+		 async.mapSeries(allDataArr, portConfig.createPortCB, function(error, data){
+        if(error){
+        		callback(error, null);
             return;
         }
-        var portId = vmisData['virtual-machine-interface']['uuid'];
-        readVMIwithUUID(portId, appData, function(err, vmiData){
-            if (err) {
-                callback(err, vmiData);
-                return;
-            }
-            portSendResponse(error, request, vmiData, orginalPortData, appData, function (err, results) {
-                    callback(err, results);
-                    return;
-            });
-        });
+        var vmi= data[0]['virtual-machine-interface'];
+        console.log("VMI:"+ JSON.stringify(data));
+    		var vmiRef = vmi['fq_name'];
+    		postData['loadbalancer']['virtual_machine_interface_refs']= [{'to' : vmiRef}];
+    		if ((!('loadbalancer' in postData)) ||
+    		        (!('instance_ip_back_refs' in postData['loadbalancer']))) {
+    	       callback(null, postData);
+    	        return;
+    	    }
+    		var instanceUUID= vmi['instance_ip_back_refs'][0]['uuid'];
+    		readInstanceIPwithUUID(instanceUUID, appData, function(error, instanceData){
+ 	    		console.log("instanceUUID:"+instanceData);
+ 	    		
+ 	    		var vipAddress = postData['loadbalancer']['loadbalancer_properties']['vip_address'];
+ 	    		if(vipAddress== null || vipAddress==""){
+ 	    			vipAddress = instanceData['instance-ip']['instance_ip_address'];
+ 	    		}
+    			callback(null, postData);
+    		});
+    		
     });
 }
-    
-  function createVMIDummyObject(llPostData, callback){
-    		var vmi={};
-    		var uuid = UUID.create();
-    		vmi['virtual-machine-interface']['uuid'] = uuid['hex'];
-    		vmi['virtual-machine-interface']['fq_name'][0] = llPostData['loadbalancer']['fq_name'][0];
-    		vmi['virtual-machine-interface']['fq_name'][1] = llPostData['loadbalancer']['fq_name'][1];
-    		vmi['virtual-machine-interface']['fq_name'][2] = uuid['hex'];
-    		vmi['virtual-machine-interface']['display_name'] = uuid['hex'];
-    		vmi['virtual-machine-interface']['name'] = uuid['hex'];
-    		
-    		vmi['virtual-machine-interface']['parent_type'] = llPostData['loadbalancer']['parent_type'];
-    		vmi['virtual-machine-interface']['id_perms'] = {enable : true};
-    		
-    		vmi['virtual-machine-interface']['security_group_refs'][0] = llPostData['loadbalancer']['fq_name'][0];
-    		vmi['virtual-machine-interface']['security_group_refs'][1] = llPostData['loadbalancer']['fq_name'][1]; 
-    		vmi['virtual-machine-interface']['security_group_refs'][2] = 'default';
-    		
-    		vmi['virtual-machine-interface']['virtual_machine_interface_device_owner'] = 'neutron:LOADBALANCER';
-    		
-    	       
-    	       
-    		callback(null, vmi);
-    		
-   
-    }
   
+  
+  
+  function readInstanceIPwithUUID(ipId, appData, callback){
+		console.log('readInstanceIPwithUUID');
+	var pURL = '/instance-ip/' + ipId;
+		configApiServer.apiGet(pURL, appData, function(error, result) {
+			if (error) {
+				callback(error, null);
+				return;
+			}
+			callback(null, result);
+		});
+	}
   /**
    * @appendMessage
    * private function
@@ -2717,6 +2838,16 @@ function appendMessage(newMessage, existingMessage) {
       }
       return existingMessage;
   }
+
+function printMessage(listMessage) {
+	var len= listMessage.length;
+	newMessage={};
+	newMessage.message="";
+	for(i=0;i<len;i++){
+		newMessage.message += listMessage[i].message + '<br>';
+	}
+    return newMessage;
+}
 
 exports.listListenersByLBId = listListenersByLBId;
 exports.listPoolsByListernerId = listPoolsByListernerId;
