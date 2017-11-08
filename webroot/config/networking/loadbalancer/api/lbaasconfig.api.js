@@ -457,12 +457,11 @@ function getVMIDetailsfromLB(appData, lbs, callback) {
 		callback(null,{});
 		return;
 	}
-	for (i = 0; i < lisLength; i++) {
-		reqUrl = '/virtual-machine-interface/' + vimUUID[i]
-				+ '?exclude_hrefs=true&exclude_Refs=true';
+	_.each(vimUUID, function(id) {
+		reqUrl = '/virtual-machine-interface/' + id + '?exclude_hrefs=true&exclude_Refs=true';
 		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
 				null, null, null, appData);
-	}
+	});
 	if (!dataObjArr.length) {
 		var error = new appErrors.RESTServerError(
 				'Invalid virtual machine interface Data');
@@ -516,23 +515,22 @@ function parseFloatingIps(vmiData, appData, lbs, callback) {
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
-	var fIPRef = [], fIPRefsLen = 0;
+	var fIPRefs = [];
 	if(vmiData != null && vmiData.length > 0){
-		for(i= 0;i < vmiData.length; i++){
-			vmi = vmiData[i];
+		_.each(vmiData, function(vmi) {
 			if ('floating_ip_back_refs' in vmi['virtual-machine-interface']) {
-				fIPRef = vmi['virtual-machine-interface']['floating_ip_back_refs'];
-				fIPRefsLen = fIPRef.length;
+				var floatingRefs = vmi['virtual-machine-interface']['floating_ip_back_refs'];
+				_.each(floatingRefs, function(fp) {
+					fIPRefs.push(fp['uuid']);
+				});
 			}
-		}
+		});
 	}
-	for (i = 0; i < fIPRefsLen; i++) {
-		floatingipObj = fIPRef[i];
-		reqUrl = '/floating-ip/' + floatingipObj['uuid']
-				+ '?exclude_hrefs=true';
+	_.each(fIPRefs, function(id) {
+		reqUrl = '/floating-ip/' + id + '?exclude_hrefs=true';
 		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
-				null, null, null, appData);
-	}
+		null, null, null, appData);
+	});
 
 	if (!dataObjArr.length) {
 		callback(null, lbs);
@@ -549,19 +547,21 @@ function parseFloatingIps(vmiData, appData, lbs, callback) {
 			if (results != null && results.length > 0) {
 				if (lbs['loadbalancers'].length > 0
 						&& results != null && results.length > 0) {
-					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-						if (vmi_refs != null && vmi_refs.length > 0) {
-							for (i = 0; i < vmi_refs.length; i++) {
-								for (var l = 0; l < results.length; l++) {
-									if (results[l]['floating-ip'] != null) {
-										var vmi_ref_fip = results[l]['floating-ip']['virtual_machine_interface_refs']
+					for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+						var lb_vmi_refs = lbs['loadbalancers'][lb]['loadbalancer']['virtual_machine_interface_refs'];
+						if (lb_vmi_refs != null && lb_vmi_refs.length > 0) {
+							for (vmi = 0; vmi < lb_vmi_refs.length; vmi++) {
+								//console.log("lb_vmi_refs",lb_vmi_refs[vmi]);
+								for (var fp = 0; fp < results.length; fp++) {
+									if (results[fp]['floating-ip'] != null) {
+										var vmi_ref_fip = results[fp]['floating-ip']['virtual_machine_interface_refs']
+										//console.log("vmi_ref_fip",vmi_ref_fip);
 										var vmi_ref_fip_len = vmi_ref_fip.length;
-										for (q = 0; q < vmi_ref_fip_len; q++) {
-											if (vmi_refs[i]['uuid'] == vmi_ref_fip[q]['uuid']) {
-												vmi_refs[i]['floating-ip'].ip = results[l]['floating-ip']['floating_ip_address'];
-												vmi_refs[i]['floating-ip'].uuid = results[l]['floating-ip']['uuid'];
-												vmi_refs[i]['floating-ip'].floating_ip_fixed_ip_address = results[l]['floating-ip']['floating_ip_fixed_ip_address'];
+										for (x = 0; x < vmi_ref_fip_len; x++) {
+											if (lb_vmi_refs[vmi]['uuid'] == vmi_ref_fip[x]['uuid']) {
+												lb_vmi_refs[vmi]['floating-ip'].ip = results[fp]['floating-ip']['floating_ip_address'];
+												lb_vmi_refs[vmi]['floating-ip'].uuid = results[fp]['floating-ip']['uuid'];
+												lb_vmi_refs[vmi]['floating-ip'].floating_ip_fixed_ip_address = results[fp]['floating-ip']['floating_ip_fixed_ip_address'];
 											}
 										}
 
@@ -592,25 +592,24 @@ function parseInstanceIps(vmiData, appData, lbs, callback) {
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
-	var instanceipPoolRef = [], instanceipPoolRefsLen = 0;
+	
+	var instanceipPoolRef = [];
 	if(vmiData != null && vmiData.length > 0){
-		for(i= 0;i < vmiData.length; i++){
-			vmi = vmiData[i];
+		_.each(vmiData, function(vmi) {
 			if ('instance_ip_back_refs' in vmi['virtual-machine-interface']) {
-				instanceipPoolRef = vmi['virtual-machine-interface']['instance_ip_back_refs'];
-				instanceipPoolRefsLen = instanceipPoolRef.length;
+				var instanceRefs = vmi['virtual-machine-interface']['instance_ip_back_refs'];
+				_.each(instanceRefs, function(ip) {
+					instanceipPoolRef.push(ip['uuid']);
+				});
 			}
-		}
+		});
 	}
 //	console.log("instance_ip_back_refs:",instanceipPoolRef);
-	for (i = 0; i < instanceipPoolRefsLen; i++) {
-		instanceipObj = instanceipPoolRef[i];
-		reqUrl = '/instance-ip/' + instanceipObj['uuid']
-				+ '?exclude_hrefs=true';
+	_.each(instanceipPoolRef, function(id) {
+		reqUrl = '/instance-ip/' + id + '?exclude_hrefs=true';
 		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
-				null, null, null, appData);
-	}
-
+		null, null, null, appData);
+	});
 	if (!dataObjArr.length) {
 		callback(null, lbs);
 		return;
@@ -627,21 +626,22 @@ function parseInstanceIps(vmiData, appData, lbs, callback) {
 			if (results != null && results.length > 0) {
 				if (lbs['loadbalancers'].length > 0
 						&& results != null && results.length > 0) {
-					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-						if (vmi_refs != null && vmi_refs.length > 0) {
-							//console.log(j+":vmi_refs",vmi_refs);
-							for (i = 0; i < vmi_refs.length; i++) {
-								for (var l = 0; l < results.length; l++) {
-									if (results[l]['instance-ip'] != null) {
-										var vmi_ref_instanceIP = results[l]['instance-ip']['virtual_machine_interface_refs']
-										var vmi_ref_instanceIP_len = vmi_ref_instanceIP.length;
-										for (q = 0; q < vmi_ref_instanceIP_len; q++) {
-											//console.log("vmi_ref_instanceIP",vmi_ref_instanceIP);
-											if (vmi_refs[i]['uuid'] == vmi_ref_instanceIP[q]['uuid']) {
-												vmi_refs[i]['instance-ip'].instance_ip_address = results[l]['instance-ip']['instance_ip_address'];
-												vmi_refs[i]['instance-ip'].uuid = results[l]['instance-ip']['uuid'];
-												vmi_refs[i]['instance-ip'].instance_ip_mode = results[l]['instance-ip']['instance_ip_mode'];
+					for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+						var lb_vmi_refs = lbs['loadbalancers'][lb]['loadbalancer']['virtual_machine_interface_refs'];
+						if (lb_vmi_refs != null && lb_vmi_refs.length > 0) {
+							for (vmi = 0; vmi < lb_vmi_refs.length; vmi++) {
+								//console.log("lb_vmi_refs",lb_vmi_refs[vmi]);
+								for (var ip = 0; ip < results.length; ip++) {
+									if (results[ip]['instance-ip'] != null) {
+										var vmi_ref_ip = results[ip]['instance-ip']['virtual_machine_interface_refs']
+										//console.log("vmi_ref_ip",vmi_ref_ip);
+										var vmi_ref_ip_len = vmi_ref_ip.length;
+										for (x = 0; x < vmi_ref_ip_len; x++) {
+											if (lb_vmi_refs[vmi]['uuid'] == vmi_ref_ip[x]['uuid']) {
+												lb_vmi_refs[vmi]['instance-ip'].instance_ip_address = results[ip]['instance-ip']['instance_ip_address'];
+												lb_vmi_refs[vmi]['instance-ip'].uuid = results[ip]['instance-ip']['uuid'];
+												lb_vmi_refs[vmi]['instance-ip'].instance_ip_mode = results[ip]['instance-ip']['instance_ip_mode'];
+
 											}
 										}
 
@@ -670,20 +670,18 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
-	var vrPoolRef = [], vrPoolRefsLen = 0;
+	var vrPoolRef = [];
 	for(i= 0;i < vmiData.length; i++){
 		vmi = vmiData[i];
 		if ('virtual_network_refs' in vmi['virtual-machine-interface']) {
 			vrPoolRef = vmi['virtual-machine-interface']['virtual_network_refs'];
-			vrPoolRefsLen = vrPoolRef.length;
 		}
 	}
-	for (i = 0; i < vrPoolRefsLen; i++) {
-		vrObj = vrPoolRef[i];
+	_.each(vrPoolRef, function(vrObj) {
 		reqUrl = '/virtual-network/' + vrObj['uuid'] + '?exclude_hrefs=true';
 		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
 				null, null, null, appData);
-	}
+	});
 
 	if (!dataObjArr.length) {
 		callback(null,lbs);
@@ -2804,6 +2802,7 @@ function createNewVMIObject(request, response, appData, postData, callback){
         		callback(error, null);
             return;
         }
+        console.log("VMI:"+ JSON.stringify(data));
         var vmi= data[0]['virtual-machine-interface'];
        // console.log("VMI:"+ JSON.stringify(vmi));
     		var vmiRef = vmi['fq_name'];
