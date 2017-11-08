@@ -5,9 +5,9 @@
 define(
         [ 'lodashv4', 'contrail-view',
          'contrail-charts-view', 'contrail-list-model',
-         'monitor/networking/trafficgroups/ui/js/views/TrafficGroupsSettingsView',
-         'monitor/networking/trafficgroups/ui/js/models/TrafficGroupsSettingsModel',
-         'monitor/networking/trafficgroups/ui/js/models/TrafficGroupsFilterModel',
+         'monitor/security/trafficgroups/ui/js/views/TrafficGroupsSettingsView',
+         'monitor/security/trafficgroups/ui/js/models/TrafficGroupsSettingsModel',
+         'monitor/security/trafficgroups/ui/js/models/TrafficGroupsFilterModel',
          "core-basedir/js/views/ContainerSettingsView"],
         function(_, ContrailView, ContrailChartsView,
                 ContrailListModel, settingsView, settingsModel, filterModel, ContainerSettings) {
@@ -19,10 +19,12 @@ define(
                     'deployment': [],
                     'site': []
                 },
+                clientData: [],
+                serverData: [],
                 showOtherProjectTraffic: false,
                 combineEmptyTags: false,
                 matchArcsColorByCategory: false,
-                enableSessionDrilldown: false,
+                enableSessionDrilldown: true,
                 sliceByProjectOnly: true,
                 // Provide colours list for top level arcs
                 topLevelArcColors: cowc['TRAFFIC_GROUP_COLOR_LEVEL1'].slice(0,1),
@@ -32,7 +34,7 @@ define(
                     tgView.renderTrafficChart();
                 },
                 showSessionsInfo: function() {
-                    require(['monitor/networking/trafficgroups/ui/js/views/TrafficGroupsEPSTabsView'], function(EPSTabsView) {
+                    require(['monitor/security/trafficgroups/ui/js/views/TrafficGroupsEPSTabsView'], function(EPSTabsView) {
                         var linkInfo = tgView.getLinkInfo(tgView.selectedLinkData),
                             linkData = {
                                 endpointNames: [linkInfo.srcTags, linkInfo.dstTags],
@@ -50,33 +52,98 @@ define(
                         epsTabsView.render(linkData);
                     });
                 },
-                showLinkSessions: function() {
-                    require(['monitor/networking/trafficgroups/ui/js/views/TrafficGroupsEPSTabsView'], function(EPSTabsView) {
-                        var linkInfo = tgView.getLinkInfo(tgView.selectedLinkData),
-                            endpoint1Data = [], endpoint2Data = [],
-                            curSession = linkInfo.links[0].data.dataChildren[0];
-                        _.each(tgView.getCategorizationObj(), function(tags) {
+                getTagsFromSession: function(session, level, external) {
+                    if(session) {
+                        var sliceByProject =
+                                tgView.getSettingValue('sliceByProject', false),
+                            operator = 1;
+                        if(sliceByProject && !this.sliceByProjectOnly) {
+                            var vn = session['vn'],
+                                remoteVN = session['eps.traffic.remote_vn'];
+                        } else {
+                            var vn = this.sliceVNName(session['vn']),
+                                remoteVN = this.sliceVNName(session['eps.traffic.remote_vn']);
+                            operator = 7;
+                        }
+                        var endpoint1Data = [{
+                                'name' : 'vn',
+                                'value' : vn,
+                                'operator' : operator
+                            }],
+                            endpoint2Data = [],
+                            filter = [],
+                            categoryObj = tgView.getCategorizationObj();
+                        if(external == 'externalProject' && !sliceByProject) {
+                            remoteVN = '^(?!' + vn + ').*';
+                            filter.push({
+                                'name' : 'vn',
+                                'value' : remoteVN,
+                                'operator' : 8
+                            });
+                        } else {
+                            endpoint2Data.push({
+                                'name' : 'vn',
+                                'value' : remoteVN,
+                                'operator' : operator
+                            });
+                        }
+                        if(level == 1) {
+                            categoryObj = [categoryObj[0]];
+                        }
+                        _.each(categoryObj, function(tags) {
                             _.each(tags.split('-'), function(tag) {
                                 tag = tag.trim();
                                 endpoint1Data.push({
                                     'name' : (tag == 'app' ? 'application' : tag),
-                                    'value' : curSession[tag].split('=')[1]
+                                    'value' : session[tag + '_fqn']
                                 });
                                 endpoint2Data.push({
                                     'name' : (tag == 'app' ? 'application' : tag),
-                                    'value' : curSession['eps.traffic.remote_' + tag + '_id'].split('=')[1]
+                                    'value' : session['eps.traffic.remote_' + tag + '_id_fqn']
                                 });
                             });
                         });
-                        var linkData = {
-                                endpointNames: [linkInfo.srcTags, linkInfo.dstTags],
+                        return {endpoint1Data, endpoint2Data, external, filter, sliceByProject};
+
+                    } else return '';
+                },
+                sliceVNName: function(vn) {
+                    if(vn && vn.indexOf(':') > 0) {
+                            vn = vn.split(':');
+                            vn.pop();
+                            vn = vn.join(':') + ':';
+                    }
+                    return vn;
+                },
+                showLinkSessions: function() {
+                    require(['monitor/security/trafficgroups/ui/js/views/TrafficGroupsEPSTabsView'], function(EPSTabsView) {
+                        var srcNodeData = _.filter(tgView.selectedLinkData, function (val, idx){
+                            return _.result(val, 'data.type') == 'src';
+                            }),
+                            dstNodeData = _.filter(tgView.selectedLinkData, function (val, idx){
+                                return _.result(val, 'data.type') == 'dst';
+                            }),
+                            externalProject = dstNodeData[0].data.arcType,
+                            linkData = _.result(srcNodeData, '0.data', ''),
+                            srcId = self.removeEmptyTags(_.result(srcNodeData, '0.data.currentNode.displayLabels')),
+                            dstId = self.removeEmptyTags(_.result(dstNodeData, '0.data.currentNode.displayLabels'));
+                            curSession = _.find(linkData.dataChildren, function(session) {
+                            return tgView.isRecordMatched(
+                                _.result(linkData, 'currentNode.names'), session, linkData);
+                            }),
+                            tagData = tgView.getTagsFromSession(curSession, '', externalProject),
+                            linkData = {
+                                endpointNames: [srcId, dstId],
                                 endpointStats: [],
-                                tags: [endpoint1Data, endpoint2Data],
-                                breadcrumb: [['All'], [linkInfo.srcTags,linkInfo.dstTags]],
+                                tags: [tagData.endpoint1Data, tagData.endpoint2Data],
+                                breadcrumb: [['All'], [srcId, dstId]],
                                 where: [[], []],
+                                filter: tagData.filter,
+                                sliceByProject: tagData.sliceByProject,
                                 selectedEndpoint: 'endpoint1',
                                 sessionType: 'client',
-                                level : 1
+                                level : 1,
+                                external : tagData.external
                             },
                             epsTabsView = new EPSTabsView();
                             epsTabsView.parentView = tgView;
@@ -106,16 +173,58 @@ define(
                             return obj.isServer; });
                         return {
                             'eps.__key': uuid,
-                            'session_responded_active': _.sumBy(serverObjs, 'SUM(eps.server.active)'),
-                            'session_initiated_active': _.sumBy(clientObjs, 'SUM(eps.client.active)'),
+                            'session_responded_active': _.sumBy(serverObjs, 'MAX(eps.server.active)'),
+                            'session_initiated_active': _.sumBy(clientObjs, 'MAX(eps.client.active)'),
+                            'session_responded_min_active': _.sumBy(serverObjs, 'MIN(eps.server.active)'),
+                            'session_initiated_min_active': _.sumBy(clientObjs, 'MIN(eps.client.active)'),
+                            'session_responded_max_active': _.sumBy(serverObjs, 'MAX(eps.server.active)'),
+                            'session_initiated_max_active': _.sumBy(clientObjs, 'MAX(eps.client.active)'),
+                            'session_responded_deleted': _.sumBy(serverObjs, 'SUM(eps.server.deleted)'),
+                            'session_initiated_deleted': _.sumBy(clientObjs, 'SUM(eps.client.deleted)'),
+                            'session_initiated_in_bytes': _.sumBy(clientObjs, 'SUM(eps.traffic.in_bytes)'),
+                            'session_responded_in_bytes': _.sumBy(serverObjs, 'SUM(eps.traffic.in_bytes)'),
+                            'session_initiated_out_bytes': _.sumBy(clientObjs, 'SUM(eps.traffic.out_bytes)'),
+                            'session_responded_out_bytes': _.sumBy(serverObjs, 'SUM(eps.traffic.out_bytes)'),
                             'session_responded': _.sumBy(serverObjs, 'SUM(eps.server.added)'),
                             'session_initiated': _.sumBy(clientObjs, 'SUM(eps.client.added)')
                         }
                     }).value();
                     return sessionData;
                 },
-                showLinkInfo(d,el,e) {
+                getCurrentSessionDetails: function(src, dst, id) {
+                    var srcSessionInfo = {
+                            'columns' : ['Sessions', 'Intiated', 'Responded'],
+                            'rows' : [{
+                                values: ['In Bytes:', formatBytes(_.result(src, id+'.0.session_initiated_in_bytes')), formatBytes(_.result(src, id+'.0.session_responded_in_bytes'))]
+                            },{
+                                values: ['Out Bytes:', formatBytes(_.result(src, id+'.0.session_initiated_out_bytes')), formatBytes(_.result(src, id+'.0.session_responded_out_bytes'))]
+                            },{
+                                values: ['MAX (Active):', _.result(src, id+'.0.session_initiated_max_active', '-'), _.result(src, id+'.0.session_responded_max_active', '-')]
+                            },{
+                                values: ['MIN (Active):', _.result(src, id+'.0.session_initiated_min_active', '-'), _.result(src, id+'.0.session_responded_min_active', '-')]
+                            },{
+                                values: ['Deleted:', _.result(src, id+'.0.session_initiated_deleted', '-'), _.result(src, id+'.0.session_responded_deleted', '-')]
+                            }]
+                        },
+                        dstSessionInfo = {
+                            'columns' : ['Sessions', 'Intiated', 'Responded'],
+                            'rows' : [{
+                                values: ['In Bytes:', formatBytes(_.result(dst, id+'.0.session_initiated_in_bytes')), formatBytes(_.result(dst, id+'.0.session_responded_in_bytes'))]
+                            },{
+                                values: ['Out Bytes:', formatBytes(_.result(dst, id+'.0.session_initiated_out_bytes')), formatBytes(_.result(dst, id+'.0.session_responded_out_bytes'))]
+                            },{
+                                values: ['MAX (Active):', _.result(dst, id+'.0.session_initiated_max_active', '-'), _.result(dst, id+'.0.session_responded_max_active', '-')]
+                            },{
+                                values: ['MIN (Active):', _.result(dst, id+'.0.session_initiated_min_active', '-'), _.result(dst, id+'.0.session_responded_min_active', '-')]
+                            },{
+                                values: ['Deleted:', _.result(dst, id+'.0.session_initiated_deleted', '-'), _.result(dst, id+'.0.session_responded_deleted', '-')]
+                            }]
+                        };
+                        return { srcSessionInfo, dstSessionInfo };
+                },
+                showLinkInfo(d,el,e,option) {
                     var self = this,
+                        tooltipTemplate = contrail.getTemplate4Id(cowc.TOOLTIP_CUSTOM_TEMPLATE);
                         ruleUUIDs = [], ruleKeys = [], level = 1;
                     if (_.result(d, 'innerPoints.length') == 4)
                         level = 2;
@@ -147,13 +256,6 @@ define(
                         });
                     });
                     ruleUUIDs = _.uniq(ruleUUIDs);
-                    _.each(self.chartInfo.component.ribbons, function (ribbon) {
-                       ribbon.selected = false;
-                       ribbon.active = false;
-                    });
-                    d.selected = true;
-                    d.active = true;
-                    self.chartInfo.component._render();
                     if (ruleUUIDs.length > 0) {
                         var listModelConfig = {
                             remote: {
@@ -165,8 +267,32 @@ define(
                                          'service', 'service_group_refs']}]})
                                 },
                                 dataParser: function (data) {
-                                    var ruleDetails = _.result(data, '0.firewall-rules', []),
+                                    var defaultRuleUUIDs = _.keys(cowc.DEFAULT_FIREWALL_RULES);
+                                        ruleDetails = _.result(data, '0.firewall-rules', []),
                                         ruleMap = {}, formattedRuleDetails = [];
+                                    $.each(defaultRuleUUIDs, function (idx, uuid) {
+                                        if (ruleUUIDs.indexOf(uuid) > -1) {
+                                            var defaultRuleDetails = cowc.DEFAULT_FIREWALL_RULES[uuid],
+                                                sessionInfo = self.getCurrentSessionDetails(srcSessionObj, dstSessionObj, uuid);
+                                            formattedRuleDetails.push({
+                                                policy_name: _.result(defaultRuleDetails, 'name'),
+                                                rule_name: uuid,
+                                                srcId: srcId,
+                                                dstId: dstId,
+                                                srcTooltipContent: tooltipTemplate(sessionInfo.srcSessionInfo),
+                                                dstTooltipContent: tooltipTemplate(sessionInfo.dstSessionInfo),
+                                                implicitRule: 'implicitRuleStyle',
+                                                src_session_initiated: _.result(srcSessionObj, uuid+'.0.session_initiated', 0),
+                                                src_session_responded: _.result(srcSessionObj, uuid+'.0.session_responded', 0),
+                                                src_session_initiated_active: _.result(srcSessionObj, uuid+'.0.session_initiated_active', 0),
+                                                src_session_responded_active: _.result(srcSessionObj, uuid+'.0.session_responded_active', 0),
+                                                dst_session_initiated: _.result(dstSessionObj, uuid+'.0.session_initiated', 0),
+                                                dst_session_responded: _.result(dstSessionObj, uuid+'.0.session_responded', 0),
+                                                dst_session_initiated_active: _.result(dstSessionObj, uuid+'.0.session_initiated_active', 0),
+                                                dst_session_responded_active: _.result(dstSessionObj, uuid+'.0.session_responded_active', 0)
+                                            });
+                                        }
+                                    });
                                     $.each(ruleDetails, function (idx, detailsObj) {
                                         if (detailsObj['firewall-rule'] != null) {
                                             var ruleDetailsObj = detailsObj['firewall-rule'],
@@ -242,6 +368,7 @@ define(
                                             if (simple_action == 'pass') {
                                                 simple_action = 'permit';
                                             }
+                                            var sessionInfo = self.getCurrentSessionDetails(srcSessionObj, dstSessionObj, ruleUUID);
                                             formattedRuleDetails.push({
                                                 policy_name: policy_name,
                                                 srcId: srcId,
@@ -250,6 +377,8 @@ define(
                                                 src_session_initiated_active: _.result(srcSessionObj, ruleUUID+'.0.session_initiated_active', 0),
                                                 src_session_responded_active: _.result(srcSessionObj, ruleUUID+'.0.session_responded_active', 0),
                                                 dstId: dstId,
+                                                srcTooltipContent: tooltipTemplate(sessionInfo.srcSessionInfo),
+                                                dstTooltipContent: tooltipTemplate(sessionInfo.dstSessionInfo),
                                                 dst_session_initiated: _.result(dstSessionObj, ruleUUID+'.0.session_initiated', 0),
                                                 dst_session_responded: _.result(dstSessionObj, ruleUUID+'.0.session_responded', 0),
                                                 dst_session_initiated_active: _.result(dstSessionObj, ruleUUID+'.0.session_initiated_active', 0),
@@ -266,64 +395,19 @@ define(
                                             });
                                         }
                                     });
-                                    var defaultRuleUUIDs = _.keys(cowc.DEFAULT_FIREWALL_RULES);
-                                    $.each(defaultRuleUUIDs, function (idx, uuid) {
-                                        if (ruleUUIDs.indexOf(uuid) > -1) {
-                                            var defaultRuleDetails = cowc.DEFAULT_FIREWALL_RULES[uuid];
-                                            formattedRuleDetails.push({
-                                                policy_name: _.result(defaultRuleDetails, 'name'),
-                                                rule_name: uuid,
-                                                srcId: srcId,
-                                                dstId: dstId,
-                                                implicitRule: 'implicitRuleStyle',
-                                                src_session_initiated: _.result(srcSessionObj, uuid+'.0.session_initiated', 0),
-                                                src_session_responded: _.result(srcSessionObj, uuid+'.0.session_responded', 0),
-                                                src_session_initiated_active: _.result(srcSessionObj, uuid+'.0.session_initiated_active', 0),
-                                                src_session_responded_active: _.result(srcSessionObj, uuid+'.0.session_responded_active', 0),
-                                                dst_session_initiated: _.result(dstSessionObj, uuid+'.0.session_initiated', 0),
-                                                dst_session_responded: _.result(dstSessionObj, uuid+'.0.session_responded', 0),
-                                                dst_session_initiated_active: _.result(dstSessionObj, uuid+'.0.session_initiated_active', 0),
-                                                dst_session_responded_active: _.result(dstSessionObj, uuid+'.0.session_responded_active', 0)
-                                            });
-                                        }
-                                    });
                                     TrafficGroupsView.ruleMap = ruleMap;
                                     data.srcId = srcId;
                                     data.dstId = dstId;
+                                    data.option = 'linkInfo';
                                     data.policyRules = formattedRuleDetails;
                                     if(!formattedRuleDetails.length) {
                                         data.rules = ruleUUIDs;
                                     }
-                                    var ruleDetailsTemplate = contrail.getTemplate4Id('traffic-rule-template');
-                                    $('#traffic-groups-link-info').html(ruleDetailsTemplate(data));
-                                    if(!self.enableSessionDrilldown) {
-                                        if($('#traffic-groups-radial-chart').hasClass('showLinkInfo')) {
-                                           $('.trafficGroups_sidePanel').
-                                                removeClass('animateLinkInfo');
-                                        } else {
-                                            $('.trafficGroups_sidePanel').
-                                                addClass('animateLinkInfo');
-                                            $('#traffic-groups-radial-chart')
-                                            .addClass('showLinkInfo');
-                                        }
-                                    }
+                                    self.showTGSidePanel(data, d, option);
                                     $('.allSessionInfo').on('click', self.showSessionsInfo);
-                                    $('#traffic-groups-radial-chart')
-                                     .on('click', function(ev) {
-                                        if($(ev.target)
-                                            .parents('#'+self.chartInfo.component.id).length == 0) {
-                                            _.each(self.chartInfo.component.ribbons,
-                                             function (ribbon) {
-                                               ribbon.selected = false;
-                                               ribbon.active = false;
-                                            });
-                                            if(!self.enableSessionDrilldown) {
-                                                $('#traffic-groups-radial-chart')
-                                                        .removeClass('showLinkInfo');
-                                                $('#traffic-groups-link-info').html('');
-                                                self.chartInfo.component._render();
-                                            }
-                                        }
+                                    $('.trafficGroups_sidePanel .showMoreInfo')
+                                        .data("toggle", "tooltip").tooltip({
+                                        html: 'true'
                                     });
                                     return ruleDetails;
                                 }
@@ -332,17 +416,73 @@ define(
                         var ruleDetailsModel = new ContrailListModel(listModelConfig);
                     }
                 },
+                showTGSidePanel: function(data, d, option, updateData) {
+                    this.selectedLink = data.title;
+                    var self = this,
+                        ruleDetailsTemplate = contrail.getTemplate4Id('traffic-rule-template');
+                    $('#traffic-groups-link-info').html(ruleDetailsTemplate(data));
+                    if(!updateData) {
+                        $('#traffic-groups-link-info').removeClass('hidden')
+                        _.each(self.chartInfo.component.ribbons, function (ribbon) {
+                           ribbon.selected = false;
+                           ribbon.active = false;
+                        });
+                        _.each(self.chartInfo.component.arcs, function (arc) {
+                           arc.selected = false;
+                           arc.active = false;
+                        });
+                        d.selected = true;
+                        d.active = true;
+                        self.chartInfo.component._render();
+                        if(option != 'drill-down') {
+                            $('#traffic-groups-radial-chart').addClass('addAnimation');
+                            if($('#traffic-groups-radial-chart').hasClass('showTgSidePanel')) {
+                               $('.trafficGroups_sidePanel').
+                                    removeClass('animateLinkInfo');
+                            } else {
+                                $('.trafficGroups_sidePanel').
+                                    addClass('animateLinkInfo');
+                                $('#traffic-groups-radial-chart')
+                                .addClass('showTgSidePanel');
+                            }
+                        } else {
+                            $('#traffic-groups-radial-chart').removeClass('addAnimation');
+                        }
+                        $('#traffic-groups-radial-chart')
+                                      .off('click.showSidePanelEvent');
+                        $('#traffic-groups-radial-chart')
+                         .on('click.showSidePanelEvent', function(ev) {
+                            if($('#'+self.chartInfo.component.id).length &&  $(ev.target)
+                                .parents('#'+self.chartInfo.component.id).length == 0) {
+                                _.each(self.chartInfo.component.ribbons, function (ribbon) {
+                                   ribbon.selected = false;
+                                   ribbon.active = false;
+                                });
+                                _.each(self.chartInfo.component.arcs, function (arc) {
+                                   arc.selected = false;
+                                   arc.active = false;
+                                });
+                                if(option != 'drill-down') {
+                                    $('#traffic-groups-radial-chart')
+                                            .removeClass('showTgSidePanel');
+                                    $('#traffic-groups-link-info').addClass('hidden');
+                                    self.chartInfo.component._render();
+                                }
+                            }
+                        });
+                    }
+                },
                 showEndPointStatsInGrid: function () {
                     var self = this,
                         data = self.handleUntaggedEndpoints(self.filterdData);
-                    $('#traffic-groups-link-info').html('');
+                    $('#traffic-groups-link-info').addClass('hidden');
                     $('.tgChartLegend, .tgCirclesLegend').hide();
                     self.showHideLegendInfo(data);
                     self.renderView4Config($('#traffic-groups-grid-view'), null, {
                         elementId: 'traffic-groups-grid-view',
                         view: "TrafficGroupsEPSGridView",
                         viewPathPrefix:
-                        "monitor/networking/trafficgroups/ui/js/views/",
+                        "monitor/security/trafficgroups/ui/js/views/",
                         app: cowc.APP_CONTRAIL_CONTROLLER,
                         viewConfig: {
                             data: data,
@@ -409,6 +549,8 @@ define(
                             label += (label ? ' ' : '') +
                                 this.formatVN(vn ? vn : d['vn']);
                         }
+                        label += (label ? ' ' : '') +
+                                '<Untagged>';
                     }
                     return label ? label : ' ';
                 },
@@ -443,7 +585,7 @@ define(
                                 arcLabelLetterWidth: 6,
                                 labelDuration:0,
                                 labelFlow: 'along-arc',
-                                linkCssClasses: ['implicitDeny', 'implicitAllow'],
+                                linkCssClasses: ['implicitDeny', 'implicitAllow', 'notEvaluated'],
                                 arcLabelXOffset: 0,
                                 arcLabelYOffset: [-12,-6],
                                 showLinkDirection: true,
@@ -498,11 +640,18 @@ define(
                                             implicitAllowKey = ifNull(_.find(cowc.DEFAULT_FIREWALL_RULES, function(rule) {
                                                 return rule.name == 'Implicit Allow';
                                             }), '').uuid;
+
+                                            notEvaluatedKey = ifNull(_.find(cowc.DEFAULT_FIREWALL_RULES, function(rule) {
+                                                return rule.name == 'Not Evaluated';
+                                            }), '').uuid;
                                         if(self.isImplictRule(d, implicitDenyKey)) {
                                             d.linkCssClass = 'implicitDeny';
                                         }
                                         if(self.isImplictRule(d, implicitAllowKey)) {
                                             d.linkCssClass = 'implicitAllow';
+                                        }
+                                        if(self.isImplictRule(d, notEvaluatedKey)) {
+                                            d.linkCssClass = 'notEvaluated';
                                         }
                                         $.each(srcHierarchy, function(idx) {
                                             srcDisplayLabel.push(self.formatLabel(hierarchyObj.srcLabels, idx));
@@ -560,45 +709,29 @@ define(
                             config: {
                                 formatter: function formatter(data) {
                                     if(data.level) {
-                                        var arcTitle = data.displayLabels.slice(0);
-                                        var content = { title: self.removeEmptyTags(arcTitle), items: [] };
-                                        content.title += '<hr/>'
-
-                                        var childrenArr = data['children'];
-                                        //data is nested on hovering 1st-level arc while showing 2-level arcs
-                                        //For intra-app traffic, there will be 2 children with same linkId
-                                        //Remove 2nd-level duplicate intra links
-                                        if(childrenArr[0].children != null) {
-                                            childrenArr = jsonPath(data,'$.children[*].children[*]');
-                                            childrenArr = _.flatten(childrenArr);
-                                        }
-                                        if(childrenArr[0].linkId != null) {
-                                            childrenArr = _.uniqWith(childrenArr,function(a,b) {
-                                                return a.linkId == b.linkId;
-                                            });
-                                        }
-
-                                        var dataChildren = jsonPath(childrenArr,'$.[*].dataChildren');
-                                        if(dataChildren == false)
-                                            dataChildren = jsonPath(data,'$.children[*].children[*].dataChildren');
-                                        dataChildren = _.flatten(dataChildren);
-
+                                        var arcData = self.getArcData(data),
+                                            content = { title: arcData.title, items: [] };
+                                        content.title += '<hr/>';
+                                        content.title = content.title.replace(/<Untagged>/g, '&lt;untagged>')
+                                        var matchedChilds = _.filter(arcData.dataChildren,function(currSession) {
+                                            if(self.isRecordMatched(data.namePath, currSession, data))
+                                                return _.result(currSession,'SUM(eps.traffic.in_bytes)',0);
+                                             else
+                                                return 0;
+                                        });
                                         content.items.push({
                                             label: 'Traffic In',
-                                            value:  formatBytes(_.sumBy(dataChildren,function(currSession) {
-                                                if(self.isRecordMatched(data.namePath, currSession, data))
+                                            value:  formatBytes(_.sumBy(matchedChilds, function(currSession) {
                                                     return _.result(currSession,'SUM(eps.traffic.in_bytes)',0);
-                                                 else
-                                                    return 0;
                                             }))
                                         }, {
                                             label: 'Traffic Out',
-                                            value: formatBytes(_.sumBy(dataChildren,function(currSession) {
-                                                if(self.isRecordMatched(data.namePath, currSession, data))
+                                            value: formatBytes(_.sumBy(matchedChilds, function(currSession) {
                                                     return _.result(currSession,'SUM(eps.traffic.out_bytes)',0);
-                                                 else
-                                                    return 0;
                                             }))
+                                        }, {
+                                            label: ctwl.VMI_LABEL,
+                                            value: _.uniqBy(matchedChilds, 'name').length
                                         });
                                     } else {
                                         var linkInfo = self.getLinkInfo(data.link),
@@ -644,8 +777,8 @@ define(
                         }]
                     }
                     $('#traffic-groups-radial-chart')
-                    .removeClass('showLinkInfo');
-                    $('#traffic-groups-link-info').html('');
+                    .removeClass('showTgSidePanel');
+                    $('#traffic-groups-link-info').addClass('hidden');
                     self.chartInfo = self.viewInst.getChartViewInfo(config,
                                 "dendrogram-chart-id", self.addtionalEvents());
                     if(cfg['freshData']) {
@@ -665,8 +798,14 @@ define(
                 },
                 chartRender: function() {
                     var data = this.filterdData ? JSON.parse(JSON.stringify(this.filterdData))
-                             : this.viewInst.model.getItems(),
-                        data = this.handleUntaggedEndpoints(data);
+                             : this.viewInst.model.getItems();
+                    data = this.handleUntaggedEndpoints(data);
+                    this.showHideLegendInfo(data);
+                    if($('#traffic-groups-legend-info:visible').length) {
+                        $('#traffic-groups-radial-chart #chartBox').removeClass('noLegend');
+                    } else {
+                        $('#traffic-groups-radial-chart #chartBox').addClass('noLegend');
+                    }
                     if($('#traffic-groups-radial-chart:visible').length) {
                         if(data && data.length == 0) {
                             $('#traffic-groups-radial-chart').empty();
@@ -681,14 +820,118 @@ define(
                         this.showEndPointStatsInGrid();
                     }
                     this.updateCircleLegends();
-                    this.showHideLegendInfo(data);
                     $('#traffic-groups-options').removeClass('hidden');
+                },
+                getArcData: function(data) {
+                    var arcTitle = data.displayLabels.slice(0),
+                        arcTitle = this.removeEmptyTags(arcTitle),
+                        childrenArr = data['children'];
+                    //data is nested on hovering 1st-level arc while showing 2-level arcs
+                    //For intra-app traffic, there will be 2 children with same linkId
+                    //Remove 2nd-level duplicate intra links
+                    if(childrenArr[0].children != null) {
+                        childrenArr = jsonPath(data,'$.children[*].children[*]');
+                        childrenArr = _.flatten(childrenArr);
+                    }
+                    if(childrenArr[0].linkId != null) {
+                        childrenArr = _.uniqWith(childrenArr,function(a,b) {
+                            return a.linkId == b.linkId;
+                        });
+                    }
+                    var dataChildren = jsonPath(childrenArr,'$.[*].dataChildren');
+                    if(dataChildren == false)
+                        dataChildren = jsonPath(data,'$.children[*].children[*].dataChildren');
+                    dataChildren = _.flatten(dataChildren);
+                    return {
+                        dataChildren : dataChildren,
+                        title : arcTitle
+                    };
                 },
                 showHideLegendInfo: function(data) {
                     if(data && data.length) {
                         $('#traffic-groups-legend-info').removeClass('hidden');
+
                     } else {
                         $('#traffic-groups-legend-info').addClass('hidden');
+                    }
+                },
+                querySessionSeries: function(reqObj) {
+                    var self = this,
+                        selectedTime = self.getSelectedTime();
+                        clientPostData = {
+                            "session_type": "client",
+                            "start_time": "now-" + (selectedTime.fromTime + 'm'),
+                            "end_time": "now-" + (selectedTime.toTime + 'h'),
+                            "select_fields": reqObj.selectFields,
+                            "table": "SessionSeriesTable",
+                            "where": [reqObj.whereClause],
+                            'filter': reqObj.filter ? [reqObj.filter] : []
+                        },
+                        serverPostData = {
+                            "session_type": "server",
+                            "start_time": "now-" + (selectedTime.fromTime + 'm'),
+                            "end_time": "now-" + (selectedTime.toTime + 'm'),
+                            "select_fields": reqObj.selectFields,
+                            "table": "SessionSeriesTable",
+                            "where": [reqObj.whereClause],
+                            'filter': reqObj.filter ? [reqObj.filter] : []
+                        },
+                        clientModelConfig = {
+                            remote : {
+                                ajaxConfig : {
+                                    url:monitorInfraConstants.monitorInfraUrls['ANALYTICS_QUERY'],
+                                    type:'POST',
+                                    data:JSON.stringify(clientPostData)
+                                },
+                                dataParser : function (response) {
+                                    reqObj.clientData = cowu.getValueByJsonPath(response, 'value', []);
+                                    reqObj.curSessionData = reqObj.clientData;
+                                    return reqObj.clientData;
+                                }
+                            }
+                        },
+                        serverModelConfig = {
+                            remote : {
+                                ajaxConfig : {
+                                    url:monitorInfraConstants.monitorInfraUrls['ANALYTICS_QUERY'],
+                                    type:'POST',
+                                    data:JSON.stringify(serverPostData)
+                                },
+                                dataParser : function (response) {
+                                    reqObj.serverData = cowu.getValueByJsonPath(response, 'value', []);
+                                    reqObj.curSessionData = reqObj.serverData;
+                                    return reqObj.serverData;
+                                }
+                            }
+                        };
+
+                    if(reqObj.level == 1) {
+                        var clientModel = new ContrailListModel(clientModelConfig),
+                            serverModel = new ContrailListModel(serverModelConfig),
+                            reqCount = 0;
+                        clientModel.onAllRequestsComplete.subscribe(function() {
+                           reqCount++;
+                           bothRequestDone(reqCount);
+                        });
+                        serverModel.onAllRequestsComplete.subscribe(function() {
+                            reqCount++;
+                            bothRequestDone(reqCount);
+                        });
+                    } else if(reqObj.type == 'client') {
+                        var clientModel = new ContrailListModel(clientModelConfig);
+                        clientModel.onAllRequestsComplete.subscribe(function() {
+                          reqObj.callback(reqObj);
+                        });
+                    } else {
+                        var serverModel = new ContrailListModel(serverModelConfig);
+                        serverModel.onAllRequestsComplete.subscribe(function() {
+                           reqObj.callback(reqObj);
+                        });
+                    }
+                    function bothRequestDone(reqCount) {
+                        if(reqCount == 2) {
+                            reqObj.callback(reqObj);
+                        }
                     }
                 },
                 handleUntaggedEndpoints: function (data) {
@@ -707,7 +950,8 @@ define(
                                     dstTags = true;
                                 }
                             });
-                            return srcTags && (dstTags || !remoteVN);
+                            return srcTags && (dstTags || !remoteVN
+                                    || remoteVN == cowc.UNKNOWN_VALUE);
                         });
                     }
                     return tgData;
@@ -718,6 +962,12 @@ define(
                             selector: 'node',
                             handler: this._onClickNode,
                             handlerName: '_onClickNode'
+                        },
+                        {
+                            event: 'dblclick',
+                            selector: 'link',
+                            handler: this._onDoubleClickLink,
+                            handlerName: '_onDoubleClickLink'
                         },
                         {
                             event: 'click',
@@ -736,34 +986,147 @@ define(
                             selector: 'link',
                             handler: this._onMouseoutLink,
                             handlerName: '_onMouseoutLink'
+                        },
+                        {
+                            event: 'mousemove',
+                            selector: 'node',
+                            handler: this._onMousemove
+                        },
+                        {
+                            event: 'mouseout',
+                            selector: 'node',
+                            handler: this._onMouseout
                         }
                     ];
                 },
                 _onClickNode: function(d, el ,e) {
                     var chartScope = tgView.chartInfo.component;
-                    if(chartScope.config.attributes.
-                        expandLevels == 'disable' && el && d) {
-                      return;
-                    }
                     if(chartScope.clearArcTootltip) {
                       clearTimeout(chartScope.clearArcTootltip);
                     }
-                    var levels = 2;
-                    //If clicked on 2nd level arc,collapse to 1st level
-                    if(!d || d.depth == 2 || d.height == 2)
-                        levels = 1;
-                    tgView.updateChart({levels: levels});
+                    var arcData = tgView.getArcData(d.data),
+                        childData = _.filter(arcData.dataChildren, function(children) {
+                            return tgView.isRecordMatched(d.data.namePath, children, d.data);
+                        }),
+                        tagData = tgView.getTagsFromSession(childData[0], d.depth);
+                    if(tagData) {
+                        var selectedTime = tgView.getSelectedTime(),
+                            whereTags = tagData.endpoint1Data.slice(0),
+                            whereClause = [],
+                            selectFields = ['SUM(forward_logged_bytes)', 'SUM(reverse_logged_bytes)',
+                            'SUM(forward_sampled_bytes)', 'SUM(reverse_sampled_bytes)', 'vn', 'vrouter' ,'vmi'];
+                            _.each(whereTags, function(tag) {
+                                if(tag.value) {
+                                whereClause.push({
+                                    "suffix": null, "value2": null, "name": tag.name, "value": tag.value, "op": tag.operator ? tag.operator : 1
+                                });
+                                }
+                            });
+                        var projectPrefix = tgView.getProjectPrefix();
+                        whereClause.push({
+                            "suffix": null, "value2": null, "name": 'vmi', "value": projectPrefix, "op": 7
+                        });
+                        var reqObj = {
+                                selectFields : selectFields,
+                                whereClause : whereClause,
+                                level : 1,
+                                callback : tgView.renderVMIDetails,
+                                vmiDetails : {
+                                    data : [],
+                                    title : arcData.title,
+                                    vmiLabel: ctwl.VMI_LABEL,
+                                    vmiCount: ''
+                                },
+                                d : d
+                            };
+                        self.showTGSidePanel(reqObj.vmiDetails, d);
+                        tgView.querySessionSeries(reqObj);
+                    } else {
+                        self.noSessionResults(d, arcData.title);
+                    }
+                },
+                noSessionResults: function(d, title) {
+                    this.showTGSidePanel({
+                        data : 'nodata',
+                        title : title,
+                        vmiLabel: ctwl.VMI_LABEL,
+                        vmiCount: ''
+                    }, d);
+                },
+                renderVMIDetails: function(resObj) {
+                    var data = resObj.clientData.concat(resObj.serverData);
+                    if(data.length) {
+                        $.each(data, function (idx, value) {
+                            $.each(['vn','vmi'],function(idx,tagName) {
+                                value[tagName + '_fqn'] = value[tagName];
+                                value[tagName] = tagName == 'vn' ?
+                                        tgView.formatVN(value[tagName]) :
+                                        tgView.getFormattedValue(value[tagName]);
+                            });
+                        });
+                        data = _.groupBy(data, 'vmi');
+                        resObj.vmiDetails.vmiCount =  Object.keys(data).length;
+                        _.each(data, function(session, key) {
+                            var loggedIn = formatBytes(_.sumBy(session,
+                            function(bytes) {
+                                return _.result(bytes,'SUM(forward_logged_bytes)',0);
+
+                            })),
+                            loggedIn = formatBytes(_.sumBy(session,
+                            function(bytes) {
+                                return _.result(bytes,'SUM(reverse_logged_bytes)',0);
+
+                            })),
+                            sampledIn = formatBytes(_.sumBy(session,
+                            function(bytes) {
+                                return _.result(bytes,'SUM(forward_sampled_bytes)',0);
+
+                            })),
+                            sampledOut = formatBytes(_.sumBy(session,
+                            function(bytes) {
+                                return _.result(bytes,'SUM(reverse_sampled_bytes)',0);
+
+                            }));
+                            resObj.vmiDetails.data.push({
+                                name: key ? key : '-',
+                                loggedIn: loggedIn,
+                                loggedOut: loggedIn,
+                                sampledIn : sampledIn,
+                                sampledOut : sampledOut,
+                                vn: session[0]['vn'] ? session[0]['vn'] : '-',
+                                vrouter: session[0]['vrouter'] ?
+                                     session[0]['vrouter'] : '-'
+                            });
+                        });
+                       if(self.selectedLink == resObj.vmiDetails.title)
+                        self.showTGSidePanel(resObj.vmiDetails, resObj.d, '', true);
+                    } else {
+                        self.noSessionResults(resObj.d, resObj.vmiDetails.title);
+                    }
+                },
+                _onDoubleClickLink: function(d, el ,e) {
+                    e.preventDefault();
+                    tgView.linkClicks = 2 ;
                 },
                 _onClickLink: function(d, el ,e) {
-                    var chartScope = tgView.chartInfo.component;
-                    if(chartScope.config.attributes.showLinkInfo) {
-                        tgView.showLinkInfo(d, el, e, chartScope);
-                        if(tgView.enableSessionDrilldown) {
-                            $('#traffic-groups-radial-chart')
-                                .addClass('showLinkInfo');
-                            tgView.showLinkSessions();
-                        }
-                    }
+                    setTimeout(function() {
+                        if(tgView.linkClicks) {
+                            tgView.linkClicks--;
+                            if(tgView.linkClicks == 1) {
+                                $('#traffic-groups-radial-chart').removeClass('addAnimation');
+                                var chartScope = tgView.chartInfo.component;
+                                if(chartScope.config.attributes.showLinkInfo) {
+                                    tgView.showLinkInfo(d, el, e, 'drill-down');
+                                    if(tgView.enableSessionDrilldown) {
+                                        $('#traffic-groups-radial-chart')
+                                            .addClass('showTgSidePanel');
+                                        tgView.showLinkSessions();
+                                    }
+                                }
+                            }
+                        } else
+                            tgView.showLinkInfo(d, el, e);
+                    }, 300);
                 },
                 _onMousemoveLink: function(d, el ,e) {
                     var chartScope = tgView.chartInfo.component,
@@ -788,6 +1151,21 @@ define(
                       clearTimeout(chartScope.clearLinkTooltip);
                     }
                     chartScope.actionman.fire('HideComponent', 'tooltip-id');
+                },
+                _onMousemove: function(d, el ,e) {
+                    var chartScope = tgView.chartInfo.component;
+                    _.each(chartScope.arcs, function(arc) {
+                        arc.active = Boolean(arc.data.namePath && arc.data.namePath.join('-') == e.target.id)
+                                        || arc.selected;
+                    });
+                    chartScope._render();
+                },
+                _onMouseout: function(d, el ,e) {
+                    var chartScope = tgView.chartInfo.component;
+                  _.each(chartScope.arcs, function(arc) {
+                        arc.active = arc.selected;
+                  });
+                  chartScope._render();
                 },
                 getLinkInfo: function(links) {
                     var srcTags = this.removeEmptyTags(_.result(links, '0.data.currentNode.displayLabels')),
@@ -814,14 +1192,24 @@ define(
                     return displayLabels;
                 },
                 removeEmptyTags: function(names) {
-                    var displayNames = names.slice(0);
+                    var displayNames = names.slice(0),
+                        projectName = '',
+                        topLevelNames = displayNames[0].slice(0);
+                    if(topLevelNames.length >
+                            this.getCategorizationObj()[0].split('-').length
+                       && topLevelNames[topLevelNames.length-1] != 'External') {
+                        projectName = topLevelNames.pop();
+                        displayNames[0] = topLevelNames;
+
+                    }
                     displayNames = _.map(displayNames, function(name) {
-                        return _.compact(name).join('-')
+                        return _.compact(name).join('-');
                     });
                     displayNames = _.remove(displayNames, function(name, idx) {
                         return !(name == 'External' && idx > 0);
                     });
-                    return _.compact(displayNames).join('-');
+                    return _.compact(displayNames).join('-')
+                        + (projectName ? ' (' + projectName + ')' : '') ;
                 },
                 isRecordMatched: function(names, record, data) {
                     var arcType = data.arcType ? '_' + data.arcType : '',
@@ -891,12 +1279,13 @@ define(
 
                     tgView.filterDataByEndpoints();
                     tgView.updateCircleLegends();
-                    var newTimeRange = tgView.getTGSettings().time_range,
-                        newFromTime = tgView.getTGSettings().from_time,
-                        newToTime = tgView.getTGSettings().to_time;
-                    if(oldTimeRange != newTimeRange || ((oldTimeRange == -1  ||
-                        oldTimeRange == -2) && (oldFromTime != newFromTime ||
-                        oldToTime != newToTime))) {
+                    sessionStorage.TG_TIME_RANGE = tgView.getTGSettings().time_range,
+                    sessionStorage.TG_FROM_TIME = tgView.getTGSettings().from_time,
+                    sessionStorage.TG_TO_TIME = tgView.getTGSettings().to_time;
+                    if(oldTimeRange != sessionStorage.TG_TIME_RANGE ||
+                        ((oldTimeRange == -1  || oldTimeRange == -2) &&
+                        (oldFromTime != sessionStorage.TG_FROM_TIME ||
+                        oldToTime != sessionStorage.TG_TO_TIME))) {
                         tgView.renderTrafficChart();
                     } else {
                         tgView.updateContainerSettings('', false);
@@ -1045,6 +1434,11 @@ define(
                                 groupByTagType = ['app','deployment'];
                                 subGroupByTagType = ['tier'];
                             }
+                            if(sessionStorage.TG_TIME_RANGE) {
+                                time_range = sessionStorage.TG_TIME_RANGE;
+                                from_time = sessionStorage.TG_FROM_TIME;
+                                to_time = sessionStorage.TG_TO_TIME;
+                            }
                         }
                     return {
                         groupByTagType: groupByTagType,
@@ -1103,25 +1497,38 @@ define(
                     var tagRecords = _.result(tagsResponse,'0.tags',[]);
                     tagRecords.forEach(function(val,idx) {
                         var currTag = val['tag'];
-                        tagMap[currTag.tag_id] = currTag.name;
+                        tagMap[currTag.tag_id] = {
+                            name :currTag.name,
+                            fqn : currTag.fq_name ? currTag.fq_name.join(':') : ''
+                        }
                     });
                     $.each(data, function (idx, value) {
                         $.each(['eps.traffic.remote_app_id', 'eps.traffic.remote_deployment_id',
                             'eps.traffic.remote_prefix', 'eps.traffic.remote_site_id',
                             'eps.traffic.remote_tier_id'], function (idx, val) {
-                                if(value[val] == '0')
+                                var remoteFQN = '',
+                                    currentTagMap = tagMap[value[val]];
+                                if(!_.isEmpty(currentTagMap) && !_.isEmpty(currentTagMap.name)) {
+                                    value[val] = currentTagMap.name;
+                                    remoteFQN = currentTagMap.fqn;
+                                } else {
                                     value[val] = '';
-                                if(!_.isEmpty(tagMap[parseInt(value[val])])) {
-                                    value[val] = tagMap[parseInt(value[val])];
                                 }
+                                value[val + '_fqn'] = remoteFQN;
                         });
                         //Strip-off the domain and project form FQN
-                        $.each(['app','site','tier','deployment'],function(idx,tagName) {
-                            if(typeof(value[tagName]) == 'string' && value[tagName].split(':').length == 3)
-                                value[tagName] = value[tagName].split(':').pop();
+                        $.each(['app','site','tier','deployment', 'name'],function(idx,tagName) {
+                            value[tagName + '_fqn'] = value[tagName];
+                            value[tagName] = tgView.getFormattedValue(value[tagName]);
                         });
                     });
                     return data;
+                },
+                getFormattedValue: function(value) {
+                    var value = value;
+                    if(typeof value == 'string' && value.split(':').length == 3)
+                        value =  value.split(':').pop();
+                    return value;
                 },
                 resetChartView: function() {
                    $('#traffic-groups-legend-info').addClass('hidden');
@@ -1145,10 +1552,16 @@ define(
                                    + '_settings');
                     if(curSettings) {
                         curSettings = JSON.parse(curSettings);
-                        if(typeof newObj.showLegend != 'undefined' || !newObj) {
-                            curSettings.showLegend ?
+                        var level = (curSettings.showInnerCircle &&
+                            this.getCategorizationObj().length == 2) ? 2 : 1;
+                        curSettings.showLegend ?
                                 $('#traffic-groups-legend-info').show()
                                 : $('#traffic-groups-legend-info').hide();
+                        if(typeof newObj.showLegend != 'undefined') {
+                                if($('#traffic-groups-radial-chart svg').length)
+                                    this.updateChart({
+                                        'levels': level
+                                    });
                         }
                         if(typeof newObj.view_type != 'undefined' ||
                          typeof newObj.untaggedEndpoints != 'undefined'
@@ -1160,7 +1573,7 @@ define(
                                 if(isFreshData) {
                                     this.updateChart({
                                         'freshData': isFreshData,
-                                        'levels': curSettings.showInnerCircle ? 2 : 1
+                                        'levels': level
                                     });
                                 } else {
                                     this.showEndPointStatsInGrid();
@@ -1168,9 +1581,10 @@ define(
                             } else {
                                 $('#traffic-groups-radial-chart').show();
                                 $('#traffic-groups-grid-view').hide();
+                                if(!newObj || newObj.view_type || $('#traffic-groups-radial-chart svg').length)
                                 this.updateChart({
                                     'freshData': isFreshData,
-                                    'levels': curSettings.showInnerCircle ? 2 : 1
+                                    'levels': level
                                 });
                             }
                         }
@@ -1247,7 +1661,7 @@ define(
                                     view: 'FormCheckboxView',
                                     default: false,
                                     viewConfig: {
-                                        label: 'Slice By Project',
+                                        label: 'Project Name',
                                         path: 'sliceByProject',
                                         dataBindValue: 'sliceByProject',
                                         templateId: cowc.TMPL_CHECKBOX_LABEL_RIGHT_VIEW,
@@ -1278,6 +1692,14 @@ define(
                         toTime : toTime
                     }
                 },
+                getProjectPrefix: function() {
+                    var currentProject = '';
+                    if(contrail.getCookie(cowc.COOKIE_PROJECT) != 'undefined') {
+                        currentProject =
+                                contrail.getCookie(cowc.COOKIE_PROJECT) + ':';
+                    }
+                    return contrail.getCookie(cowc.COOKIE_DOMAIN) + ':'+ currentProject;
+                },
                 renderTrafficChart: function(option) {
                     this.resetChartView();
                     var self = this,
@@ -1291,11 +1713,8 @@ define(
                         TrafficGroupsView.tagsResponse = response;
                         TrafficGroupsView.tagMap = _.groupBy(_.map(_.result(response, '0.tags', []), 'tag'), 'tag_id');
                     });
-                    var currentProject = '';
-                    if(contrail.getCookie(cowc.COOKIE_PROJECT) != 'undefined') {
-                        currentProject = contrail.getCookie(cowc.COOKIE_PROJECT);
-                    }
-                    var clientPostData = {
+                    var projectPrefix = self.getProjectPrefix(),
+                        clientPostData = {
                         "async": false,
                         "formModelAttrs": {
                             "from_time_utc": "now-" + (selctedTime.fromTime+ 'm'),
@@ -1303,10 +1722,11 @@ define(
                             "select": "eps.client.remote_app_id, eps.client.remote_tier_id, eps.client.remote_site_id,"+
                                  "eps.client.remote_deployment_id, eps.client.remote_prefix, eps.client.remote_vn, eps.__key,"+
                                  " eps.client.app, eps.client.tier, eps.client.site, eps.client.deployment, eps.client.local_vn, name, SUM(eps.client.in_bytes),"+
-                                 " SUM(eps.client.out_bytes), SUM(eps.client.in_pkts), SUM(eps.client.out_pkts), SUM(eps.client.added), SUM(eps.client.active)",
+                                 " SUM(eps.client.out_bytes), SUM(eps.client.in_pkts), SUM(eps.client.out_pkts), SUM(eps.client.added), SUM(eps.client.deleted),"+
+                                 " MIN(eps.client.active), MAX(eps.client.active)",
                             "table_type": "STAT",
                             "table_name": "StatTable.EndpointSecurityStats.eps.client",
-                            "where": "(name Starts with " + contrail.getCookie(cowc.COOKIE_DOMAIN) + (currentProject ? ':' : '') + currentProject + ")",
+                            "where": "(name Starts with " + projectPrefix + ")",
                             "where_json": []
                         }
                     };
@@ -1319,10 +1739,11 @@ define(
                             "select": "eps.server.remote_app_id, eps.server.remote_tier_id, eps.server.remote_site_id,"+
                                  "eps.server.remote_deployment_id, eps.server.remote_prefix, eps.server.remote_vn, eps.__key,"+
                                  " eps.server.app, eps.server.tier, eps.server.site, eps.server.deployment, eps.server.local_vn, name, SUM(eps.server.in_bytes),"+
-                                 " SUM(eps.server.out_bytes), SUM(eps.server.in_pkts), SUM(eps.server.out_pkts), SUM(eps.server.added), SUM(eps.server.active)",
+                                 " SUM(eps.server.out_bytes), SUM(eps.server.in_pkts), SUM(eps.server.out_pkts), SUM(eps.server.added), SUM(eps.server.deleted),"+
+                                 " MIN(eps.server.active), MAX(eps.server.active)",
                             "table_type": "STAT",
                             "table_name": "StatTable.EndpointSecurityStats.eps.server",
-                            "where": "(name Starts with " + contrail.getCookie(cowc.COOKIE_DOMAIN) + (currentProject ? ':' : '') + currentProject + ")",
+                            "where": "(name Starts with " + projectPrefix + ")",
                             "where_json": []
                         }
                     };

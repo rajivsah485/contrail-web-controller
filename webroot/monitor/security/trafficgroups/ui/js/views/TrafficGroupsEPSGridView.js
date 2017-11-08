@@ -181,7 +181,6 @@ define([
                             templateGeneratorConfig: {
                                 columns: [
                                     {
-                                        //class: 'trafficEndpointDetails',
                                         rows: [
                                             {
                                                 title: 'Details',
@@ -331,28 +330,8 @@ define([
                 data = this.rootView.sessionData,
                 currentLevel = data.level,
                 sessionColumns = [];
-            if(currentLevel == 1) {
-                if(data.groupBy == 'policy') {
-                    sessionColumns.push({
-                        field: 'security_policy_rule',
-                        name: 'Policy (Rule)',
-                        cssClass: 'cell-hyperlink-blue',
-                        formatter: function(r,c,v,cd,dc) {
-                            return policyRuleFormatter(v, dc);
-                        },
-                        events : {
-                            onClick : function(e, d) {
-                                data.level++;
-                                var value = $(e.target).html();
-                                data.where.push([{
-                                    "suffix": null, "value2": null, "name": "security_policy_rule", "value": value, "op": 1
-                                }]);
-                                data.breadcrumb.push(['Policy: ' + value]);
-                                self.rootView.sessionDrilldown(data);
-                             }
-                         }
-                    });
-                } else {
+            if(currentLevel == 1 || (currentLevel == 2 && data.groupBy == 'policy')) {
+                if(data.groupBy != 'policy' || currentLevel == 2) {
                     sessionColumns.push({
                         field: 'protocol',
                         name: 'Protocol (Server Port)',
@@ -363,21 +342,55 @@ define([
                         events : {
                             onClick : function(e, d) {
                                 data.level++;
-                                var value = $(e.target).html().split('('),
-                                    protocol = cowf.format.protocolCode(value[0].trim()),
-                                    port = value[1].replace(')', '').trim();
+                                var protocol = cowf.format.protocol(d['protocol']);
                                 data.where.push([{
-                                    "suffix": null, "value2": null, "name": "protocol", "value": protocol, "op": 1
+                                    "suffix": null, "value2": null, "name": "protocol", "value": d['protocol'], "op": 1
                                 }, {
-                                    "suffix": null, "value2": null, "name": "server_port", "value": port, "op": 1
-                                }]);
-                                data.breadcrumb.push(['Protocol: ' + protocol, 'Port: ' + port]);
+                                    "suffix": null, "value2": null, "name": "server_port", "value": d['server_port'], "op": 1
+                                }
+                                /*, {
+                                    "suffix": null, "value2": null, "name": "forward_action", "value": d['forward_action'], "op": 1
+                                }*/
+                                ]);
+                                data.breadcrumb.push(['Protocol: ' + protocol, 'Port: ' + d['server_port']]);
+                                self.rootView.sessionDrilldown(data);
+                             }
+                         }
+                    });
+                } else {
+                    sessionColumns.push({
+                        field: 'security_policy_rule',
+                        name: 'Policy (Rule)',
+                        cssClass: 'cell-hyperlink-blue',
+                        formatter: function(r,c,v,cd,dc) {
+                            return policyRuleFormatter(v, dc);
+                        },
+                        events : {
+                            onClick : function(e, d) {
+                                data.level++;
+                                var ruleObj = getPolicyInfo(d['security_policy_rule']);
+                                data.where.push([{
+                                    "suffix": null, "value2": null, "name": "security_policy_rule", "value": d['security_policy_rule'], "op": 1
+                                }
+                                /*,
+                                {
+                                    "suffix": null, "value2": null, "name": "forward_action", "value": d['forward_action'], "op": 1
+                                }*/
+                                ]);
+                                data.breadcrumb.push(['Policy: ' + ruleObj.name, 'Rule: ' + ruleObj.uuid]);
                                 self.rootView.sessionDrilldown(data);
                              }
                          }
                     });
                 }
+                /*sessionColumns.push({
+                    field: 'forward_action',
+                    name: 'Forward Action',
+                    maxWidth: 150
+                }); */
             }
+            if(data.groupBy == 'policy')
+                currentLevel--;
             if(currentLevel == 2) {
                 var label = (data.sessionType == 'client') ? 'Client IP' : 'Server IP';
                 sessionColumns.push({
@@ -387,17 +400,13 @@ define([
                     events : {
                         onClick : function(e, d) {
                             data.level++;
-                            var vnValue = $(e.target).parent().find('.vn_field').html().split('('),
-                                currentVN = vnValue[0].trim(),
-                                project = vnValue[1].replace(')', '').trim(),
-                                vnName = contrail.getCookie(cowc.COOKIE_DOMAIN) + ":" + project + ":" + currentVN,
-                                name = (data.sessionType == 'client') ? 'Client IP' : 'Server IP';
+                            var name = (data.sessionType == 'client') ? 'Client IP' : 'Server IP';
                             data.where.push([{
-                                "suffix": null, "value2": null, "name": 'local_ip', "value": $(e.target).html(), "op": 1
+                                "suffix": null, "value2": null, "name": 'local_ip', "value": d['local_ip'], "op": 1
                             }, {
-                                "suffix": null, "value2": null, "name": 'vn', "value": vnName, "op": 1
+                                "suffix": null, "value2": null, "name": 'vn', "value": d['vn'], "op": 1
                             }]);
-                            data.breadcrumb.push([name + ': ' + $(e.target).html()]);
+                            data.breadcrumb.push([name + ': ' + d['local_ip'], 'VN: ' + formatVN(d['vn'])]);
                             self.rootView.sessionDrilldown(data);
                          }
                      }
@@ -407,21 +416,15 @@ define([
                     name: 'VN',
                     formatter: function(r,c,v,cd,dc) {
                         return vnFormatter(v, dc);
-                    },
-                    cssClass: 'vn_field'
+                    }
                 });
             }
             if(currentLevel == 3) {
                 var label = (data.sessionType == 'server') ? 'Client IP' : 'Server IP';
                 sessionColumns.push({
                     field: 'remote_ip',
-                    name: label
-                }, {
-                    field: 'vn',
-                    name: 'VN',
-                    formatter: function(r,c,v,cd,dc) {
-                        return vnFormatter(v, dc);
-                    }
+                    name: label,
+                    maxWidth: 75
                 }, {
                     field: 'remote_vn',
                     name: 'Remote VN',
@@ -430,27 +433,24 @@ define([
                     }
                 }, {
                     field: 'client_port',
-                    name: 'Client Port'
+                    name: 'Client Port',
+                    maxWidth: 75
                 }, {
-                    field: 'forward_action',
-                    name: 'Forward Action'
-                }/*, {
-                    field: 'reverse_action',
-                    name: 'Reverse Action'
-                }*/);
+                    field: 'SUM(forward_sampled_bytes)',
+                    name: 'Sampled Bytes (In/Out)',
+                    formatter:function(r,c,v,cd,dc) {
+                       return (formatBytes(v) + ' / ' +
+                              formatBytes(dc['SUM(reverse_sampled_bytes)']));
+                    }
+                });
             }
 
             sessionColumns.push({
-                field: 'SUM(forward_sampled_bytes)',
-                name: 'In Bytes',
+                field: 'SUM(forward_logged_bytes)',
+                name: 'Logged Bytes (In/Out)',
                 formatter:function(r,c,v,cd,dc) {
-                   return formatBytes(v);
-                }
-            }, {
-                field: 'SUM(reverse_sampled_bytes)',
-                name: 'Out Bytes',
-                formatter:function(r,c,v,cd,dc) {
-                   return formatBytes(v);
+                   return (formatBytes(v) + ' / ' +
+                          formatBytes(dc['SUM(reverse_logged_bytes)']));
                 }
             });
             gridElementConfig = {
@@ -503,17 +503,8 @@ define([
         getCurrentSessionDetailsTemplateConfig: function(data) {
             var currentLevel = data.level,
                 templateConfig = [];
-            if(currentLevel == 1) {
-                if(data.groupBy == 'policy') {
-                    templateConfig.push({
-                        key: 'security_policy_rule',
-                        label: 'Policy (Rule)',
-                        templateGenerator: 'TextGenerator',
-                        templateGeneratorConfig: {
-                            formatter: 'policyRuleFormatter'
-                        }
-                    });
-                } else {
+            if(currentLevel == 1 || (currentLevel == 2 && data.groupBy == 'policy')) {
+                if(data.groupBy != 'policy' || currentLevel == 2) {
                     templateConfig.push({
                         key: 'protocol',
                         label: 'protocol (Server Port)',
@@ -522,8 +513,19 @@ define([
                             formatter: 'protocolPortFormatter'
                         }
                     });
+                } else {
+                    templateConfig.push({
+                        key: 'security_policy_rule',
+                        label: 'Policy (Rule)',
+                        templateGenerator: 'TextGenerator',
+                        templateGeneratorConfig: {
+                            formatter: 'policyRuleFormatter'
+                        }
+                    });
                 }
             }
+            if(data.groupBy == 'policy')
+                currentLevel--;
             if(currentLevel == 2) {
                 var label = (data.sessionType == 'client') ? 'Client IP' : 'Server IP';
                 templateConfig.push({
@@ -546,13 +548,6 @@ define([
                     label: label,
                     templateGenerator: 'TextGenerator'
                 }, {
-                    key: 'vn',
-                    label: 'VN',
-                    templateGenerator: 'TextGenerator',
-                    templateGeneratorConfig: {
-                        formatter: 'vnFormatter'
-                    }
-                }, {
                     key: 'remote_vn',
                     label: 'Remote VN',
                     templateGenerator: 'TextGenerator',
@@ -564,28 +559,34 @@ define([
                     label: 'Client Port',
                     templateGenerator: 'TextGenerator'
                 }, {
-                    key: 'forward_action',
-                    label: 'Forward Action',
-                    templateGenerator: 'TextGenerator'
-                }/*, {
-                    key: 'reverse_action',
-                    label: 'Reverse Action',
-                    templateGenerator: 'TextGenerator'
-                }*/);
+                    key: 'SUM(forward_sampled_bytes)',
+                    label: 'Sampled In Bytes',
+                    templateGenerator: 'TextGenerator',
+                    templateGeneratorConfig: {
+                        formatter: 'bytesForwardFormatter'
+                    }
+                }, {
+                    key: 'SUM(reverse_sampled_bytes)',
+                    label: 'Sampled Out Bytes',
+                    templateGenerator: 'TextGenerator',
+                    templateGeneratorConfig: {
+                        formatter: 'bytesReverseFormatter'
+                    }
+                });
             }
             templateConfig.push({
-                key: 'SUM(forward_sampled_bytes)',
-                label: 'In Bytes',
+                key: 'SUM(forward_logged_bytes)',
+                label: 'Looged In Bytes',
                 templateGenerator: 'TextGenerator',
                 templateGeneratorConfig: {
-                    formatter: 'bytesForwardFormatter'
+                    formatter: 'loogedBytesForwardFormatter'
                 }
             }, {
-                key: 'SUM(reverse_sampled_bytes)',
-                label: 'Ou Bytes',
+                key: 'SUM(reverse_logged_bytes)',
+                label: 'Looged Out Bytes',
                 templateGenerator: 'TextGenerator',
                 templateGeneratorConfig: {
-                    formatter: 'bytesReverseFormatter'
+                    formatter: 'loogedBytesReverseFormatter'
                 }
             });
             return {
@@ -597,7 +598,6 @@ define([
                             templateGeneratorConfig: {
                                 columns: [
                                     {
-                                        //class: 'trafficEndpointDetails',
                                         rows: [
                                             {
                                                 title: 'Details',
@@ -619,10 +619,10 @@ define([
         return (v || v === 0) ? v : '-';
     }
     this.policyFormatter = function(v, dc) {
-        return this.epsDefaultValueFormatter(this.getPolicyInfo(dc).name);
+        return this.getPolicyInfo(dc['eps.__key']).name;
     }
     this.ruleFormatter = function(v, dc) {
-        return this.epsDefaultValueFormatter(this.getPolicyInfo(dc).uuid);
+        return this.getPolicyInfo(dc['eps.__key']).uuid;
     }
     this.sourceTagsFormatter = function(v, dc) {
        return this.epsDefaultValueFormatter(this.getEndpointTags(dc));
@@ -666,6 +666,12 @@ define([
     this.bytesForwardFormatter = function(v, dc) {
        return formatBytes(dc['SUM(forward_sampled_bytes)']);
     }
+    this.loogedBytesReverseFormatter = function(v, dc) {
+       return formatBytes(dc['SUM(reverse_logged_bytes)']);
+    }
+    this.loogedBytesForwardFormatter = function(v, dc) {
+       return formatBytes(dc['SUM(forward_logged_bytes)']);
+    }
     this.vnFormatter = function(v, dc) {
        return formatVN(dc['vn']);
     }
@@ -679,7 +685,8 @@ define([
        return cowf.format.protocol(dc['protocol']) + " (" + dc['server_port'] + ")";
     }
     this.policyRuleFormatter = function(v, dc) {
-       return dc['security_policy_rule'];
+       var ruleObj = getPolicyInfo(dc['security_policy_rule']);
+       return ruleObj.name + ' (' + ruleObj.uuid + ')';
     }
     this.sessionsInFormatter = function(v, dc) {
        return this.epsDefaultValueFormatter(
@@ -689,11 +696,14 @@ define([
        return this.epsDefaultValueFormatter(
             dc['SUM(eps.traffic.responder_session_count)']);
     }
-    this.getPolicyInfo = function(dc) {
-        var policyInfo = {};
-        if(dc['eps.__key']) {
-            if(dc['eps.__key'].indexOf(':') > 0) {
-                var policy = dc['eps.__key'].split(':');
+    this.getPolicyInfo = function(key) {
+        var policyInfo = {
+                'name': '-',
+                'uuid': key
+            };
+        if(key) {
+            if(key.indexOf(':') > 0) {
+                var policy = key.split(':');
                 policyInfo = {
                     'name': policy[policy.length-2],
                     'uuid': policy[policy.length-1]
@@ -701,13 +711,10 @@ define([
             } else {
                 var policy = _.find(cowc.DEFAULT_FIREWALL_RULES,
                     function(rule) {
-                        return rule.uuid == dc['eps.__key'];
+                        return rule.uuid == key;
                 });
                 if(policy) {
-                    policyInfo = {
-                        'name': policy.name,
-                        'uuid': dc['eps.__key']
-                    }
+                    policyInfo.name = policy.name;
                 }
             }
         }

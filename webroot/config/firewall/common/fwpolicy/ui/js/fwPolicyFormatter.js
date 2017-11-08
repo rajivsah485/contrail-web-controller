@@ -136,7 +136,59 @@
               		return projectAddressGrp;
               	}
              };
-             
+
+             this.filterServiceGroupByProjects = function(serviceGroup, global){
+                 var filtedGlobalServiceGrp = [], filteredProjectServiceGrp = [], isGlobal;
+                 if(global !== undefined){
+                    isGlobal = global;
+                 }else{
+                    isGlobal = checkIsGlobal();
+                 }
+                 var projectName = contrail.getCookie(cowc.COOKIE_PROJECT_DISPLAY_NAME);
+                 for(var i = 0; i < serviceGroup.length; i++){
+                    var fq_name =  serviceGroup[i]['service-group']['fq_name'];
+                    if(fq_name[0] === 'default-policy-management'){
+                        filtedGlobalServiceGrp.push(serviceGroup[i]);
+                    }else if(fq_name.length > 1){
+                        if(fq_name.indexOf(projectName) === 1){
+                            filteredProjectServiceGrp.push(serviceGroup[i]);
+                        }
+                    }
+                }
+                if(isGlobal){
+                    return filtedGlobalServiceGrp;
+                }else{
+                    var projectServiceGrp = filteredProjectServiceGrp.concat(filtedGlobalServiceGrp);
+                    return projectServiceGrp;
+                }
+             };
+
+             this.filterSloByProjects = function(slo, global){
+                 var filteredGlobalSlo = [], filteredProjectSlo = [], isGlobal;
+                 if(global !== undefined){
+                    isGlobal = global;
+                 }else{
+                    isGlobal = checkIsGlobal();
+                 }
+                 var projectName = contrail.getCookie(cowc.COOKIE_PROJECT_DISPLAY_NAME);
+                 for(var i = 0; i < slo.length; i++){
+                    var fq_name =  slo[i]['security-logging-object']['fq_name'];
+                    if(fq_name[0] === 'default-global-system-config'){
+                        filteredGlobalSlo.push(slo[i]);
+                    }else if(fq_name.length > 1){
+                        if(fq_name.indexOf(projectName) === 1){
+                            filteredProjectSlo.push(slo[i]);
+                        }
+                    }
+                }
+                if(isGlobal){
+                    return filteredGlobalSlo;
+                }else{
+                    var projectSlo = filteredProjectSlo.concat(filteredGlobalSlo);
+                    return projectSlo;
+                }
+             };
+
              this.parseTags = function(tags) {
                  var tagGroupData = {},
                      applicationMap = { Application: [{ text: "Select Application",
@@ -168,33 +220,33 @@
                                   'global:' + data.name : data.name;
                           var txt = data.fq_name.length === 1 ?
                                   'global:' + data.tag_value : data.tag_value;
-                          if(data.tag_type === ctwc.APPLICATION_TAG_TYPE) {
+                          if(data.tag_type_name === ctwc.APPLICATION_TAG_TYPE) {
                               applicationMap['Application'].push({
                                   text: txt,
                                   value: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Application",
                                   id: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Application",
                                   parent: 'Application'});
-                          } else if(data.tag_type === ctwc.TIER_TAG_TYPE) {
+                          } else if(data.tag_type_name === ctwc.TIER_TAG_TYPE) {
                               tierMap['Tier'].push({
                                   text: txt,
                                   value: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Tier",
                                   id: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Tier",
                                   parent: 'Tier'});
 
-                          } else if(data.tag_type === ctwc.DEPLOYMENT_TAG_TYPE) {
+                          } else if(data.tag_type_name === ctwc.DEPLOYMENT_TAG_TYPE) {
                               deploymentMap['Deployment'].push({
                                   text: txt,
                                   value: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Deployment",
                                   id: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Deployment",
                                   parent: 'Deployment'});
 
-                          } else if(data.tag_type === ctwc.SITE_TAG_TYPE) {
+                          } else if(data.tag_type_name === ctwc.SITE_TAG_TYPE) {
                               siteMap['Site'].push({
                                   text: txt,
                                   value: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Site",
                                   id: val + cowc.DROPDOWN_VALUE_SEPARATOR + "Site",
                                   parent: 'Site'});
-                          } else if(data.tag_type === ctwc.LABEL_TAG_TYPE) {
+                          } else if(data.tag_type_name === ctwc.LABEL_TAG_TYPE) {
                               labelMap['Label'].push({
                                   text: txt,
                                   value: val + cowc.DROPDOWN_VALUE_SEPARATOR + "label",

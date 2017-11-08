@@ -3,7 +3,7 @@
  */
 
 define([
-    'lodash',
+    'lodashv4',
     'knockback',
     'contrail-view',
     'contrail-list-model',
@@ -38,11 +38,11 @@ define([
                     containerEle.empty();
                 }
                 this.renderView4Config(containerEle, self.model,
-                    this.getSessionsTabViewConfig(sessionData.endpointNames), null, null, null,
+                    this.getSessionsTabViewConfig(sessionData.endpointNames, sessionData.external), null, null, null,
                     function() {
                         self.renderBreadcrumb();
                         if(sessionData.level == 1) {
-                            $('#Session_Endpoint').show();
+                            $('#Session_Endpoint, #group_by_columns').show();
                             sessionData.sessionType = $('#Client_Sessions-tab-link')
                                 .parent().hasClass('ui-tabs-active')
                                                        ? 'client' : 'server';
@@ -51,11 +51,11 @@ define([
                                 Knockback.applyBindings(self.model,
                                     document.getElementById('Session_Endpoint'));
                                 Knockback.applyBindings(self.model,
-                                    document.getElementById('TG_Sessions_View'));
+                                    document.getElementById('group_by_columns'));
                                 kbValidation.bind(self);
                             }
                         } else {
-                            $('#Session_Endpoint').hide();
+                            $('#Session_Endpoint, #group_by_columns').hide();
                         }
                     });
             } else {
@@ -112,7 +112,7 @@ define([
                     title: 'Endpoint' + (idx + 1),
                     view: "TrafficGroupsEPSGridView",
                     app: cowc.APP_CONTRAIL_CONTROLLER,
-                    viewPathPrefix: "monitor/networking/trafficgroups/ui/js/views/",
+                    viewPathPrefix: "monitor/security/trafficgroups/ui/js/views/",
                     viewConfig: {
                         data: endpoint,
                         tabid: "Endpoint_" + idx + "_Stats",
@@ -157,7 +157,7 @@ define([
                     title: title + ' Sessions',
                     view: "TrafficGroupsEPSGridView",
                     app: cowc.APP_CONTRAIL_CONTROLLER,
-                    viewPathPrefix: "monitor/networking/trafficgroups/ui/js/views/",
+                    viewPathPrefix: "monitor/security/trafficgroups/ui/js/views/",
                     viewConfig: {
                         data: endpoint,
                         tabid: title + "_Sessions",
@@ -177,7 +177,7 @@ define([
              });
             return tabConfig;
         },
-        getSessionsTabViewConfig: function (names) {
+        getSessionsTabViewConfig: function (names, external) {
                 var configRows = [];
                 if(!$('#TG_Sessions_View').length) {
                     configRows.push({
@@ -190,6 +190,7 @@ define([
                                 templateId: cowc.TMPL_RADIO_BUTTON_VIEW,
                                 path: 'Session_Endpoint',
                                 dataBindValue: 'Session_Endpoint',
+                                disabled: external ? true : false,
                                 elementConfig: {
                                     dataObj: [
                                         {value: 'endpoint1', label: names[0]},
@@ -198,7 +199,7 @@ define([
                                 }
                             }
                         }],
-                    }, /*{
+                    }, {
                         columns: [{
                             elementId: 'group_by_columns',
                             view: 'FormDropdownView',
@@ -220,7 +221,7 @@ define([
                                 }
                             }
                         }]
-                    }, */{
+                    }, {
                         columns: [{
                             elementId: 'TG_Sessions_View',
                             view: "SectionView",
@@ -260,7 +261,7 @@ define([
                             elementId: type + "_Sessions",
                             view: "TrafficGroupsEPSGridView",
                             app: cowc.APP_CONTRAIL_CONTROLLER,
-                            viewPathPrefix: "monitor/networking/trafficgroups/ui/js/views/",
+                            viewPathPrefix: "monitor/security/trafficgroups/ui/js/views/",
                             viewConfig: {
                                 data: this.curSessionData,
                                 tabid: type + "_Sessions",
@@ -291,54 +292,84 @@ define([
                 breadcrumbId : 'TGsessionsBreadcrumb'
             }));
             $('#TGsessionsBreadcrumb li:last').addClass('active');
-            $('#TGsessionsBreadcrumb li').on('click', function(e) {
+            $('#TGsessionsBreadcrumb li a').on('click', function(e) {
                 e.preventDefault();
                 var curIndex = $(e.target).parents('li').index();
-                if(curIndex == 0) {
+                if(self.sessionData.level != curIndex) {
+                    if(curIndex == 0) {
                     self.parentView.render();
-                } else {
-                    self.sessionData.breadcrumb = self.sessionData.breadcrumb.slice(0, curIndex+1);
-                    self.sessionData.where = self.sessionData.where.slice(0, curIndex+1);
-                    self.sessionData.level = curIndex;
-                    self.sessionDrilldown(self.sessionData, $('#traffic-groups-radial-chart'));
+                    } else {
+                        self.sessionData.breadcrumb = self.sessionData.breadcrumb.slice(0, curIndex+1);
+                        self.sessionData.where = self.sessionData.where.slice(0, curIndex+1);
+                        self.sessionData.level = curIndex;
+                        self.sessionDrilldown(self.sessionData, $('#traffic-groups-radial-chart'));
+                    }
                 }
             });
         },
         sessionDrilldown: function(sessionData) {
+            var parentEle = $('#TG_Sessions_View').length ?
+                $('#TG_Sessions_View') : $('#traffic-groups-radial-chart');
+                parentEle.html('<h4 class="noStatsMsg">Loading...</h4>');
+            $('#traffic-groups-legend-info').addClass('hidden');
             $('.tgChartLegend, .tgCirclesLegend').hide();
             var sessionData = this.sessionData,
                 self = this,
-                selectFields = ["SUM(forward_sampled_bytes)", "SUM(reverse_sampled_bytes)"];
-                if(sessionData.level == 1) {
-                    if(self.model && self.model.model()
-                            .attributes['group_by_columns'] == 'policy') {
-                        selectFields.push("policy", "rule");
-                    } else {
+                filterApplied = self.isFilterApplied(sessionData),
+                groupByOption = sessionData.groupBy == 'policy' ?
+                                'policy' : 'protocol',
+                level = sessionData.level,
+                selectFields = ['SUM(forward_logged_bytes)', 'SUM(reverse_logged_bytes)'];
+                if(level == 1 || (level == 2 && groupByOption == 'policy')) {
+                    if(groupByOption != 'policy' || level == 2) {
                         selectFields.push("protocol", "server_port");
+                    } else {
+                        selectFields.push("security_policy_rule");
                     }
                 }
-                if(sessionData.level == 2) {
+                if(groupByOption == 'policy')
+                    level--;
+                if(level == 2) {
                     selectFields.push("local_ip", "vn");
                 }
-                if(sessionData.level == 3) {
-                    selectFields.push("remote_ip", "vn", 'remote_vn', 'client_port', 'forward_action', 'reverse_action');
+                if(level == 3) {
+                    selectFields.push('remote_ip', 'remote_vn', 'client_port',
+                        'SUM(forward_sampled_bytes)', 'SUM(reverse_sampled_bytes)');
                 }
-            var whereClause = [],
+            if(filterApplied)
+                selectFields.push('remote_vn');
+
+            var whereClause = [], filter = [],
                 whereTags = sessionData.tags.slice(0);
             if(sessionData.selectedEndpoint == 'endpoint2') {
                 whereTags = whereTags.reverse();
             }
             _.each(whereTags[0], function(tag) {
-                whereClause.push({
-                    "suffix": null, "value2": null, "name": tag.name, "value": tag.value, "op": 1
-                });
+                if (tag.value && (tag.name != 'vn' || level < 3)) {
+                    whereClause.push({
+                        "suffix": null, "value2": null, "name": tag.name,
+                        "value": tag.value, "op": tag.operator ? tag.operator : 1
+                    });
+                }
             });
            _.each(whereTags[1], function(tag) {
-                whereClause.push({
-                    "suffix": null, "value2": null, "name": "remote_" + tag.name, "value": tag.value, "op": 1
-                });
+                if (tag.value) {
+                    whereClause.push({
+                        "suffix": null, "value2": null, "name": "remote_" + tag.name,
+                        "value": tag.value, "op": tag.operator ? tag.operator : 1
+                    });
+                 }
             });
-
+           if(filterApplied) {
+               _.each(sessionData.filter, function(tag) {
+                    if (tag.value) {
+                        filter.push({
+                            "suffix": null, "value2": null, "name": "remote_" + tag.name,
+                            "value": tag.value, "op": tag.operator ? tag.operator : 1
+                        });
+                     }
+                });
+            }
             var addWhere = [];
             _.each(sessionData.where, function(values) {
                 _.each(values, function(value) {
@@ -346,90 +377,59 @@ define([
                 });
             });
             whereClause = whereClause.concat(addWhere);
-            var selectedTime = self.parentView.getSelectedTime();
-
-            var clientPostData = {
-                "session_type": "client",
-                "start_time": "now-" + (selectedTime.fromTime + 'm'),
-                "end_time": "now-" + (selectedTime.toTime + 'h'),
-                "select_fields": selectFields,
-                "table": "SessionSeriesTable",
-                "where": [whereClause]
+            var reqObj = {
+                selectFields : selectFields,
+                whereClause : whereClause,
+                filter: filter,
+                level : sessionData.level,
+                type: sessionData.sessionType,
+                callback : self.callRender,
+                view : self
             };
-
-            var serverPostData = {
-                "session_type": "server",
-                "start_time": "now-" + (selectedTime.fromTime + 'm'),
-                "end_time": "now-" + (selectedTime.toTime + 'm'),
-                "select_fields": selectFields,
-                "table": "SessionSeriesTable",
-                "where": [whereClause]
-            };
-
-            var clientModelConfig = {
-                remote : {
-                    ajaxConfig : {
-                        url:monitorInfraConstants.monitorInfraUrls['ANALYTICS_QUERY'],
-                        type:'POST',
-                        data:JSON.stringify(clientPostData)
-                    },
-                    dataParser : function (response) {
-                        self.clientData = cowu.getValueByJsonPath(response, 'value', []);
-                        self.curSessionData = self.clientData;
-                        return self.clientData;
-                    }
-                }
-            };
-
-            var serverModelConfig = {
-                remote : {
-                    ajaxConfig : {
-                        url:monitorInfraConstants.monitorInfraUrls['ANALYTICS_QUERY'],
-                        type:'POST',
-                        data:JSON.stringify(serverPostData)
-                    },
-                    dataParser : function (response) {
-                        self.serverData = cowu.getValueByJsonPath(response, 'value', []);
-                        self.curSessionData = self.serverData;
-                        return self.serverData;
-                    }
-                }
-            };
-
-            if(sessionData.level == 1) {
-                var clientModel = new ContrailListModel(clientModelConfig),
-                    serverModel = new ContrailListModel(serverModelConfig),
-                    reqCount = 0;
-                clientModel.onAllRequestsComplete.subscribe(function() {
-                   reqCount++;
-                   bothRequestDone(reqCount);
+            self.parentView.querySessionSeries(reqObj);
+        },
+        isFilterApplied: function(data) {
+            var level = (data.groupBy == 'policy') ? data.level-1 : data.level;
+            if(data.external == 'externalProject' && !data.sliceByProject
+                && level !=3) {
+                return true;
+            } else return false;
+        },
+        grouByColumns: function(columns, data) {
+            data = _.groupBy(data, function(d) {
+                var groupBy = [];
+                _.each(columns, function(key) {
+                    groupBy.push(d[key]);
                 });
-                serverModel.onAllRequestsComplete.subscribe(function() {
-                    reqCount++;
-                    bothRequestDone(reqCount);
-                });
-            } else if(sessionData.sessionType == 'client') {
-                var clientModel = new ContrailListModel(clientModelConfig);
-                clientModel.onAllRequestsComplete.subscribe(function() {
-                   callRender();
-                });
-            } else {
-                var serverModel = new ContrailListModel(serverModelConfig);
-                serverModel.onAllRequestsComplete.subscribe(function() {
-                   callRender();
-                });
-            }
-            function bothRequestDone(reqCount) {
-                if(reqCount == 2) {
-                    callRender();
+                return groupBy.join('-');
+            });
+            data = _.map(data, function(objs, keys) {
+                objs[0]['SUM(forward_logged_bytes)'] = _.sumBy(objs, 'SUM(forward_logged_bytes)');
+                objs[0]['SUM(reverse_logged_bytes)'] = _.sumBy(objs, 'SUM(reverse_logged_bytes)');
+                return objs[0];
+            });
+            return data;
+        },
+        callRender: function(resObj) {
+            var view = resObj.view;
+            if(view.isFilterApplied(view.sessionData)) {
+                var columns = _.without(resObj.selectFields,
+                    'remote_vn',"SUM(forward_logged_bytes)", "SUM(reverse_logged_bytes)")
+                if(resObj.level == 1) {
+                    resObj.clientData = view.grouByColumns(columns, resObj.clientData);
+                    resObj.serverData = view.grouByColumns(columns, resObj.serverData);
+                } else {
+                    resObj.curSessionData =
+                        resObj.view.grouByColumns(columns, resObj.curSessionData);
                 }
             }
-            function callRender() {
-                if(sessionData.level == 1) {
-                    sessionData.endpointStats = [self.clientData, self.serverData];
-                }
-                self.render(sessionData, $('#traffic-groups-radial-chart'));
+            if(resObj.level == 1) {
+                view.sessionData.endpointStats =
+                        [resObj.clientData, resObj.serverData];
             }
+            view.curSessionData = resObj.curSessionData;
+            view.render(resObj.view.sessionData, $('#traffic-groups-radial-chart'));
+            $('#traffic-groups-legend-info').removeClass('hidden');
         }
     });
     return TrafficGroupsSessionsView;

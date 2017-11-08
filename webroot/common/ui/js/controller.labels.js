@@ -857,6 +857,7 @@ define([
         this.TITLE_SERVICE_GROUP_MULTI_DELETE = 'Delete Service Group (s)';
         this.TITLE_SERVICE_GROUP_DELETE = 'Delete Service Group';
         this.FIREWALL_POLICY_ANY = 'any';
+        this.TITLE_ASSOCIATED_POLICY = 'Associated Firewall Policies';
 
         /* RBAC labels */
         this.TITLE_RBAC = 'API Access';
@@ -1402,7 +1403,7 @@ define([
 
         //SLO
         this.TITLE_SLO = 'Security Logging Object';
-        this.TITLE_SLO_MULTI_DELETE = "Delete SLO";
+        this.TITLE_SLO_MULTI_DELETE = "Delete Security Logging Objects";
         this.TITLE_CREATE_SLO = 'Create Security Logging Object';
         this.TITLE_DELETE_SLO = 'Delete Security Logging Object';
         // Health Check Config labels
@@ -1427,6 +1428,8 @@ define([
         this.TITLE_ADD_PACKET_CAPTURE = 'Create Analyzer';
         this.ERROR_LABEL_PACKET_CAPTURE = 'Analyzer';
         this.CONFIG_SEC_GRP_PAGE_ID = 'config-sec-grp-page';
+
+        this.VMI_LABEL = 'Workloads';
 
         /*Traffic Groups Labels */
         this.TRAFFIC_GROUPS_ENDPOINT_STATS = 'traffic-groups-endpoint-statistics';

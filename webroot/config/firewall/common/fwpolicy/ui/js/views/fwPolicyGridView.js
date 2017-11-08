@@ -7,11 +7,13 @@ define([
     'contrail-view',
     'config/firewall/common/fwpolicy/ui/js/fwPolicyFormatter',
     'config/firewall/common/fwpolicy/ui/js/models/fwPolicyModel',
-    'config/firewall/common/fwpolicy/ui/js/views/fwPolicyEditView'
-], function(_, ContrailView, FWPolicyFormatter, FWPolicyModel, FWPolicyEditView) {
+    'config/firewall/common/fwpolicy/ui/js/views/fwPolicyEditView',
+    'config/firewall/fwpolicywizard/common/ui/js/views/fwPolicyWizard.utils'
+], function(_, ContrailView, FWPolicyFormatter, FWPolicyModel, FWPolicyEditView, FWZUtils) {
     var self, gridElId = '#' + ctwc.FW_POLICY_GRID_ID, gridObj,
       fwPolicyFormatter = new FWPolicyFormatter(),
-      fwPolicyEditView =  new FWPolicyEditView();
+      fwPolicyEditView =  new FWPolicyEditView(),
+      fwzUtils = new FWZUtils();
     var fwPolicyGridView = ContrailView.extend({
         el: $(contentContainer),
 
@@ -50,50 +52,68 @@ define([
         }
     };
 
-    function getRowActionConfig() {
-        var rowActionConfig = [];
-        rowActionConfig.push(ctwgc.getEditConfig("Edit", function (rowIndex) {
-            var dataItem = $(gridElId).data("contrailGrid").
-                _dataView.getItem(rowIndex),
-                fwPolicyModel = new FWPolicyModel(dataItem);
-            fwPolicyEditView.model = fwPolicyModel;
-            fwPolicyEditView.renderEditFirewallPolicyDescription(
-                {"title": ctwl.EDIT,
-                    mode: ctwl.EDIT_ACTION,
-                    callback: function () {
-                        var dataView =
-                            $(gridElId).data("contrailGrid")._dataView;
-                        dataView.refreshData();
-                    }
-                }
-            );
-        }));
-        rowActionConfig.push(ctwgc.getDeleteAction(function (rowIndex) {
-              var dataItem = $(gridElId).data("contrailGrid").
-                  _dataView.getItem(rowIndex),
-                  fwPolicyModel = new FWPolicyModel(dataItem),
-                  checkedRow = [dataItem];
-
-              fwPolicyEditView.model = fwPolicyModel;
-              fwPolicyEditView.renderDeleteFWPolicies(
-                  {"title": ctwl.TITLE_FW_POLICY_DELETE,
-                      checkedRows: checkedRow,
-                      callback: function () {
-                          var dataView =
-                              $(gridElId).data("contrailGrid")._dataView;
-                          dataView.refreshData();
-                      }
-                  }
-              );
-        }));
-        return rowActionConfig;
+    function getRowActionConfig(viewConfig) {
+        if(cowu.isAdmin() === false && viewConfig['is_global'] === true){
+            return false;
+        }
+        else{
+            var rowActionConfig = [];
+            rowActionConfig.push(ctwgc.getEditConfig("Edit", function (rowIndex) {
+                    var dataItem = $(gridElId).data("contrailGrid").
+                        _dataView.getItem(rowIndex),
+                    fwPolicyModel = new FWPolicyModel(dataItem);
+                        fwPolicyEditView.model = fwPolicyModel;
+                        fwPolicyEditView.renderEditFirewallPolicyDescription(
+                            {"title": ctwl.EDIT,
+                                mode: ctwl.EDIT_ACTION,
+                                isGlobal: viewConfig.isGlobal,
+                                callback: function () {
+                                    var dataView =
+                                        $(gridElId).data("contrailGrid")._dataView;
+                                    dataView.refreshData();
+                                }
+                            }
+                        );
+                }));
+            rowActionConfig.push(ctwgc.getDeleteAction(function (rowIndex) {
+                         var dataItem = $(gridElId).data("contrailGrid").
+                         _dataView.getItem(rowIndex),
+                         fwPolicyModel = new FWPolicyModel(dataItem),
+                         checkedRow = [dataItem];
+                     fwPolicyEditView.model = fwPolicyModel;
+                     fwPolicyEditView.renderDeleteFWPolicies(
+                         {"title": ctwl.TITLE_FW_POLICY_DELETE,
+                             checkedRows: checkedRow,
+                             callback: function () {
+                                 var dataView =
+                                     $(gridElId).data("contrailGrid")._dataView;
+                                 dataView.refreshData();
+                             }
+                         }
+                     );
+                }));
+            if(viewConfig.isWizard){
+               var options = [];
+               options.push(rowActionConfig[1]);
+               return options;
+            }else{
+                return rowActionConfig;
+            }
+        }
     };
 
     function getConfiguration (viewConfig) {
+        var title;
+        if(viewConfig.isWizard == true){
+            title = '';
+        }
+        else{
+            title = ctwl.TITLE_FW_POLICY;
+        }
         var gridElementConfig = {
             header: {
                 title: {
-                    text: ctwl.TITLE_FW_POLICY
+                    text: title
                 },
                advanceControls: getHeaderActionConfig(viewConfig)
             },
@@ -133,58 +153,61 @@ define([
     };
 
     function getHeaderActionConfig(viewConfig) {
-        var headerActionConfig;
-            var headerActionConfig = [
-                {
-                    "type" : "link",
-                    "title" : ctwl.TITLE_FW_POLICY_MULTI_DELETE,
-                    "iconClass": 'fa fa-trash',
-                    "linkElementId": 'btnDeleteFWPolicy',
-                    "onClick" : function() {
-                        var fwPolicyModel = new FWPolicyModel();
-                        var checkedRows =
-                            $(gridElId).data("contrailGrid").
-                            getCheckedRows();
-                        if(checkedRows && checkedRows.length > 0) {
+            if(cowu.isAdmin() === false && viewConfig.isGlobal === true){
+                return false;
+            }
+            else{
+                var headerActionConfig = [
+                    {
+                        "type" : "link",
+                        "title" : ctwl.TITLE_FW_POLICY_MULTI_DELETE,
+                        "iconClass": 'fa fa-trash',
+                        "linkElementId": 'btnDeleteFWPolicy',
+                        "onClick" : function() {
+                            var fwPolicyModel = new FWPolicyModel();
+                            var checkedRows =
+                                $(gridElId).data("contrailGrid").
+                                getCheckedRows();
+                            if(checkedRows && checkedRows.length > 0) {
+                                fwPolicyEditView.model = fwPolicyModel;
+                                fwPolicyEditView.renderDeleteFWPolicies(
+                                    {"title": ctwl.TITLE_FW_POLICY_MULTI_DELETE,
+                                        checkedRows: checkedRows,
+                                        callback: function () {
+                                            var dataView =
+                                                $(gridElId).
+                                                data("contrailGrid")._dataView;
+                                            dataView.refreshData();
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    },
+                    {
+                        "type" : "link",
+                        "title" : ctwl.TITLE_CREATE_FW_POLICY,
+                        "iconClass" : "fa fa-plus",
+                        "onClick" : function() {
+                            var fwPolicyModel = new FWPolicyModel();
                             fwPolicyEditView.model = fwPolicyModel;
-                            fwPolicyEditView.renderDeleteFWPolicies(
-                                {"title": ctwl.TITLE_FW_POLICY_MULTI_DELETE,
-                                    checkedRows: checkedRows,
+                            fwPolicyEditView.renderAddEditFWPolicy(
+                                {"title": ctwl.CREATE,
                                     callback: function () {
                                         var dataView =
                                             $(gridElId).
                                             data("contrailGrid")._dataView;
                                         dataView.refreshData();
-                                    }
+                                    },
+                                    mode : ctwl.CREATE_ACTION,
+                                    isGlobal: viewConfig.isGlobal
                                 }
                             );
                         }
                     }
-                },
-                {
-                    "type" : "link",
-                    "title" : ctwl.TITLE_CREATE_FW_POLICY,
-                    "iconClass" : "fa fa-plus",
-                    "onClick" : function() {
-                        var fwPolicyModel = new FWPolicyModel();
-                        fwPolicyEditView.model = fwPolicyModel;
-                        fwPolicyEditView.renderAddEditFWPolicy(
-                            {"title": ctwl.CREATE,
-                                callback: function () {
-                                    var dataView =
-                                        $(gridElId).
-                                        data("contrailGrid")._dataView;
-                                    dataView.refreshData();
-                                },
-                                mode : ctwl.CREATE_ACTION,
-                                isGlobal: viewConfig.isGlobal
-                            }
-                        );
-                    }
-                }
-            ];
-
-        return headerActionConfig;
+                ];
+                    return headerActionConfig;
+            }
     };
 
     function onPolicyClick (e, dc) {
@@ -222,7 +245,7 @@ define([
             id: 'name',
             field: 'name',
             name: 'Name',
-            cssClass :'cell-hyperlink-blue',
+            cssClass: viewConfig.isWizard ? '' : 'cell-hyperlink-blue',
             events : {
                 onClick : onPolicyClick.bind({viewConfig:viewConfig})
             }
@@ -235,14 +258,14 @@ define([
           }, {
               id: 'application_policy_set_back_refs',
               field: 'application_policy_set_back_refs',
-              name: 'Member of',
+              name: 'Member of Application Policy Sets',
               minWidth : 150,
               formatter: fwPolicyFormatter.policySetFormatter
            }, {
              id: 'firewall_rule_refs',
              field: 'firewall_rule_refs',
              name: 'Rules',
-             cssClass :'cell-hyperlink-blue',
+             cssClass: viewConfig.isWizard ? '' : 'cell-hyperlink-blue',
              events : {
                  onClick : onPolicyClick.bind({viewConfig:viewConfig})
              },
@@ -306,6 +329,15 @@ define([
                                         formatter: "policySetFormatter"
                                     }
                                 },{
+                                    label: 'Associated Security Logging Objects',
+                                    key: 'security_logging_object_refs',
+                                    templateGenerator:
+                                        'TextGenerator',
+                                    templateGeneratorConfig: {
+                                        formatter:
+                                            'SloFormatter'
+                                    }
+                                },{
                                     keyClass:'col-xs-3',
                                     valueClass:'col-xs-9',
                                     key: "uuid",
@@ -348,6 +380,10 @@ define([
 
     this.lastUpdateExpFormatter = function(v, dc) {
         return fwPolicyFormatter.lastUpdateExpFormatter("", "", v, "", dc);
+    };
+
+    this.SloFormatter = function (v, dc) {
+        return ctwu.securityLoggingObjectFormatter(dc, 'details');
     };
 
     return fwPolicyGridView;
