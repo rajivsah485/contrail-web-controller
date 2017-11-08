@@ -452,7 +452,7 @@ function getVMIDetailsfromLB(appData, lbs, callback) {
 		}
 	}
 	var lisLength = vimUUID.length;
-	console.log('getVMIDetailsfromLB-lisLength-'+lisLength);
+	//console.log('getVMIDetailsfromLB-lisLength-'+lisLength);
 	if(vimUUID.length < 1){
 		callback(null,{});
 		return;
@@ -1210,15 +1210,15 @@ function createLoadBalancer(request, response, appData) {
 				commonUtils.handleJSONResponse(error, response, null);
 				return;
 			}
+			commonUtils.handleJSONResponse(null, response, postData);
+			/*
 		 	var lbId = postData["loadbalancer"]["uuid"];
 			readLBwithUUID(lbId, appData, function(error, results){
 				commonUtils.handleJSONResponse(error, response, results);
-			});
+			});*/
 		});
 
 }
-
-
 
 /**
 * @createLoadBalancer
@@ -1226,7 +1226,7 @@ function createLoadBalancer(request, response, appData) {
 * 1. Basic validation before creating the Load Balancer
 */
 function createLoadBalancerValidate (appData, postData, callback){
-	console.log('createLoadBalancerValidate', postData);
+	console.log('createLoadBalancerValidate');
 	if (!('loadbalancer' in postData)) {
         error = new appErrors.RESTServerError('Load Balancer object missing ');
         callback(error, postData);
@@ -1278,7 +1278,7 @@ function createLoadBalancerValidate (appData, postData, callback){
 				callback(error, null);
 				return;
 			}
-			console.log('lbData:'+ JSON.stringify(lbData));
+		//	console.log('lbData:'+ JSON.stringify(lbData));
 			var lbId = lbData['loadbalancer']['uuid'];
 			readLBwithUUID(lbId, appData, function(err, lbData) {
 				if (err) {
@@ -1404,51 +1404,81 @@ function removeLoadBalancerRefs(lbPutData){
 function deleteLoadBalancer(request, response, appData) {	 
 	console.log('deleteLoadBalancer');
 	if (!(uuid = request.param('uuid').toString())) {
-	        error = new appErrors.RESTServerError('Load Balancer id missing');
-	        commonUtils.handleJSONResponse(error, response, null);
-	        return;
-	    }
-		deleteLoadBalancerCB(uuid, appData, function(error, results){
-			if(error){
-	            commonUtils.handleJSONResponse(error, response, null);
-	            return;
-	        }
-	        commonUtils.handleJSONResponse(error, response, results);
-		});
+        error = new appErrors.RESTServerError('Load Balancer id missing');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	var dataObj={};
+	dataObj.uuid= uuid;
+	dataObj.request= request;
+	dataObj.appData=appData;
+	
+	deleteLoadBalancerCB(dataObj, function(error, results){
+		if(error){
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        commonUtils.handleJSONResponse(error, response, results);
+	});
+
 	
 }
 
 
 
-function deleteLoadBalancerCB(uuid, appData,callback){
+function deleteLoadBalancerCB(dataObj,callback){
 	console.log('deleteLoadBalancerCB');
-	deleteLoadBalancerRefs(uuid, appData, function(err, outputs) {
-		configApiServer.apiDelete('/loadbalancer/' + uuid, appData, 
-				function(error, results) {
-					if (error) {
-						callback(error, null);
-						return;
-					}
-					//console.log(JSON.stringify('deleteLoadBalancerCB:'+results));
-					var newMessage={};
-					newMessage.message="Load Balancer are deleted....";
-					callback(null,appendMessage(newMessage, outputs));
-				});
-		});
-}
-function deleteLoadBalancerRefs(uuid, appData, callback){
-	console.log('deleteLoadBalancerRefs');
+	var uuid = dataObj.uuid;
+    var appData = dataObj.appData;
+    var request = dataObj.request;
 	readLBwithUUID(uuid, appData, function(err, lbData) {
 		if (err) {
-			callback(err, lbData);
+			callback(err, null);
 			return;
 		}
-		var l_back_refs = commonUtils.getValueByJsonPath(lbData,
-				'loadbalancer;loadbalancer_listener_back_refs', false);
-		deleteListenerByUUIDList(l_back_refs, appData, function(error, results) {
-			//console.log(JSON.stringify('results:'+results));
-			callback(null,results);
+		var dataObj={};
+		dataObj.lbData= lbData;
+		dataObj.request= request;
+		dataObj.appData=appData;
+		async.waterfall([
+			async.apply(deleteLoadBalancerRefs, dataObj),
+			async.apply(deleteLoadBalancerById, dataObj),
+			async.apply(deleteLoadBalancerVMIbyId, dataObj),
+			
+		], 
+		function(error, result) {
+			callback(error, result);
 		});
+	});
+}
+
+function deleteLoadBalancerById(dataObj, eMessage, callback){
+	var lbData = dataObj.lbData;
+    var appData = dataObj.appData;
+    var request = dataObj.request;
+    var uuid= lbData['loadbalancer']['uuid'];
+	configApiServer.apiDelete('/loadbalancer/' + uuid, appData, 
+			function(error, results) {
+				if (error) {
+					callback(error, null);
+					return;
+				}
+				//console.log(JSON.stringify('deleteLoadBalancerCB:'+results));
+				var newMessage={};
+				newMessage.message="Load Balancer are deleted....";
+				callback(null,appendMessage(newMessage, eMessage));
+			});
+}
+
+function deleteLoadBalancerRefs(dataObj, callback){
+	console.log('deleteLoadBalancerRefs');
+	var lbData = dataObj.lbData;
+    var appData = dataObj.appData;
+    var request = dataObj.request;
+	var l_back_refs = commonUtils.getValueByJsonPath(lbData, 'loadbalancer;loadbalancer_listener_back_refs', false);
+	deleteListenerByUUIDList(l_back_refs, appData, function(error, results) {
+		//console.log(JSON.stringify('results:'+results));
+		callback(null,results);
 	});
 	
 }
@@ -1702,12 +1732,11 @@ function deleteListenerByUUIDList(llIds, appData, callback) {
         }
 	}
 	async.mapSeries(allDataArr, deleteListenerRefs, function(error, outputs){
-		var rowsCnt = llIds.length;
-		for (var i = 0; i < rowsCnt; i++) {
-			reqUrl = '/loadbalancer-listener/' + llIds[i]['uuid']
+		_.each(llIds, function(llId) {
+			reqUrl = '/loadbalancer-listener/' + llId['uuid']
 			commonUtils.createReqObj(dataObjArr, reqUrl,
 					global.HTTP_REQUEST_DELETE, null, null, null, appData);
-		}
+		});
 		async.map(dataObjArr, commonUtils.getAPIServerResponse(
 				configApiServer.apiDelete, true), function(error, results) {
 			if (error) {
@@ -1737,35 +1766,26 @@ function deleteListenerRefs(pDataObj, callback){
 			callback(error, null);
 			return;
 		}
-		var p_back_refs;
+		var pool_back_refs;
 		for(i=0; i< results.length; i++){
-			p_back_refs=commonUtils.getValueByJsonPath(results[i],
+			pool_back_refs=commonUtils.getValueByJsonPath(results[i],
 					'loadbalancer-listener;loadbalancer_pool_back_refs', false);
 		}
-		if(p_back_refs== undefined || p_back_refs==false ){
+		var pUUIDs=[];
+		for(i=0; i< pool_back_refs.length; i++){
+			pUUIDs.push(pool_back_refs[i]['uuid']);
+		}
+		//console.log(pUUIDs);
+		if(pUUIDs== undefined || pUUIDs==false ){
 			callback(null,'');
 			return;
 		}
-		getPoolListbyIds(p_back_refs, appData, function(error, pLists){
-			var allDataArr = [];
-			for(i=0; i< pLists.length; i++){
-		        if(pLists[i]['loadbalancer-pool']!=null){
-		        		var ref={};	
-		        		ref['loadbalancer-pool'] = pLists[i]['loadbalancer-pool'];
-					 allDataArr.push({
-					        pData: ref,
-					        appData: appData
-					    });
-		        }
-			}
-			async.mapSeries(allDataArr, deletePoolMembers, function(error, results){
-				lastMessage= printMessage(results);
-				var newMessage={};
-				newMessage.message="All Listener refs are deleted....";
-				console.log("............"+lastMessage);
-				callback(null,appendMessage(newMessage, lastMessage));
-			 });
-		});
+		deletePoolCB(pUUIDs, appData, function(error, results){
+			var newMessage={};
+			newMessage.message="All Listener refs are deleted....";
+			//console.log("............"+lastMessage);
+			callback(null,appendMessage(newMessage, results));
+		 });
 	});	
 }
 
@@ -1853,7 +1873,7 @@ function createPoolMembers (appData, postData, callback){
 		if(err){
 			callback(err, null);
 		}
-		callback(err, postData);	
+		callback(null, postData);	
 	});
 }
 
@@ -1866,16 +1886,16 @@ function createPoolMember(appData, postData, callback){
 	var members= postData['loadbalancer-member'];
 	var allDataObj =[];
 	if(members.length > 0 ){
-		for(i=0; i<members.length; i++){
+		_.each(members, function(member) {
 			var mObj = {};
-			mObj['loadbalancer-member'] = members[i];
+			mObj['loadbalancer-member'] = member;
 		    mObj['appData'] = appData;
 		    allDataObj.push(mObj);
-		}
+		});
 	}
 	async.mapSeries(allDataObj, createMemberValidate, function(err, data) {
 		 postData['loadbalancer-member']= data;
-         callback(err, postData);
+         callback(null, postData);
      });
 }
 
@@ -2095,7 +2115,9 @@ function deletePool(request, response, appData) {
         commonUtils.handleJSONResponse(error, response, null);
         return;
     }
-	deletePoolCB(uuid, function(error, results){
+	var pIds=[];
+	pIds.push(uuid);
+	deletePoolCB(pIds,appData, function(error, results){
 		if(error){
             commonUtils.handleJSONResponse(error, response, null);
             return;
@@ -2105,15 +2127,24 @@ function deletePool(request, response, appData) {
 	});
 }
 
-function deletePoolCB(uuid, callback){
-	configApiServer.apiDelete('/loadbalancer-pool/' + uuid, appData,
-	     function(error, results) {
-	         if(error){
-	             callback(error,null)
-	             return;
-	         }
-	         callback(null,results)
-	     });
+function deletePoolCB(pIds, appData, callback){
+	getPoolListbyIds(pIds, appData, function(error, pLists){
+		var allDataArr = [];
+		for(i=0; i< pLists.length; i++){
+	        if(pLists[i]['loadbalancer-pool']!=null){
+	        		var ref={};	
+	        		ref['loadbalancer-pool'] = pLists[i]['loadbalancer-pool'];
+				 allDataArr.push({
+				        pData: ref,
+				        appData: appData
+				    });
+	        }
+		}
+		async.mapSeries(allDataArr, deletePoolMembers, function(error, results){
+			lastMessage= printMessage(results);
+			callback(null,lastMessage);
+		 });
+	});
 }
 
 function deletePoolMembers(pDataObj, callback){
@@ -2137,12 +2168,11 @@ function getPoolListbyIds(pIds, appData, callback){
 		return;
 	}
 	var dataObjArr = [];
-	var rowsCnt = pIds.length;
-	for (var i = 0; i < rowsCnt; i++) {
-		reqUrl = '/loadbalancer-pool/' + pIds[i]['uuid']
+	_.each(pIds, function(pId) {
+		reqUrl = '/loadbalancer-pool/' + pId
 		commonUtils.createReqObj(dataObjArr, reqUrl,
 				global.HTTP_REQUEST_GET, null, null, null, appData);
-	}
+	});
 	async.map(dataObjArr, commonUtils.getAPIServerResponse(
 			configApiServer.apiGet, true), function(error, results) {
 		if (error) {
@@ -2158,15 +2188,7 @@ function deletePoolsBypData(pDataObj, message, callback) {
 	console.log('deletePoolsBypData');	
 	var appData= pDataObj['appData'];
 	var pId =  pDataObj['pData'];
-	//console.log('deletePoolsBypData', pId);	
-	
 	var dataObjArr = [];
-	/*var rowsCnt = pIds.length;
-	for (var i = 0; i < rowsCnt; i++) {
-		reqUrl = '/loadbalancer-pool/' + pIds[i]['loadbalancer-pool']['uuid']
-		commonUtils.createReqObj(dataObjArr, reqUrl,
-				global.HTTP_REQUEST_DELETE, null, null, null, appData);
-	}*/
 	reqUrl = '/loadbalancer-pool/' + pId['loadbalancer-pool']['uuid']
 	commonUtils.createReqObj(dataObjArr, reqUrl,
 			global.HTTP_REQUEST_DELETE, null, null, null, appData);
@@ -2235,7 +2257,7 @@ function createMember(request, response, appData) {
 		}
 		
 		var members= commonUtils.cloneObj(postData);
-		console.log(members);
+		//console.log(members);
 		var allDataObj =[];
 		if(members['loadbalancer-member'].length > 0 ){
 			for(i=0; i< members['loadbalancer-member'].length; i++){
@@ -2243,7 +2265,7 @@ function createMember(request, response, appData) {
 				members['loadbalancer-member'][i]['parent_type'] = 'loadbalancer-pool';
 				var mObj = {};
 				mObj['loadbalancer-member'] = members['loadbalancer-member'][i];
-				console.log('mObj:'+ JSON.stringify(mObj));
+				//console.log('mObj:'+ JSON.stringify(mObj));
 			    mObj['appData'] = appData;
 			    allDataObj.push(mObj);
 			}
@@ -2312,12 +2334,12 @@ function createMemberValidate (dataObj, callback){
 				return;
 			}
 			var mId = mData['loadbalancer-member']['uuid'];
-			readMemberwithUUID(mId, appData, function(err, mData) {
+			readMemberwithUUID(mId, appData, function(err, results) {
 				if (err) {
-					callback(err, mData);
+					callback(err, null);
 					return;
 				}
-				callback(null, mData);
+				callback(null, results);
 			});
     });
   
@@ -2400,19 +2422,21 @@ function updateMemberCB(request, appData, callback){
  * @returns
  */
 function deleteMember(request, response, appData) {
-	if (!(lbId = request.param('uuid').toString())) {
+	if (!(uuid = request.param('uuid').toString())) {
         error = new appErrors.RESTServerError('Member id missing');
         commonUtils.handleJSONResponse(error, response, null);
         return;
     }
-	configApiServer.apiDelete('/loadbalancer-member/' + lbId, appData,
-     function(error, results) {
-         if(error){
-             commonUtils.handleJSONResponse(error, response, null);
-             return;
-         }
-         commonUtils.handleJSONResponse(error, response, results);
-     });
+	var mIds=[];
+	mIds.push(uuid);
+	deleteMembersByUUIDList(mIds, appData, function(error, results){
+		if(error){
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        commonUtils.handleJSONResponse(error, response, results);
+		
+	});
 }
 
 function deleteMembersbypData(pDataObj, callback){
@@ -2420,25 +2444,26 @@ function deleteMembersbypData(pDataObj, callback){
 	var pId =  pDataObj['pData'];
 	var memberRef= pId['loadbalancer-pool']['loadbalancer_members'];
 	var mIds=[];
+	var eMessage={};
+	eMessage.message="";
 	if(memberRef!= undefined && memberRef.length > 0){
-		for(j=0; j< memberRef.length; j++){
-			mIds.push(memberRef[j]);
-		}
+		_.each(memberRef, function(member) {
+			mIds.push(member['uuid']);
+		});
 	}
-	deleteMembersByUUIDList(mIds,appData, function(error, results){
-		callback(null, results);
+	deleteMembersByUUIDList(mIds,appData, function(error, newMessage){
+		callback(null, appendMessage(newMessage, eMessage));
 	});
 }
 
 function deleteMembersByUUIDList(mIds, appData, callback) {
 	console.log('deleteMembersByUUIDList');	
 	var dataObjArr = [];
-	var rowsCnt = mIds.length;
-	for (var i = 0; i < rowsCnt; i++) {
-		reqUrl = '/loadbalancer-member/' + mIds[i]['uuid'];
+	_.each(mIds, function(mId) {
+		reqUrl = '/loadbalancer-member/' + mId;
 		commonUtils.createReqObj(dataObjArr, reqUrl,
 				global.HTTP_REQUEST_DELETE, null, null, null, appData);
-	}
+	});
 	async.map(dataObjArr, commonUtils.getAPIServerResponse(
 			configApiServer.apiDelete, true), function(error, results) {
 		if (error) {
@@ -2693,42 +2718,32 @@ function deleteHealthMonitorCB(uuid, appData, callback){
 	     });
 }
 
-function deleteHealthMonitorsbypData(pDataObj, message, callback){
+function deleteHealthMonitorsbypData(pDataObj, eMessage, callback){
 	console.log('deleteHealthMonitorsbypData');	
 	var appData= pDataObj['appData'];
 	var pId =  pDataObj['pData'];
 	var allDataArr = [];
 	var ref= pId['loadbalancer-pool']['loadbalancer_healthmonitor_refs'];
-	if(ref.length > 0){
-		for(j=0; j< ref.length; j++){
-			 allDataArr.push({
-			        hmData: ref[j],
-			        appData: appData,
-			        message:message
-			    });
-		}
+	var hmIds=[];
+	if(ref!= undefined && ref.length > 0){
+		_.each(ref, function(hm) {
+			hmIds.push(hm['uuid']);
+		});
 	}
-	async.mapSeries(allDataArr, deleteHealthMonitorsById, function(error, message){
-         if(error){
-         		callback(error, null);
-             return;
-         }
-         message= printMessage(message);
-         callback(null, message);
-	 });
-	
+	deleteHealthMonitorsByUUIDList(hmIds,appData, function(error, newMessage){
+		callback(null, appendMessage(newMessage, eMessage));
+	});
 }
 
-function deleteHealthMonitorsById(pDataObj, callback) {
-	console.log('deleteHealthMonitorsById');	
-	var appData= pDataObj['appData'];
-	var hmId =  pDataObj['hmData'];	
-	var message = pDataObj['message'];	
+
+function deleteHealthMonitorsByUUIDList(hmIds, appData, callback) {
+	console.log('deleteMembersByUUIDList');	
 	var dataObjArr = [];
-	reqUrl = '/loadbalancer-healthmonitor/' + hmId['uuid']
-	commonUtils.createReqObj(dataObjArr, reqUrl,
-			global.HTTP_REQUEST_DELETE, null, null, null, appData);
-	
+	_.each(hmIds, function(id) {
+		reqUrl = '/loadbalancer-healthmonitor/' + id;
+		commonUtils.createReqObj(dataObjArr, reqUrl,
+				global.HTTP_REQUEST_DELETE, null, null, null, appData);
+	});
 	async.map(dataObjArr, commonUtils.getAPIServerResponse(
 			configApiServer.apiDelete, true), function(error, results) {
 		if (error) {
@@ -2737,58 +2752,60 @@ function deleteHealthMonitorsById(pDataObj, callback) {
 		}
 		var newMessage={};
 		newMessage.message="Health Monitor are deleted....";
-		callback(null, appendMessage(newMessage, message));
+		callback(null, newMessage);
 	});
 }
 
 function createNewVMIObject(request, response, appData, postData, callback){
-	  	console.log('createNewVMIObject');	
-		var vmi={};
-		vmi['virtual-machine-interface'] = {};
-		vmi['virtual-machine-interface'].parent_type = postData['loadbalancer']['parent_type'];
-		vmi['virtual-machine-interface'].virtual_machine_interface_device_owner = 'neutron:LOADBALANCER';
-		
-		var fqName=[];
-		fqName.push(postData['loadbalancer']['fq_name'][0]);
-		fqName.push(postData['loadbalancer']['fq_name'][1]);
-		
-		vmi['virtual-machine-interface']['fq_name'] = fqName
-		
-		var secGrp =[];
-		secGrp.push(postData['loadbalancer']['fq_name'][0]);
-		secGrp.push(postData['loadbalancer']['fq_name'][1]);
-		secGrp.push('default');
-		
-		vmi['virtual-machine-interface']['security_group_refs'] =  [{'to' : secGrp}];
-		
-		var vnRef =[];
-		vnRef.push(postData['loadbalancer']['fq_name'][0]);
-		vnRef.push(postData['loadbalancer']['fq_name'][1]);
-		vnRef.push('testvn1');
-		vmi['virtual-machine-interface']['virtual_network_refs'] =  [{'to' : vnRef}];
-		
-		var instanceIp= '{"instance_ip_address":[ {  '+
-	                    // '   "fixedIp":"'+postData['loadbalancer']['loadbalancer_properties']['vip_address']+'",'+
-	                     '   "fixedIp":"",'+
-	                     '   "domain":"'+postData['loadbalancer']['fq_name'][0]+'",'+
-	                     '   "project":"'+postData['loadbalancer']['fq_name'][1]+'"}],'+
-	                     ' "subnet_uuid":"'+postData['loadbalancer']['loadbalancer_properties']['vip_subnet_id']+'"}';
-		
-		vmi['virtual-machine-interface']['instance_ip_back_refs'] =  [JSON.parse(instanceIp)];
-		var allDataArr = [];
-	  allDataArr.push({
-          request: request,
-          vmidata: vmi,
-          response: response,
-          appData: appData
-      });
-		 async.mapSeries(allDataArr, portConfig.createPortCB, function(error, data){
+  	console.log('createNewVMIObject');	
+	var vmi={};
+	vmi['virtual-machine-interface'] = {};
+	vmi['virtual-machine-interface'].parent_type = postData['loadbalancer']['parent_type'];
+	vmi['virtual-machine-interface'].virtual_machine_interface_device_owner = 'neutron:LOADBALANCER';
+	
+	var fqName=[];
+	fqName.push(postData['loadbalancer']['fq_name'][0]);
+	fqName.push(postData['loadbalancer']['fq_name'][1]);
+	
+	vmi['virtual-machine-interface']['fq_name'] = fqName
+	
+	var secGrp =[];
+	secGrp.push(postData['loadbalancer']['fq_name'][0]);
+	secGrp.push(postData['loadbalancer']['fq_name'][1]);
+	secGrp.push('default');
+	
+	vmi['virtual-machine-interface']['security_group_refs'] =  [{'to' : secGrp}];
+	
+	var vnRef =[];
+	vnRef.push(postData['loadbalancer']['fq_name'][0]);
+	vnRef.push(postData['loadbalancer']['fq_name'][1]);
+	vnRef.push('testvn1');
+	vmi['virtual-machine-interface']['virtual_network_refs'] =  [{'to' : vnRef}];
+	
+	var instanceIp= '{"instance_ip_address":[ {  '+
+                    // '   "fixedIp":"'+postData['loadbalancer']['loadbalancer_properties']['vip_address']+'",'+
+                     '   "fixedIp":"",'+
+                     '   "domain":"'+postData['loadbalancer']['fq_name'][0]+'",'+
+                     '   "project":"'+postData['loadbalancer']['fq_name'][1]+'"}],'+
+                     ' "subnet_uuid":"'+postData['loadbalancer']['loadbalancer_properties']['vip_subnet_id']+'"}';
+	
+	vmi['virtual-machine-interface']['instance_ip_back_refs'] =  [JSON.parse(instanceIp)];
+	//console.log("VMI:"+ JSON.stringify(vmi));
+	
+	var allDataArr = [];
+	allDataArr.push({
+      request: request,
+      vmidata: vmi,
+      response: response,
+      appData: appData
+	});
+	async.mapSeries(allDataArr, portConfig.createPortCB, function(error, data){
         if(error){
         		callback(error, null);
             return;
         }
         var vmi= data[0]['virtual-machine-interface'];
-        console.log("VMI:"+ JSON.stringify(data));
+       // console.log("VMI:"+ JSON.stringify(vmi));
     		var vmiRef = vmi['fq_name'];
     		postData['loadbalancer']['virtual_machine_interface_refs']= [{'to' : vmiRef}];
     		if ((!('loadbalancer' in postData)) ||
@@ -2798,7 +2815,7 @@ function createNewVMIObject(request, response, appData, postData, callback){
     	    }
     		var instanceUUID= vmi['instance_ip_back_refs'][0]['uuid'];
     		readInstanceIPwithUUID(instanceUUID, appData, function(error, instanceData){
- 	    		console.log("instanceUUID:"+instanceData);
+ 	    		//console.log("instanceUUID:"+instanceData);
  	    		
  	    		var vipAddress = postData['loadbalancer']['loadbalancer_properties']['vip_address'];
  	    		if(vipAddress== null || vipAddress==""){
@@ -2810,8 +2827,7 @@ function createNewVMIObject(request, response, appData, postData, callback){
     });
 }
   
-  
-  
+   
   function readInstanceIPwithUUID(ipId, appData, callback){
 		console.log('readInstanceIPwithUUID');
 	var pURL = '/instance-ip/' + ipId;
@@ -2823,6 +2839,36 @@ function createNewVMIObject(request, response, appData, postData, callback){
 			callback(null, result);
 		});
 	}
+  
+  function deleteLoadBalancerVMIbyId(dataObj, eMessage, callback){
+	  console.log('deleteLoadBalancerVMIbyId');
+	  var allDataArr = [];
+	  var appData = dataObj.appData;
+	  var request = dataObj.request;
+	  var lbData = dataObj.lbData;
+	  var deleteVMIArray = commonUtils.getValueByJsonPath(lbData, 'loadbalancer;virtual_machine_interface_refs', false);
+	  
+      var delVMILength = deleteVMIArray.length;
+      
+      _.each(deleteVMIArray, function(vmi) {
+	    	  	var uuid = vmi["uuid"];
+	          allDataArr.push({
+	              uuid: uuid,
+	              appData: appData,
+	              request: request
+	          });
+  		});
+      async.mapSeries(allDataArr, portConfig.deletePortsCB, function(error, data){
+          if(error){
+        	  callback(error,null);
+              return;
+          }
+      	var newMessage={};
+		newMessage.message="Load Balancer VMI ref's are deleted....";
+		callback(null,appendMessage(newMessage, eMessage));
+      });
+  }
+  
   /**
    * @appendMessage
    * private function
