@@ -1208,12 +1208,10 @@ function createLoadBalancer(request, response, appData) {
 				commonUtils.handleJSONResponse(error, response, null);
 				return;
 			}
-			commonUtils.handleJSONResponse(null, response, postData);
-			/*
-		 	var lbId = postData["loadbalancer"]["uuid"];
+			var lbId = postData["loadbalancer"]["uuid"];
 			readLBwithUUID(lbId, appData, function(error, results){
 				commonUtils.handleJSONResponse(error, response, results);
-			});*/
+			});
 		});
 
 }
@@ -1269,6 +1267,8 @@ function createLoadBalancerValidate (appData, postData, callback){
 	    return;
 	}
 	lbPostData['loadbalancer']['display_name'] = lbPostData['loadbalancer']['name'];
+	lbPostData['loadbalancer']['loadbalancer_properties']['provisioning_status'] = 'ACTIVE';
+	lbPostData['loadbalancer']['loadbalancer_properties']['operating_status'] = 'ONLINE';
 	
     configApiServer.apiPost(lbCreateURL, lbPostData, appData, 
     		function(error, lbData) {
@@ -2290,8 +2290,7 @@ function createMemberValidate (dataObj, callback){
 	var appData= dataObj['appData'];
 	var postData={};
 	postData['loadbalancer-member'] = dataObj['loadbalancer-member'];
-	callback(null, postData);
-	
+
 	var mCreateURL = '/loadbalancer-members';
 
 	var mPostData={};
@@ -2804,12 +2803,16 @@ function createNewVMIObject(request, response, appData, postData, callback){
         }
         console.log("VMI:"+ JSON.stringify(data));
         var vmi= data[0]['virtual-machine-interface'];
-       // console.log("VMI:"+ JSON.stringify(vmi));
+        
     		var vmiRef = vmi['fq_name'];
     		postData['loadbalancer']['virtual_machine_interface_refs']= [{'to' : vmiRef}];
-    		if ((!('loadbalancer' in postData)) ||
-    		        (!('instance_ip_back_refs' in postData['loadbalancer']))) {
-    	       callback(null, postData);
+    		
+    		
+    		callback(null, postData);
+    		/*  		
+    		if (!('instance_ip_back_refs' in vmi)) {
+    			console.log("VMI:"+ JSON.stringify(vmi));
+    	       
     	        return;
     	    }
     		var instanceUUID= vmi['instance_ip_back_refs'][0]['uuid'];
@@ -2822,6 +2825,7 @@ function createNewVMIObject(request, response, appData, postData, callback){
  	    		}
     			callback(null, postData);
     		});
+    		*/
     		
     });
 }
