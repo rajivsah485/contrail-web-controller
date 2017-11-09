@@ -98,6 +98,12 @@
         <feature>lbaasconfig</feature>
         <callback>lbaasconfigapi.deleteLoadBalancer</callback>
     </item>
+     <item>
+        <url>/api/tenants/config/lbaas/load-balancer/delete</url>
+        <method>post</method>
+        <feature>lbaasconfig</feature>
+        <callback>lbaasconfigapi.deleteLoadBalancerbyIds</callback>
+    </item>
 <!--
      ***Listeners: Use the following APIs to manage Listener resources***
      
@@ -168,6 +174,12 @@
           <method>delete</method>
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deleteListener</callback>
+      </item>
+      <item>
+          <url>/api/tenants/config/lbaas/listener/delete</url>
+          <method>post</method>
+          <feature>lbaasconfig</feature>
+          <callback>lbaasconfigapi.deleteListenerbyIds</callback>
       </item>
 
 <!--

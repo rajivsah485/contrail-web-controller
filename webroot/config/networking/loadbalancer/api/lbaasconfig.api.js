@@ -643,6 +643,7 @@ function parseInstanceIps(vmiData, appData, lbs, callback) {
 												lb_vmi_refs[vmi]['instance-ip'].instance_ip_mode = results[ip]['instance-ip']['instance_ip_mode'];
 												var vipAddress = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer_properties']['vip_address'];
 												if(vipAddress== null || vipAddress==""){
+													console.log("VIP Address Empty"+vipAddress);
 													lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer_properties']['vip_address'] = results[ip]['instance-ip']['instance_ip_address'];
 										    		}
 											}
@@ -1424,7 +1425,41 @@ function deleteLoadBalancer(request, response, appData) {
 	
 }
 
-
+function deleteLoadBalancerbyIds(request, response, appData) {	 
+	console.log('deleteLoadBalancerbyIds');
+	var postData = request.body;
+	if (typeof(postData) != 'object') {
+        error = new appErrors.RESTServerError('Invalid Post Data');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	if (!('uuids' in postData)) {
+        error = new appErrors.RESTServerError('Load Balancer uuids object missing ');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	var uuids = postData['uuids'];
+	if(!(uuids.length)){
+		 error = new appErrors.RESTServerError('Load Balancer uuids list is empty ');
+		 commonUtils.handleJSONResponse(error, response, null);
+        return;
+	}
+	var allDataArr = [];
+	_.each(uuids, function(uuid) {
+		allDataArr.push({
+	        uuid: uuid,
+	        request: request,
+	        appData: appData
+	    });
+	});
+	async.mapSeries(allDataArr, deleteLoadBalancerCB, function(error, outputs){
+		if(error){
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        commonUtils.handleJSONResponse(error, response, results);
+	});
+}
 
 function deleteLoadBalancerCB(dataObj,callback){
 	console.log('deleteLoadBalancerCB');
@@ -1476,9 +1511,24 @@ function deleteLoadBalancerRefs(dataObj, callback){
     var appData = dataObj.appData;
     var request = dataObj.request;
 	var l_back_refs = commonUtils.getValueByJsonPath(lbData, 'loadbalancer;loadbalancer_listener_back_refs', false);
-	deleteListenerByUUIDList(l_back_refs, appData, function(error, results) {
-		//console.log(JSON.stringify('results:'+results));
-		callback(null,results);
+	
+	var allDataArr = [];
+	_.each(l_back_refs, function(listener) {
+		allDataArr.push({
+	        uuid: listener['uuid'],
+	        request: request,
+	        appData: appData
+	    });
+	});
+	
+	var lUUIDs=[];
+	_.each(l_back_refs, function(listener) {
+		lUUIDs.push(
+				listener['uuid']);
+	});
+	async.mapSeries(allDataArr, deleteListenerCB, function(error, outputs){
+	//deleteListenerCB(lUUIDs, appData, function(error, results) {
+		callback(null,outputs);
 	});
 	
 }
@@ -1692,7 +1742,12 @@ function deleteListener(request, response, appData) {
         commonUtils.handleJSONResponse(error, response, null);
         return;
     }
-	deleteListenerCB(uuid, appData, function(error, results){
+	var dataObj= {
+		        uuid: uuid,
+		        request: request,
+		        appData: appData
+		    }
+	deleteListenerCB(dataObj, function(error, results){
 		if(error){
             commonUtils.handleJSONResponse(error, response, null);
             return;
@@ -1702,41 +1757,49 @@ function deleteListener(request, response, appData) {
 	
 }
 
-function deleteListenerCB(uuid, appData, callback){
-	console.log('deleteListenerCB:');
-	readLLwithUUID(uuid, appData, function(err, llData) {
-		if (err) {
-			callback(err, llData);
-			return;
-		}
-		var l_back_refs=[];
-		l_back_refs.push(llData['loadbalancer-listener']);
-		deleteListenerByUUIDList(l_back_refs, appData, function(error, results) {
-			//console.log(JSON.stringify('results:'+results));
-			callback(null,results);
-		});
+function deleteListenerbyIds(request, response, appData) {	 
+	console.log('deleteListener');
+	var postData = request.body;
+	if (typeof(postData) != 'object') {
+        error = new appErrors.RESTServerError('Invalid Post Data');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	if (!('uuids' in postData)) {
+        error = new appErrors.RESTServerError('Listener uuids object missing ');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	var uuids = postData['uuids'];
+	if(!(uuids.length)){
+		 error = new appErrors.RESTServerError('Listener uuids list is empty ');
+		 commonUtils.handleJSONResponse(error, response, null);
+        return;
+	}
+	var allDataArr = [];
+	_.each(uuids, function(uuid) {
+		allDataArr.push({
+	        uuid: uuid,
+	        request: request,
+	        appData: appData
+	    });
+	});
+	async.mapSeries(allDataArr, deleteLoadBalancerCB, function(error, outputs){
+		callback(null,outputs);
 	});
 }
-
-function deleteListenerByUUIDList(llIds, appData, callback) {
-	console.log('deleteListenerByUUIDList:');
-	var dataObjArr = [];
+function deleteListenerCB(dataObj, callback) {
+	console.log('deleteListenerCB:');
 	
-	var allDataArr = [];
-	for(i=0; i< llIds.length; i++){
-        if(llIds[i]['uuid']!=null){
-			 allDataArr.push({
-			        uuid: llIds[i]['uuid'],
-			        appData: appData
-			    });
-        }
-	}
-	async.mapSeries(allDataArr, deleteListenerRefs, function(error, outputs){
-		_.each(llIds, function(llId) {
-			reqUrl = '/loadbalancer-listener/' + llId['uuid']
-			commonUtils.createReqObj(dataObjArr, reqUrl,
-					global.HTTP_REQUEST_DELETE, null, null, null, appData);
-		});
+	var uuid = dataObj.uuid;
+    var appData = dataObj.appData;
+    var request = dataObj.request;
+    
+   
+	 deleteListenerRefs(dataObj, function(error, outputs){
+		var dataObjArr = [];
+		var reqUrl = '/loadbalancer-listener/' + uuid;
+		commonUtils.createReqObj(dataObjArr, reqUrl,	global.HTTP_REQUEST_DELETE, null, null, null, appData);
 		async.map(dataObjArr, commonUtils.getAPIServerResponse(
 				configApiServer.apiDelete, true), function(error, results) {
 			if (error) {
@@ -1745,18 +1808,23 @@ function deleteListenerByUUIDList(llIds, appData, callback) {
 			}
 			lastMessage= printMessage(outputs);
 			var newMessage={};
-			newMessage.message="All Listener are deleted....";
+			newMessage.message="Listener deleted....";
 			callback(null,appendMessage(newMessage, lastMessage));
 		});
 	});
 }
 
-function deleteListenerRefs(pDataObj, callback){
+function deleteListenerRefs(dataObj, callback){
 	console.log('deleteListenerRefs');	
+
+	
+	var uuid = dataObj.uuid;
+    var appData = dataObj.appData;
+    var request = dataObj.request;
+    
 	var dataObjArr = [];
-	var appData= pDataObj['appData'];
-	var lId =  pDataObj['uuid'];	
-	reqUrl = '/loadbalancer-listener/' + lId;
+    
+	reqUrl = '/loadbalancer-listener/' + uuid;
 	commonUtils.createReqObj(dataObjArr, reqUrl,
 			global.HTTP_REQUEST_GET, null, null, null, appData);
 	
@@ -2757,39 +2825,55 @@ function deleteHealthMonitorsByUUIDList(hmIds, appData, callback) {
 
 function createNewVMIObject(request, response, appData, postData, callback){
   	console.log('createNewVMIObject');	
+  	var lbPostData={};
+  	lbPostData.loadbalancer = postData['loadbalancer'];
+	if ((!('loadbalancer' in lbPostData)) ||
+        (!('virtual_machine_interface_refs' in lbPostData['loadbalancer']))) {
+        error = new appErrors.RESTServerError('Load Balancer(s) virtual machine interface reference object missing... ');
+        callback(error, null);
+        return;
+    }
+	var vmiObj= lbPostData['loadbalancer']['virtual_machine_interface_refs'];
+	console.log('createNewVMIObject',vmiObj);
 	var vmi={};
-	vmi['virtual-machine-interface'] = {};
-	vmi['virtual-machine-interface'].parent_type = postData['loadbalancer']['parent_type'];
-	vmi['virtual-machine-interface'].virtual_machine_interface_device_owner = 'neutron:LOADBALANCER';
+	vmi['virtual-machine-interface'] = lbPostData['loadbalancer']['virtual_machine_interface_refs'];
 	
-	var fqName=[];
-	fqName.push(postData['loadbalancer']['fq_name'][0]);
-	fqName.push(postData['loadbalancer']['fq_name'][1]);
+	if ((!('virtual_network_refs' in vmi['virtual-machine-interface']))) {
+		 error = new appErrors.RESTServerError('Virtual Machine Interface(s) virtual network reference object missing... ');
+	        callback(error, null);
+	        return;
+	}
+
+	if ((!('instance_ip_back_refs' in vmi['virtual-machine-interface']))) {
+		 error = new appErrors.RESTServerError('Virtual Machine Interface(s) virtual network reference object missing... ');
+	        callback(error, null);
+	        return;
+	}
+		
+	if ((!('parent_type' in vmi['virtual-machine-interface']))) {
+		vmi['virtual-machine-interface']['parent_type'] = postData['loadbalancer']['parent_type'];
+	}
 	
-	vmi['virtual-machine-interface']['fq_name'] = fqName
+	if ((!('virtual_machine_interface_device_owner' in vmi['virtual-machine-interface']))) {
+		vmi['virtual-machine-interface']['virtual_machine_interface_device_owner'] = 'neutron:LOADBALANCER';
+	}
+	if ((!('fq_name' in vmi['virtual-machine-interface']))) {
+		var fqName=[];
+		fqName.push(postData['loadbalancer']['fq_name'][0]);
+		fqName.push(postData['loadbalancer']['fq_name'][1]);
+		
+		vmi['virtual-machine-interface']['fq_name'] = fqName
+	}
 	
-	var secGrp =[];
-	secGrp.push(postData['loadbalancer']['fq_name'][0]);
-	secGrp.push(postData['loadbalancer']['fq_name'][1]);
-	secGrp.push('default');
-	
-	vmi['virtual-machine-interface']['security_group_refs'] =  [{'to' : secGrp}];
-	
-	var vnRef =[];
-	vnRef.push(postData['loadbalancer']['fq_name'][0]);
-	vnRef.push(postData['loadbalancer']['fq_name'][1]);
-	vnRef.push('testvn1');
-	vmi['virtual-machine-interface']['virtual_network_refs'] =  [{'to' : vnRef}];
-	
-	var instanceIp= '{"instance_ip_address":[ {  '+
-                    // '   "fixedIp":"'+postData['loadbalancer']['loadbalancer_properties']['vip_address']+'",'+
-                     '   "fixedIp":"",'+
-                     '   "domain":"'+postData['loadbalancer']['fq_name'][0]+'",'+
-                     '   "project":"'+postData['loadbalancer']['fq_name'][1]+'"}],'+
-                     ' "subnet_uuid":"'+postData['loadbalancer']['loadbalancer_properties']['vip_subnet_id']+'"}';
-	
-	vmi['virtual-machine-interface']['instance_ip_back_refs'] =  [JSON.parse(instanceIp)];
-	//console.log("VMI:"+ JSON.stringify(vmi));
+	if ((!('security_group_refs' in vmi['virtual-machine-interface']))) {
+		var secGrp =[];
+		secGrp.push(postData['loadbalancer']['fq_name'][0]);
+		secGrp.push(postData['loadbalancer']['fq_name'][1]);
+		secGrp.push('default');
+		
+		vmi['virtual-machine-interface']['security_group_refs'] =  [{'to' : secGrp}];
+	}
+
 	var allDataArr = [];
 	allDataArr.push({
       request: request,
@@ -2813,38 +2897,7 @@ function createNewVMIObject(request, response, appData, postData, callback){
     		dataObjArr['reqDataArr'].uuid= vmi['uuid'];
     		dataObjArr['reqDataArr'].appData= appData;
     		
-    		console.log(dataObjArr);
     		callback(null, postData);
-    		/*  	
-    		readInstanceFromVMIUUID(vmi['uuid'], appData, function(error, instanceData){
-    			console.log("VMI:"+ JSON.stringify(instanceData));
-        		var vipAddress = postData['loadbalancer']['loadbalancer_properties']['vip_address'];
-	    		if(vipAddress== null || vipAddress==""){
-	    			vipAddress = instanceData['instance-ip']['instance_ip_address'];
-	    		}
-    			callback(null, postData);
-    			
-    		});
-    		
-    		
-    			
-    		if (!('instance_ip_back_refs' in vmi)) {
-    			console.log("VMI:"+ JSON.stringify(vmi));
-    	       
-    	        return;
-    	    }
-    		var instanceUUID= vmi['instance_ip_back_refs'][0]['uuid'];
-    		readInstanceIPwithUUID(instanceUUID, appData, function(error, instanceData){
- 	    		//console.log("instanceUUID:"+instanceData);
- 	    		
- 	    		var vipAddress = postData['loadbalancer']['loadbalancer_properties']['vip_address'];
- 	    		if(vipAddress== null || vipAddress==""){
- 	    			vipAddress = instanceData['instance-ip']['instance_ip_address'];
- 	    		}
-    			callback(null, postData);
-    		});
-    		*/
-    		
     });
 }
   
@@ -2943,11 +2996,13 @@ exports.getLoadBalancerbyId = getLoadBalancerbyId;
 exports.createLoadBalancer = createLoadBalancer;
 exports.updateLoadBalancer = updateLoadBalancer;
 exports.deleteLoadBalancer = deleteLoadBalancer;
+exports.deleteLoadBalancerbyIds = deleteLoadBalancerbyIds;
 
 exports.getListenerById = getListenerById;
 exports.createListener = createListener;
 exports.updateListener = updateListener;
 exports.deleteListener = deleteListener;
+exports.deleteListenerbyIds=deleteListenerbyIds;
 
 exports.getPoolByListenerId = getPoolByListenerId;
 exports.getPoolById = getPoolById;
