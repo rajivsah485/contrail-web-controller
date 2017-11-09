@@ -83,8 +83,22 @@ define([
                    }
                 },
                 'ip_address' : function(value, attr, data) {
+                    if(value == null || value.trim() == "") {
+                        return;
+                    }
                     if(!lbCfgFormatters.validateIP(value)){
                         return "The IP address is not valid.";
+                    }
+                    if(data.lb_subnet != "") {
+                        var subnet = data.lb_subnet.split(';')[1];
+                        if(!isIPBoundToRange(subnet, value)){
+                            var ip = subnet.split('/')[0];
+                            return "Enter a fixed IP within the selected subnet range " + ip;
+                        }
+                        if(isStartAddress(subnet, value) == true ||
+                           isEndAddress(subnet, value) == true) {
+                            return "Fixed IP cannot be same as broadcast/start address";
+                        }
                     }
                  },
                  'listener_name' : function(value, attr, data) {
@@ -140,12 +154,54 @@ define([
                 }
                 loadbalancer.loadbalancer_properties = {};
                 loadbalancer.loadbalancer_properties['admin_state'] = model.lb_admin_state;
-                loadbalancer.loadbalancer_properties['vip_address'] = model.ip_address;
-                loadbalancer.loadbalancer_properties['vip_subnet_id'] = model.lb_subnet;
+                if(model.ip_address !== ''){
+                  loadbalancer.loadbalancer_properties['vip_address'] = model.ip_address;
+                }
+                var subnet = model.lb_subnet.split(';')[0];
+                loadbalancer.loadbalancer_properties['vip_subnet_id'] = subnet;
                 if(model.description !== ''){
                     loadbalancer.id_perms = {};
                     loadbalancer.id_perms.description = model.description; 
                 }
+                // VMI Object formation
+                var newVMIObj = {};
+                newVMIObj["parent_type"] = "project";
+                newVMIObj["virtual_machine_interface_device_owner"] = "neutron:LOADBALANCER";
+                var VMIfqName = [];
+                VMIfqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
+                VMIfqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
+                newVMIObj.fq_name = VMIfqName;
+                var secfqName = [];
+                secfqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
+                secfqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
+                secfqName.push('default');
+                var secList = [];
+                var secObj = {};
+                secObj.to = secfqName;
+                secList.push(secObj);
+                newVMIObj['security_group_refs'] = secList;
+                var vnList = [];
+                var vnObj = {};
+                vnObj.to =  model.lb_subnet.split(';')[2].split(':');
+                vnList.push(vnObj);
+                newVMIObj['virtual_network_refs'] = vnList;
+                var instanceIpObj = {};
+                if(model.ip_address !== ''){
+                    instanceIpObj.fixedIp = model.ip_address;
+                }else{
+                    instanceIpObj.fixedIp = '';
+                }
+                instanceIpObj.domain = contrail.getCookie(cowc.COOKIE_DOMAIN);
+                instanceIpObj.project = contrail.getCookie(cowc.COOKIE_PROJECT);
+                var instanceIpList = [], instanceIpBackRef = [];
+                instanceIpList.push(instanceIpObj);
+                var instanceIpBackRefObj = {};
+                instanceIpBackRefObj.instance_ip_address = instanceIpList;
+                instanceIpBackRefObj.subnet_uuid = model.lb_subnet.split(';')[0];
+                instanceIpBackRef.push(instanceIpBackRefObj);
+                newVMIObj["instance_ip_back_refs"] = instanceIpBackRef;
+
+                loadbalancer['virtual_machine_interface_refs'] = newVMIObj;
                 obj.loadbalancer = loadbalancer; 
             }else{
                 var lbObj = options.lbObj;

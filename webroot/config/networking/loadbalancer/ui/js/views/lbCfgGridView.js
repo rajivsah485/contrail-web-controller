@@ -265,7 +265,7 @@ define([
             var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
             lbInfoEditView.model = new LbInfoModel();
             lbInfoEditView.renderAssociateIp({
-                                  "title": 'Associate Floating IP Address',
+                                  "title": 'Associate Load Balancer to Floating IP',
                                    'ProjectId':self.ProjectId,
                                    callback: function () {
                                       dataView.refreshData();
@@ -277,7 +277,7 @@ define([
             var LbName = lbModel.loadbalancer.name;
             lbInfoEditView.model = new LbInfoModel();
             lbInfoEditView.renderDeassociateIp({
-                                  "title": 'Confirm Disassociate Floating IP Address',
+                                  "title": 'Disassociate Floating IP from Load Balancer',
                                   'LbName': LbName,
                                   callback: function () {
                                       dataView.refreshData();
