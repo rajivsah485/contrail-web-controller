@@ -117,8 +117,8 @@ function getLoadBalancersDetailsCB(error, lbs, response, appData) {
 	}
 	if (lbs['loadbalancers'] != null) {
 		lbLength = lbs['loadbalancers'].length;
-		for (i = 0; i < lbLength; i++) {
-			reqUrl = '/loadbalancer/' + lbs['loadbalancers'][i]['uuid']
+		for (lb = 0; lb < lbLength; lb++) {
+			reqUrl = '/loadbalancer/' + lbs['loadbalancers'][lb]['uuid']
 					+ '?exclude_hrefs=true&exclude_Refs=true';
 			commonUtils.createReqObj(dataObjArr, reqUrl,
 					global.HTTP_REQUEST_GET, null, null, null, appData);
@@ -135,11 +135,11 @@ function getLoadBalancersDetailsCB(error, lbs, response, appData) {
 						return;
 					}
 					if (lbs['loadbalancers'].length > 0 && loadbalancer != null) {
-						for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-							lbs['loadbalancers'][j]['loadbalancer'] = {};
+						for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+							lbs['loadbalancers'][lb]['loadbalancer'] = {};
 							for (var l = 0; l < loadbalancer.length; l++) {
-								if (lbs['loadbalancers'][j]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
-									lbs['loadbalancers'][j]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
+								if (lbs['loadbalancers'][lb]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
+									lbs['loadbalancers'][lb]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
 								}
 							}
 						}
@@ -303,11 +303,11 @@ function getLoadBalancersTreeInfo(error, lbs, response, appData) {
 						}
 						if (lbs['loadbalancers'].length > 0
 								&& loadbalancer != null) {
-							for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-								lbs['loadbalancers'][j]['loadbalancer'] = {};
+							for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+								lbs['loadbalancers'][lb]['loadbalancer'] = {};
 								for (var l = 0; l < loadbalancer.length; l++) {
-									if (lbs['loadbalancers'][j]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
-										lbs['loadbalancers'][j]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
+									if (lbs['loadbalancers'][lb]['uuid'] == loadbalancer[l]['loadbalancer']['uuid']) {
+										lbs['loadbalancers'][lb]['loadbalancer'] = loadbalancer[l]['loadbalancer'];
 									}
 								}
 							}
@@ -322,13 +322,13 @@ function getLoadBalancersTreeInfo(error, lbs, response, appData) {
 							appData : appData
 						};
 						async.waterfall([
-										async.apply(getListenersDetailInfo, appData, lbs),			
-										async.apply(getLoadBalancerRefDetails, appData),	
-										async.apply(	getPoolDetailInfo, appData),
-										async.apply(getMemberHealthMonitorInfo, appData) ],
-										function(error, lbs) {
-											commonUtils.handleJSONResponse(error, response, lbs);
-										});
+							async.apply(getListenersDetailInfo, appData, lbs),			
+							async.apply(getLoadBalancerRefDetails, appData),	
+							async.apply(	getPoolDetailInfo, appData),
+							async.apply(getMemberHealthMonitorInfo, appData) ],
+							function(error, lbs) {
+								commonUtils.handleJSONResponse(error, response, lbs);
+							});
 					});
 		} else {
 			commonUtils.handleJSONResponse(error, response, lbs);
@@ -363,9 +363,9 @@ function getServiceInstanceDetailsfromLB(appData, lbs, callback) {
 	var i = 0, lisLength = 0;
 	console.log('getServiceInstanceDetailsfromLB');
 	var sviUUID = [];
-	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-		var svi_refs = lbs['loadbalancers'][j]['loadbalancer']['service_instance_refs'];
-		if (lbs['loadbalancers'][j]['loadbalancer'] != null && svi_refs != null
+	for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+		var svi_refs = lbs['loadbalancers'][lb]['loadbalancer']['service_instance_refs'];
+		if (lbs['loadbalancers'][lb]['loadbalancer'] != null && svi_refs != null
 				&& svi_refs.length > 0) {
 			for (i = 0; i < svi_refs.length; i++) {
 				sviUUID.push(svi_refs[i]['uuid'])
@@ -406,9 +406,9 @@ function parseServiceInstanceDetailsfromLB(sviData, lbs, callback) {
 	if (sviData != null && sviData.length > 0) {
 		if (lbs['loadbalancers'].length > 0 && sviData != null
 				&& sviData.length > 0) {
-			for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-				var svi_refs = lbs['loadbalancers'][j]['loadbalancer']['service_instance_refs'];
-				if (lbs['loadbalancers'][j]['loadbalancer'] != null
+			for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+				var svi_refs = lbs['loadbalancers'][lb]['loadbalancer']['service_instance_refs'];
+				if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 						&& svi_refs != null && svi_refs.length > 0) {
 					for (i = 0; i < svi_refs.length; i++) {
 						for (var l = 0; l < sviData.length; l++) {
@@ -442,12 +442,12 @@ function getVMIDetailsfromLB(appData, lbs, callback) {
 	var i = 0, lisLength = 0;
 	console.log('getVMIDetailsfromLB');
 	var vimUUID = [];
-	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-		var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-		if (lbs['loadbalancers'][j]['loadbalancer'] != null && vmi_refs != null
+	for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+		var vmi_refs = lbs['loadbalancers'][lb]['loadbalancer']['virtual_machine_interface_refs'];
+		if (lbs['loadbalancers'][lb]['loadbalancer'] != null && vmi_refs != null
 				&& vmi_refs.length > 0) {
-			for (i = 0; i < vmi_refs.length; i++) {
-				vimUUID.push(vmi_refs[i]['uuid'])
+			for (vmi = 0; vmi < vmi_refs.length; vmi++) {
+				vimUUID.push(vmi_refs[vmi]['uuid'])
 			}
 		}
 	}
@@ -477,9 +477,9 @@ function getVMIDetailsfromLB(appData, lbs, callback) {
 				}
 				if (lbs['loadbalancers'].length > 0
 						&& vmiData != null && vmiData.length > 0) {
-					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-						if (lbs['loadbalancers'][j]['loadbalancer'] != null
+					for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+						var vmi_refs = lbs['loadbalancers'][lb]['loadbalancer']['virtual_machine_interface_refs'];
+						if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 								&& vmi_refs != null
 								&& vmi_refs.length > 0) {
 							for (i = 0; i < vmi_refs.length; i++) {
@@ -641,10 +641,12 @@ function parseInstanceIps(vmiData, appData, lbs, callback) {
 												lb_vmi_refs[vmi]['instance-ip'].instance_ip_address = results[ip]['instance-ip']['instance_ip_address'];
 												lb_vmi_refs[vmi]['instance-ip'].uuid = results[ip]['instance-ip']['uuid'];
 												lb_vmi_refs[vmi]['instance-ip'].instance_ip_mode = results[ip]['instance-ip']['instance_ip_mode'];
-
+												var vipAddress = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer_properties']['vip_address'];
+												if(vipAddress== null || vipAddress==""){
+													lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer_properties']['vip_address'] = results[ip]['instance-ip']['instance_ip_address'];
+										    		}
 											}
 										}
-
 									}
 								}
 							}
@@ -700,9 +702,9 @@ function parseVNSubnets(lbs, vmiData, appData, callback) {
 				if (lbs['loadbalancers'].length > 0
 						&& results != null && results.length > 0) {
 					// console.log(JSON.stringify(results));
-					for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-						var vmi_refs = lbs['loadbalancers'][j]['loadbalancer']['virtual_machine_interface_refs'];
-						if (lbs['loadbalancers'][j]['loadbalancer'] != null
+					for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+						var vmi_refs = lbs['loadbalancers'][lb]['loadbalancer']['virtual_machine_interface_refs'];
+						if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 								&& vmi_refs != null
 								&& vmi_refs.length > 0) {
 							for (i = 0; i < vmi_refs.length; i++) {
@@ -738,9 +740,9 @@ function getListenersDetailInfo(appData, lbs, callback) {
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
 	var lisUUID = [];
-	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-		var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-		if (lbs['loadbalancers'][j]['loadbalancer'] != null
+	for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+		var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+		if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 				&& llistener_ref != null && llistener_ref.length > 0) {
 			for (i = 0; i < llistener_ref.length; i++) {
 				lisUUID.push(llistener_ref[i]['uuid'])
@@ -784,9 +786,9 @@ function mergeListenerToLB(lbs, listeners, callback) {
 	console.log('mergeListenerToLB');
 	if (lbs['loadbalancers'].length > 0 && listeners != null
 			&& listeners.length > 0) {
-		for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-			var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-			if (lbs['loadbalancers'][j]['loadbalancer'] != null
+		for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+			var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+			if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 					&& llistener_ref != null && llistener_ref.length > 0) {
 				for (i = 0; i < llistener_ref.length; i++) {
 					for (var l = 0; l < listeners.length; l++) {
@@ -820,9 +822,9 @@ function getPoolDetailInfo(appData, lbs, callback) {
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
 	var poolUUID = [];
-	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-		var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-		if (lbs['loadbalancers'][j]['loadbalancer'] != null
+	for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+		var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+		if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 				&& llistener_ref != null && llistener_ref.length > 0) {
 			for (i = 0; i < llistener_ref.length; i++) {
 				var pools = llistener_ref[i]['loadbalancer-pool'];
@@ -869,13 +871,13 @@ function getPoolDetailInfo(appData, lbs, callback) {
 function mergePoolToLB(lbs, poolsData, callback) {
 	console.log('mergePoolToLB');
 	if (lbs['loadbalancers'].length > 0 && poolsData.length > 0) {
-		for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-			var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-			if (lbs['loadbalancers'][j]['loadbalancer'] != null
+		for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+			var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+			if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 					&& llistener_ref != null && llistener_ref.length > 0) {
 				for (i = 0; i < llistener_ref.length; i++) {
 					var pools = llistener_ref[i]['loadbalancer-pool']
-					if (lbs['loadbalancers'][j]['loadbalancer'] != null
+					if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 							&& pools != null && pools.length > 0) {
 						for (k = 0; k < pools.length; k++) {
 							for (var l = 0; l < poolsData.length; l++) {
@@ -913,13 +915,13 @@ function getMemberHealthMonitorInfo(appData, lbs, callback) {
 	var i = 0, lisLength = 0;
 	console.log('getMemberHealthMonitorInfo');
 	var memUUID = [];
-	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-		var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-		if (lbs['loadbalancers'][j]['loadbalancer'] != null
+	for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+		var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+		if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 				&& llistener_ref != null && llistener_ref.length > 0) {
 			for (i = 0; i < llistener_ref.length; i++) {
 				var pool_ref = llistener_ref[i]['loadbalancer-pool'];
-				if (lbs['loadbalancers'][j]['loadbalancer'] != null
+				if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 						&& pool_ref != null && pool_ref.length > 0) {
 					for (k = 0; k < pool_ref.length; k++) {
 						var mem = pool_ref[k]['loadbalancer-members'];
@@ -941,13 +943,13 @@ function getMemberHealthMonitorInfo(appData, lbs, callback) {
 				null, null, null, appData);
 	}
 	var helUUID = [];
-	for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-		var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-		if (lbs['loadbalancers'][j]['loadbalancer'] != null
+	for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+		var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+		if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 				&& llistener_ref != null && llistener_ref.length > 0) {
 			for (i = 0; i < llistener_ref.length; i++) {
 				var pool_ref = llistener_ref[i]['loadbalancer-pool'];
-				if (lbs['loadbalancers'][j]['loadbalancer'] != null
+				if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 						&& pool_ref != null && pool_ref.length > 0) {
 					for (k = 0; k < pool_ref.length; k++) {
 						var health = pool_ref[k]['loadbalancer-healthmonitor'];
@@ -999,13 +1001,13 @@ function getMemberHealthMonitorInfo(appData, lbs, callback) {
 function mergeMemberHealthDetailToLB(lbs, results, callback) {
 	console.log('mergeMemberHealthDetailToLB');
 	if (lbs['loadbalancers'].length > 0 && results.length > 0) {
-		for (var j = 0; j < lbs['loadbalancers'].length; j++) {
-			var llistener_ref = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'];
-			if (lbs['loadbalancers'][j]['loadbalancer'] != null
+		for (var lb = 0; lb < lbs['loadbalancers'].length; lb++) {
+			var llistener_ref = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'];
+			if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 					&& llistener_ref != null && llistener_ref.length > 0) {
 				for (i = 0; i < llistener_ref.length; i++) {
 					var pool_ref = llistener_ref[i]['loadbalancer-pool'];
-					if (lbs['loadbalancers'][j]['loadbalancer'] != null
+					if (lbs['loadbalancers'][lb]['loadbalancer'] != null
 							&& pool_ref != null && pool_ref.length > 0) {
 						for (k = 0; k < pool_ref.length; k++) {
 							var healthM = pool_ref[k]['loadbalancer-healthmonitor'];
@@ -1021,7 +1023,7 @@ function mergeMemberHealthDetailToLB(lbs, results, callback) {
 								}
 							}
 
-							var mem = lbs['loadbalancers'][j]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'];
+							var mem = lbs['loadbalancers'][lb]['loadbalancer']['loadbalancer-listener'][i]['loadbalancer-pool'][k]['loadbalancer-members'];
 							if (mem != undefined && mem.length > 0) {
 								for (q = 0; q < mem.length; q++) {
 									for (var l = 0; l < results.length; l++) {
@@ -2788,7 +2790,6 @@ function createNewVMIObject(request, response, appData, postData, callback){
 	
 	vmi['virtual-machine-interface']['instance_ip_back_refs'] =  [JSON.parse(instanceIp)];
 	//console.log("VMI:"+ JSON.stringify(vmi));
-	
 	var allDataArr = [];
 	allDataArr.push({
       request: request,
@@ -2801,15 +2802,32 @@ function createNewVMIObject(request, response, appData, postData, callback){
         		callback(error, null);
             return;
         }
-        console.log("VMI:"+ JSON.stringify(data));
+        
         var vmi= data[0]['virtual-machine-interface'];
         
     		var vmiRef = vmi['fq_name'];
     		postData['loadbalancer']['virtual_machine_interface_refs']= [{'to' : vmiRef}];
     		
+    		var dataObjArr={};
+    		dataObjArr['reqDataArr']={};
+    		dataObjArr['reqDataArr'].uuid= vmi['uuid'];
+    		dataObjArr['reqDataArr'].appData= appData;
     		
+    		console.log(dataObjArr);
     		callback(null, postData);
-    		/*  		
+    		/*  	
+    		readInstanceFromVMIUUID(vmi['uuid'], appData, function(error, instanceData){
+    			console.log("VMI:"+ JSON.stringify(instanceData));
+        		var vipAddress = postData['loadbalancer']['loadbalancer_properties']['vip_address'];
+	    		if(vipAddress== null || vipAddress==""){
+	    			vipAddress = instanceData['instance-ip']['instance_ip_address'];
+	    		}
+    			callback(null, postData);
+    			
+    		});
+    		
+    		
+    			
     		if (!('instance_ip_back_refs' in vmi)) {
     			console.log("VMI:"+ JSON.stringify(vmi));
     	       
@@ -2830,7 +2848,23 @@ function createNewVMIObject(request, response, appData, postData, callback){
     });
 }
   
-   
+function readInstanceFromVMIUUID(vmiId, appData, callback){
+	console.log('readInstanceIPwithUUID');
+	var pURL = '/virtual-machine-interface/' + vmiId;
+	configApiServer.apiGet(pURL, appData, function(error, vmi) {
+		if (error) {
+			callback(error, null);
+			return;
+		}
+		var instanceUUID= vmi['instance_ip_back_refs'][0]['uuid'];
+		readInstanceIPwithUUID(instanceUUID, appData, function(error, instanceData){
+	    		console.log("instanceUUID:"+instanceData);
+			callback(null, instanceData);
+		});
+	});
+}   
+
+
   function readInstanceIPwithUUID(ipId, appData, callback){
 		console.log('readInstanceIPwithUUID');
 	var pURL = '/instance-ip/' + ipId;
