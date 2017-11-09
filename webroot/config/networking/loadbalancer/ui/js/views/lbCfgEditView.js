@@ -80,13 +80,28 @@ define([
                         vnList.push(obj['virtual-network']);
                     });
                     _.each(vnList, function(obj) {
-                        ipamList = ipamList.concat(obj['network_ipam_refs']);
+                        var ipam_refs = obj['network_ipam_refs'], ipamObjList = [];
+                        var vnFqName = obj.fq_name;
+                        _.each(ipam_refs, function(obj) {
+                            obj.fq_name = vnFqName;
+                            ipamObjList.push(obj);
+                        });
+                        ipamList = ipamList.concat(ipamObjList);
                     });
                     _.each(ipamList, function(obj) {
-                        ipamSubnet = ipamSubnet.concat(obj['attr']['ipam_subnets']);
+                        var ipamSubnetObj = obj['attr']['ipam_subnets'], ipamSubnetList = [];
+                        var fq_name = obj.fq_name;
+                        _.each(ipamSubnetObj, function(obj) {
+                            obj.fq_name = fq_name;
+                            ipamSubnetList.push(obj);
+                        });
+                        ipamSubnet = ipamSubnet.concat(ipamSubnetList);
                     });
                     _.each(ipamSubnet, function(obj) {
-                        subnetList.push({id: obj.subnet_uuid, text:obj.subnet_name});
+                        var subnet = obj.subnet.ip_prefix + '/' + obj.subnet.ip_prefix_len;
+                        var fqName = obj.fq_name.join(':');
+                        var subnetUuid = obj.subnet_uuid + ';' + subnet + ';' + fqName;
+                        subnetList.push({id: subnetUuid, text:obj.subnet_name});
                     });
                     returnArr["subnetList"] = subnetList;
                     var svcSet = results[1][0];
@@ -133,17 +148,6 @@ define([
                     }, {
                         columns: [
                                   {
-                                      elementId: "ip_address",
-                                      view: "FormInputView",
-                                      viewConfig: {
-                                          path: "ip_address",
-                                          label: 'Fixed IPs',
-                                          placeholder : 'xxx.xxx.xxx.xxx',
-                                          dataBindValue: "ip_address",
-                                          class: "col-xs-6"
-                                      }
-                                  },
-                                  {
                                       elementId: 'lb_subnet',
                                       view: "FormDropdownView",
                                       viewConfig: {
@@ -158,6 +162,17 @@ define([
                                               dataValueField : "id",
                                               data : allData.subnetList
                                           }
+                                      }
+                                  },
+                                  {
+                                      elementId: "ip_address",
+                                      view: "FormInputView",
+                                      viewConfig: {
+                                          path: "ip_address",
+                                          label: 'Fixed IPs',
+                                          placeholder : 'xxx.xxx.xxx.xxx',
+                                          dataBindValue: "ip_address",
+                                          class: "col-xs-6"
                                       }
                                   }
                               ]

@@ -160,7 +160,7 @@ define([
     };
     
     function getHeaderActionConfig() {
-        var headerActionConfig = [
+        /*var headerActionConfig = [
             {
                 "type": "link",
                 "title": 'Delete Monitor',
@@ -179,8 +179,8 @@ define([
                 }
             }
 
-        ];
-        return headerActionConfig;
+        ];*/
+        return [] //headerActionConfig;
     }
 
     function  getRowActionConfig (dc) {
@@ -195,7 +195,7 @@ define([
                 }});
             })
         ];
-        rowActionConfig.push(ctwgc.getDeleteConfig('Delete Health Monitor', function(rowIndex) {
+        /*rowActionConfig.push(ctwgc.getDeleteConfig('Delete Health Monitor', function(rowIndex) {
                 dataView = $('#' + ctwc.CONFIG_LB_MONITOR_GRID_ID).data("contrailGrid")._dataView;
                 monitorEditView.model = new MonitorModel();
                 monitorEditView.renderMultiDeleteMonitor({
@@ -204,7 +204,7 @@ define([
                                       callback: function () {
                                           dataView.refreshData();
                 }});
-            }));
+            }));*/
         return rowActionConfig;
     };
     
