@@ -218,7 +218,6 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.listPoolsByListernerId</callback>
       </item>
-
       <item>
           <url>/api/tenants/config/lbaas/load-balancer/:lbid/listener/:lid/pool/:pid</url>
           <method>get</method>
@@ -249,6 +248,12 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deletePool</callback>
       </item>
+      <item>
+          <url>/api/tenants/config/lbaas/pool/delete</url>
+          <method>post</method>
+          <feature>lbaasconfig</feature>
+          <callback>lbaasconfigapi.deletePoolByIds</callback>
+      </item>
 
 <!--
     ***Members: Use the following APIs to manage Member resources***
@@ -277,7 +282,6 @@
     Note: A Member cannot be deleted if the load balancer it is attached
     to is not in an ACTIVE provisioning_status.
 -->
-
     
       <item>
           <url>/api/tenants/config/lbaas/member/:uuid</url>
@@ -303,6 +307,13 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deleteMember</callback>
       </item>
+       <item>
+          <url>/api/tenants/config/lbaas/member/delete</url>
+          <method>post</method>
+          <feature>lbaasconfig</feature>
+          <callback>lbaasconfigapi.deleteMemberByIds</callback>
+      </item>
+      
 
 <!--
 ***Health Monitors - Use the following APIs to manage Health Monitor resources***
@@ -357,5 +368,12 @@
           <feature>lbaasconfig</feature>
           <callback>lbaasconfigapi.deleteHealthMonitor</callback>
       </item>
+      <item>
+          <url>/api/tenants/config/lbaas/health-monitor/delete</url>
+          <method>post</method>
+          <feature>lbaasconfig</feature>
+          <callback>lbaasconfigapi.deleteHealthMonitorByIds</callback>
+      </item>
+
 
 </urlLists>

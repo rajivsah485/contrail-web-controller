@@ -2195,6 +2195,35 @@ function deletePool(request, response, appData) {
 	});
 }
 
+function deletePoolByIds(request, response, appData) {
+	console.log('deletePoolByIds');
+	var postData = request.body;
+	if (typeof(postData) != 'object') {
+        error = new appErrors.RESTServerError('Invalid Post Data');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	if (!('uuids' in postData)) {
+        error = new appErrors.RESTServerError('Pool uuids object missing ');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	var uuids = postData['uuids'];
+	if(!(uuids.length)){
+		 error = new appErrors.RESTServerError('Pool uuids list is empty ');
+		 commonUtils.handleJSONResponse(error, response, null);
+        return;
+	}
+	deletePoolCB(uuids,appData, function(error, results){
+		if(error){
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        commonUtils.handleJSONResponse(error, response, results);
+		
+	});
+}
+
 function deletePoolCB(pIds, appData, callback){
 	getPoolListbyIds(pIds, appData, function(error, pLists){
 		var allDataArr = [];
@@ -2506,6 +2535,35 @@ function deleteMember(request, response, appData) {
 	});
 }
 
+function deleteMemberByIds(request, response, appData) {
+	console.log('deletePoolByIds');
+	var postData = request.body;
+	if (typeof(postData) != 'object') {
+        error = new appErrors.RESTServerError('Invalid Post Data');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	if (!('uuids' in postData)) {
+        error = new appErrors.RESTServerError('Pool uuids object missing ');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	var uuids = postData['uuids'];
+	if(!(uuids.length)){
+		 error = new appErrors.RESTServerError('Pool uuids list is empty ');
+		 commonUtils.handleJSONResponse(error, response, null);
+        return;
+	}
+	deleteMembersByUUIDList(uuids, appData, function(error, results){
+		if(error){
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        commonUtils.handleJSONResponse(error, response, results);
+		
+	});
+}
+
 function deleteMembersbypData(pDataObj, callback){
 	var appData= pDataObj['appData'];
 	var pId =  pDataObj['pData'];
@@ -2773,7 +2831,33 @@ function deleteHealthMonitor(request, response, appData) {
 		
 	});
 }
-
+function deleteHealthMonitorByIds(request, response, appData) {
+	console.log('deletePoolByIds');
+	var postData = request.body;
+	if (typeof(postData) != 'object') {
+        error = new appErrors.RESTServerError('Invalid Post Data');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	if (!('uuids' in postData)) {
+        error = new appErrors.RESTServerError('Health Monitor uuids object missing ');
+        commonUtils.handleJSONResponse(error, response, null);
+        return;
+    }
+	var uuids = postData['uuids'];
+	if(!(uuids.length)){
+		 error = new appErrors.RESTServerError('Health Monitor uuids list is empty ');
+		 commonUtils.handleJSONResponse(error, response, null);
+        return;
+	}
+	deleteHealthMonitorsByUUIDList(uuids, appData, function(error, results){
+		if(error){
+            commonUtils.handleJSONResponse(error, response, null);
+            return;
+        }
+        commonUtils.handleJSONResponse(error, response, results);
+	});
+}
 function deleteHealthMonitorCB(uuid, appData, callback){
 	configApiServer.apiDelete('/loadbalancer-healthmonitor/' + uuid, appData,
 	     function(error, results) {
@@ -3009,13 +3093,16 @@ exports.getPoolById = getPoolById;
 exports.createPool = createPool;
 exports.updatePool = updatePool;
 exports.deletePool = deletePool;
+exports.deletePoolByIds = deletePoolByIds;
 
 exports.getMemberById = getMemberById;
 exports.createMember = createMember;
 exports.updateMember = updateMember;
 exports.deleteMember = deleteMember;
+exports.deleteMemberByIds = deleteMemberByIds;
 
 exports.getHealthMonitorById = getHealthMonitorById;
 exports.createHealthMonitor = createHealthMonitor;
 exports.updateHealthMonitor = updateHealthMonitor;
 exports.deleteHealthMonitor = deleteHealthMonitor;
+exports.deleteHealthMonitorByIds = deleteHealthMonitorByIds;
