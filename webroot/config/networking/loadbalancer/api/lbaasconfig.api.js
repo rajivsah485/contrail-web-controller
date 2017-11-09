@@ -1252,12 +1252,6 @@ function createLoadBalancerValidate (appData, postData, callback){
         lbPostData['loadbalancer']['fq_name'][2] = lbPostData['loadbalancer']['name'] +'-'+uuid['hex'];
     }
 	if ((!('loadbalancer' in lbPostData)) ||
-        (!('vip_address' in lbPostData['loadbalancer']['loadbalancer_properties']))) {
-        error = new appErrors.RESTServerError('Enter IP Address for Load Balancer ');
-        callback(error, null);
-        return;
-    }
-	if ((!('loadbalancer' in lbPostData)) ||
 	    (!('vip_subnet_id' in lbPostData['loadbalancer']['loadbalancer_properties']))) {
 	    error = new appErrors.RESTServerError('Select a subnet for Load Balancer ');
 	    callback(error, null);
@@ -1419,7 +1413,8 @@ function deleteLoadBalancer(request, response, appData) {
             commonUtils.handleJSONResponse(error, response, null);
             return;
         }
-        commonUtils.handleJSONResponse(error, response, results);
+		lastMessage= printMessage(results);
+        commonUtils.handleJSONResponse(error, response, lastMessage);
 	});
 
 	
@@ -1457,7 +1452,8 @@ function deleteLoadBalancerbyIds(request, response, appData) {
             commonUtils.handleJSONResponse(error, response, null);
             return;
         }
-        commonUtils.handleJSONResponse(error, response, results);
+		lastMessage= printMessage(outputs);
+        commonUtils.handleJSONResponse(error, response, lastMessage);
 	});
 }
 
@@ -1785,7 +1781,8 @@ function deleteListenerbyIds(request, response, appData) {
 	    });
 	});
 	async.mapSeries(allDataArr, deleteLoadBalancerCB, function(error, outputs){
-		callback(null,outputs);
+		lastMessage= printMessage(outputs);
+		callback(null,lastMessage);
 	});
 }
 function deleteListenerCB(dataObj, callback) {
@@ -3060,9 +3057,13 @@ function appendMessage(newMessage, existingMessage) {
   }
 
 function printMessage(listMessage) {
-	var len= listMessage.length;
-	newMessage={};
+	var newMessage={};
 	newMessage.message="";
+	if(listMessage == undefined){
+		return newMessage;
+	}
+	var len= listMessage.length;
+	
 	for(i=0;i<len;i++){
 		newMessage.message += listMessage[i].message + '<br>';
 	}
