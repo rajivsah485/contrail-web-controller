@@ -1780,9 +1780,9 @@ function deleteListenerbyIds(request, response, appData) {
 	        appData: appData
 	    });
 	});
-	async.mapSeries(allDataArr, deleteLoadBalancerCB, function(error, outputs){
-		lastMessage= printMessage(outputs);
-		callback(null,lastMessage);
+	async.mapSeries(allDataArr, deleteListenerCB, function(error, results){
+		lastMessage= printMessage(results);
+		commonUtils.handleJSONResponse(error, response, lastMessage);
 	});
 }
 function deleteListenerCB(dataObj, callback) {
