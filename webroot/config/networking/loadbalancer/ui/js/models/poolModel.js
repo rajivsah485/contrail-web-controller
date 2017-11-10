@@ -108,8 +108,9 @@ define([
             $.each(checkedRows, function (checkedRowsKey, checkedRowsValue) {
                 uuidList.push(checkedRowsValue.uuid);
             });
-            ajaxConfig.type = "DELETE";
-            ajaxConfig.url = '/api/tenants/config/lbaas/pool/' + uuidList[0];
+            ajaxConfig.type = "POST";
+            ajaxConfig.url = '/api/tenants/config/lbaas/pool/delete';
+            ajaxConfig.data = JSON.stringify({'uuids': uuidList});
             contrail.ajaxHandler(ajaxConfig, function () {
                 if (contrail.checkIfFunction(callbackObj.init)) {
                     callbackObj.init();
