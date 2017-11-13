@@ -231,5 +231,5 @@ TBD
 UI documentation needs to be updated to provide information on usage of LBaaS.
 
 ## 12. References
-https://docs.openstack.org/horizon/latest/user/manage-lbaasv2.html
-https://wiki.openstack.org/wiki/Neutron/LBaaS
+* https://docs.openstack.org/horizon/latest/user/manage-lbaasv2.html
+* https://wiki.openstack.org/wiki/Neutron/LBaaS
