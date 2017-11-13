@@ -62,7 +62,7 @@ define([
             });
         },
         associateFloatingIp: function(callbackObj, options){
-            var ajaxConfig = {}, floatingIpObj, selPoolObj;
+            var ajaxConfig = {}, floatingObj, selPoolObj;
             var self = this;
             var model = $.extend(true,{},this.model().attributes);
             var obj = {};
@@ -72,76 +72,57 @@ define([
                 var fipObj = options.floatingIpObj;
                 _.each(fipObj, function(obj) {
                     if(obj.uuid === uuid){
-                        floatingIpObj = obj;
+                        floatingObj = obj;
                     }
-                });
-                obj['fixed_ip_aap'] = 'fixed-ip';
-                obj['floating_ip_fixed_ip_address'] = floatingIpObj.floating_ip_address;
-                obj['fq_name'] = floatingIpObj.fq_name;
-                obj['owner_visible'] = true;
-                obj.uuid = floatingIpObj.uuid;
-                var vmi = options.vmiTo.join(':');
-                var newVmi = vmi + ';' +  floatingIpObj.floating_ip_address;
-                obj['user_created_virtual_machine_interface_refs'] = newVmi;
-                obj['virtual_machine_interface_refs'] = options.vmiTo;
-                var modelObj = {};
-                modelObj['floating-ip'] = obj;
-                ajaxConfig.url = ' /api/tenants/config/floating-ip/' + uuid;
-                ajaxConfig.type  = 'PUT';
-                ajaxConfig.data  = JSON.stringify(modelObj);
-                contrail.ajaxHandler(ajaxConfig, function () {
-                    if (contrail.checkIfFunction(callbackObj.init)) {
-                        callbackObj.init();
-                    }
-                }, function (response) {
-                    if (contrail.checkIfFunction(callbackObj.success)) {
-                        callbackObj.success();
-                    }
-                    returnFlag = true;
-                }, function (error) {
-                    if (contrail.checkIfFunction(callbackObj.error)) {
-                        callbackObj.error(error);
-                    }
-                    returnFlag = false;
                 });
             }else{
                 var poolObj = options.fipPoolObj;
                 _.each(poolObj, function(obj) {
                     if(obj.uuid === uuid){
-                        selPoolObj = obj;
+                        floatingObj = obj;
                     }
-                });
-                obj['fq_name'] = selPoolObj.to;
-                obj.uuid = selPoolObj.uuid;
-                var vmi = options.vmiTo.join(':');
-                var subnetIp = selPoolObj.subnets.split('/')[0];
-                var newVmi = vmi + ';' +  subnetIp;
-                obj['user_created_virtual_machine_interface_refs'] = newVmi;
-                obj['virtual_machine_interface_refs'] = options.vmiTo;
-                var modelObj = {};
-                modelObj['floating-ip-pool'] = obj;
-                ajaxConfig.url = ' /api/tenants/config/floating-ip-pool/' + uuid;
-                ajaxConfig.type  = 'PUT';
-                ajaxConfig.data  = JSON.stringify(modelObj);
-                contrail.ajaxHandler(ajaxConfig, function () {
-                    if (contrail.checkIfFunction(callbackObj.init)) {
-                        callbackObj.init();
-                    }
-                }, function (response) {
-                    if (contrail.checkIfFunction(callbackObj.success)) {
-                        callbackObj.success();
-                    }
-                    returnFlag = true;
-                }, function (error) {
-                    if (contrail.checkIfFunction(callbackObj.error)) {
-                        callbackObj.error(error);
-                    }
-                    returnFlag = false;
-                });
-            } 
+                }); 
+            }
+            obj['fixed_ip_aap'] = 'fixed-ip';
+            obj['floating_ip_fixed_ip_address'] = options.vmiFixedIp;
+            if(floatingObj.fq_name === undefined){
+                obj['fq_name'] = floatingObj.to; 
+            }else{
+               obj['fq_name'] = floatingObj.fq_name;
+            }
+            obj['owner_visible'] = true;
+            obj.uuid = floatingObj.uuid;
+            var vmi = options.vmiTo.join(':');
+            var newVmi = vmi + ';' +  options.vmiFixedIp;
+            obj['user_created_virtual_machine_interface_refs'] = newVmi;
+            var vmiObj = {};
+            vmiObj.to = options.vmiTo;
+            var vmiObjList = [];
+            vmiObjList.push(vmiObj);
+            obj['virtual_machine_interface_refs'] = vmiObjList;
+            var modelObj = {};
+            modelObj['floating-ip'] = obj;
+            ajaxConfig.url = ' /api/tenants/config/floating-ip/' + uuid;
+            ajaxConfig.type  = 'PUT';
+            ajaxConfig.data  = JSON.stringify(modelObj);
+            contrail.ajaxHandler(ajaxConfig, function () {
+                if (contrail.checkIfFunction(callbackObj.init)) {
+                    callbackObj.init();
+                }
+            }, function (response) {
+                if (contrail.checkIfFunction(callbackObj.success)) {
+                    callbackObj.success();
+                }
+                returnFlag = true;
+            }, function (error) {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(error);
+                }
+                returnFlag = false;
+            });
         },
         deAssociateFloatingIp: function(callbackObj, options){
-            var ajaxConfig = {}, floatingIpObj, selPoolObj;
+            var ajaxConfig = {}, defloatingObj, selPoolObj;
             var self = this;
             var model = $.extend(true,{},this.model().attributes);
             var obj = {};
@@ -149,17 +130,14 @@ define([
             var fipObj = options.floatingIpObj;
             _.each(fipObj, function(obj) {
                 if(obj.uuid === uuid){
-                    floatingIpObj = obj;
+                    defloatingObj = obj;
                 }
             });
             obj['fixed_ip_aap'] = 'fixed-ip';
-            obj['floating_ip_fixed_ip_address'] = floatingIpObj.floating_ip_address;
-            obj['fq_name'] = floatingIpObj.fq_name;
+            obj['floating_ip_fixed_ip_address'] = options.vmiFixedIp;
+            obj['fq_name'] = defloatingObj.fq_name;
             obj['owner_visible'] = true;
-            obj.uuid = floatingIpObj.uuid;
-            //var vmi = options.vmiTo.join(':');
-            //var newVmi = vmi + ';' +  floatingIpObj.floating_ip_address;
-            //obj['user_created_virtual_machine_interface_refs'] = newVmi;
+            obj.uuid = defloatingObj.uuid;
             obj['virtual_machine_interface_refs'] = [];
             var modelObj = {};
             modelObj['floating-ip'] = obj;

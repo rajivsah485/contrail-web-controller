@@ -183,6 +183,7 @@ define([
     function onLoadBalancerClick(e, dc) {
         var viewTab = 'config_loadbalancer_details';
         var projectId = this.viewConfig.selectedProjId;
+        var lbList = this.viewConfig.lb.list;
         var hashP = 'config_load_balancer';
         var hashParams = null,
             hashObj = {
@@ -192,7 +193,8 @@ define([
                     uuid: dc.uuid,
                     tab: viewTab,
                     projectId: projectId,
-                    lbFqName : dc.loadbalancer.fq_name
+                    lbFqName : dc.loadbalancer.fq_name,
+                    lbList : lbList
                 }
             };
         if (contrail.checkIfKeyExistInObject(true,
@@ -266,12 +268,14 @@ define([
             var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
             var item = dataView.getItem(rowIndex);
             var vmiTo = getValueByJsonPath(item, "loadbalancer;virtual_machine_interface_refs;0;to", []);
+            var vmiFixedIp = getValueByJsonPath(item, "loadbalancer;virtual_machine_interface_refs;0;instance-ip;instance_ip_address", '');
             lbInfoEditView.model = new LbInfoModel();
             lbInfoEditView.renderAssociateIp({
                                    'title':'Associate Load Balancer to Floating IP',
                                    'ProjectId': self.ProjectId,
                                    'floatingIp': viewConfig.floatingIp.list,
                                    'vmiTo': vmiTo,
+                                   'vmiFixedIp': vmiFixedIp,
                                    callback: function () {
                                       dataView.refreshData();
             }});
@@ -280,6 +284,7 @@ define([
             var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
             var item = dataView.getItem(rowIndex);
             var floatingIpUuid = getValueByJsonPath(item, "loadbalancer;virtual_machine_interface_refs;0;floating-ip;uuid", '');
+            var vmiFixedIp = getValueByJsonPath(item, "loadbalancer;virtual_machine_interface_refs;0;instance-ip;instance_ip_address", '');
             var lbModel = dataView.getItem(rowIndex);
             var LbName = lbModel.loadbalancer.name;
             lbInfoEditView.model = new LbInfoModel();
@@ -288,6 +293,7 @@ define([
                                   'LbName': LbName,
                                   'ProjectId': self.ProjectId,
                                   'floatingUuid': floatingIpUuid,
+                                  'vmiFixedIp': vmiFixedIp,
                                   callback: function () {
                                       dataView.refreshData();
             }});
