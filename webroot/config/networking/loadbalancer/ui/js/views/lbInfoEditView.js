@@ -101,7 +101,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-560',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                /*self.model.configureForwardingOptions({
+                self.model.associateFloatingIp({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -116,7 +116,7 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
+                }, options);
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model, document.getElementById(modalId));
@@ -146,7 +146,7 @@ define([
             cowu.createModal({'modalId': modalId, 'className': 'modal-560',
                              'title': options['title'], 'body': editLayout,
                              'onSave': function () {
-                /*self.model.configureForwardingOptions({
+                self.model.deAssociateFloatingIp({
                     init: function () {
                         cowu.enableModalLoading(modalId);
                     },
@@ -161,27 +161,30 @@ define([
                                                      error.responseText);
                         });
                     }
-                });*/
+                }, options);
                 // TODO: Release binding on successful configure
             }, 'onCancel': function () {
                 Knockback.release(self.model, document.getElementById(modalId));
                 kbValidation.unbind(self);
                 $("#" + modalId).modal('hide');
             }});
-            
-            self.renderView4Config($("#" + modalId).find(formId),
-                    self.model,
-                    diAssociateIpViewConfig(options),
-                    "",
-                    null, null, function() {
-             self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
-             $('#configure-config_lb_info .modal-footer button:last-child').text('Diassociate');
-             Knockback.applyBindings(self.model,
-                                     document.getElementById(modalId));
-             kbValidation.bind(self);
-           });
+            this.fetchAllData(self ,options,
+                    function(allData) {
+                    self.renderView4Config($("#" + modalId).find(formId),
+                            self.model,
+                            diAssociateIpViewConfig(options),
+                            "",
+                            null, null, function() {
+                     self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
+                     $('#configure-config_lb_info .modal-footer button:last-child').text('Diassociate');
+                     Knockback.applyBindings(self.model,
+                                             document.getElementById(modalId));
+                     kbValidation.bind(self);
+                   });
+            });
         },
         fetchAllData : function(self, options, callback) {
+            var floatingIpUuid = options.floatingIp;
             var getAjaxs = [];
             getAjaxs[0] = $.ajax({
                 url: ctwc.get(ctwc.URL_CFG_FIP_DETAILS) + '/' + options.ProjectId,
@@ -199,15 +202,19 @@ define([
                     var floatingList = arguments[0][0]['floating_ip_back_refs'];
                     var fipPoolResponse = getValueByJsonPath(arguments[1][0],
                             'floating_ip_pool_refs', []);
-                    var floatingIpList = [], fipPoolList = [];;
+                    var floatingIpList = [], fipPoolList = [], floatingIpObj = [];
                     for(var i = 0; i < floatingList.length; i++){
                         var floatingIp = floatingList[i]['floating-ip'];
-                        floatingIpList.push(
-                                 {text : floatingIp.floating_ip_address,
-                                     value : floatingIp.uuid + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_address",
-                                     id : floatingIp.uuid + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_address",
-                                     parent : "floating_ip_address"});
-                        
+                        floatingIpObj.push(floatingIp);
+                        if(floatingIpUuid !== undefined){
+                            if(floatingIpUuid.indexOf(floatingIp.uuid) === -1){
+                                floatingIpList.push(
+                                        {text : floatingIp.floating_ip_address,
+                                            value : floatingIp.uuid + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_address",
+                                            id : floatingIp.uuid + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_address",
+                                            parent : "floating_ip_address"});
+                            } 
+                        }
                     }
                     if (fipPoolResponse.length > 0) {
                         $.each(fipPoolResponse, function (i, obj) {
@@ -215,14 +222,10 @@ define([
                                                 obj['to'][2] + ":" + obj['to'][3];
                             var flatNameId =    obj['to'][0] + ":" + obj['to'][1] + ":" +
                                                 obj['to'][2] + ":" + obj['to'][3];
-                            //var subnets = getValueByJsonPath(obj, 'subnets', '')
-                           // subnets = subnets.length ? subnets : 'No subnets available';
-                            //fipPoolList.push({id: flatNameId.toString(),
-                                               // text: flatName + ' (' + subnets + ')'});
                             fipPoolList.push(
                                     {text : flatName,
-                                        value : flatNameId + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_pools",
-                                        id : flatNameId + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_pools",
+                                        value : obj.uuid + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_pools",
+                                        id : obj.uuid + cowc.DROPDOWN_VALUE_SEPARATOR + "floating_ip_pools",
                                         parent : "floating_ip_pools"});
                             
                         });     
@@ -231,6 +234,8 @@ define([
                     addrFields.push({text : 'Floating IP Addresses', value : 'floating_ip_address', id: 'floating_ip_address', children : floatingIpList},
                                    {text : "Floating IP Pools", value: "floating_ip_pools", id:'floating_ip_pools', children: fipPoolList});
                     returnArr["addrFields"] = addrFields;
+                    options["floatingIpObj"] = floatingIpObj;
+                    options["fipPoolObj"] = fipPoolResponse;
                     callback(returnArr);
                 }
             )
