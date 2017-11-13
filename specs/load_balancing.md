@@ -1,4 +1,4 @@
-## 1. Introduction 
+## 1. Introduction
 This blue print describes the design, features, and implementation of Load-Balancer-as-a-Service (LBaaS) feature in Contrail Web UI.
 
 Load-Balancer-as-a-Service (LBaaS) enables networking to distribute incoming requests evenly among designated instances. This distribution ensures that the workload is shared predictably among instances and enables more effective use of system resources. Use one of these load-balancing methods to distribute incoming requests:
