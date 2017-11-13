@@ -78,7 +78,7 @@ define([
                             $('#linkLBDelete').removeClass('disabled-link');
                         }
                     },
-                    actionCell: getRowActionConfig,
+                    actionCell: getRowActionConfig.bind(viewConfig),
                     detail: {
                         noCache: true,
                         template: cowu.generateDetailTemplateHTML(
@@ -250,6 +250,7 @@ define([
     }
 
     function  getRowActionConfig (dc) {
+        var viewConfig = this;
         rowActionConfig = [
             ctwgc.getEditConfig('Edit Loadbalancer', function(rowIndex) {
                 var rowData = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView.getItem(rowIndex);
@@ -263,22 +264,30 @@ define([
         ];
         rowActionConfig.push(ctwgc.getEditConfig('Associate Floating IP', function(rowIndex) {
             var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
+            var item = dataView.getItem(rowIndex);
+            var vmiTo = getValueByJsonPath(item, "loadbalancer;virtual_machine_interface_refs;0;to", []);
             lbInfoEditView.model = new LbInfoModel();
             lbInfoEditView.renderAssociateIp({
-                                  "title": 'Associate Load Balancer to Floating IP',
-                                   'ProjectId':self.ProjectId,
+                                   'title':'Associate Load Balancer to Floating IP',
+                                   'ProjectId': self.ProjectId,
+                                   'floatingIp': viewConfig.floatingIp.list,
+                                   'vmiTo': vmiTo,
                                    callback: function () {
                                       dataView.refreshData();
             }});
         }));
         rowActionConfig.push(ctwgc.getEditConfig('Diassociate Floating IP', function(rowIndex) {
             var dataView = $('#' + ctwl.CFG_LB_GRID_ID).data("contrailGrid")._dataView;
+            var item = dataView.getItem(rowIndex);
+            var floatingIpUuid = getValueByJsonPath(item, "loadbalancer;virtual_machine_interface_refs;0;floating-ip;uuid", '');
             var lbModel = dataView.getItem(rowIndex);
             var LbName = lbModel.loadbalancer.name;
             lbInfoEditView.model = new LbInfoModel();
             lbInfoEditView.renderDeassociateIp({
                                   "title": 'Disassociate Floating IP from Load Balancer',
                                   'LbName': LbName,
+                                  'ProjectId': self.ProjectId,
+                                  'floatingUuid': floatingIpUuid,
                                   callback: function () {
                                       dataView.refreshData();
             }});
