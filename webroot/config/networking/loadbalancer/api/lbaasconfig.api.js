@@ -573,9 +573,6 @@ function parseFloatingIps(vmiData, appData, lbs, callback) {
 					}
 				}
 			}
-			parseVNSubnets(lbs, vmiData, appData, function(error, lbs) {
-				callback(error,lbs);
-			});
 		});
 }
 
