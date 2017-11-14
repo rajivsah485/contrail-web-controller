@@ -573,6 +573,7 @@ function parseFloatingIps(vmiData, appData, lbs, callback) {
 					}
 				}
 			}
+			callback(null,lbs);
 		});
 }
 
@@ -667,7 +668,7 @@ function parseInstanceIps(vmiData, appData, lbs, callback) {
  * @returns
  */
 function parseVNSubnets(vmiData, appData, lbs, callback) {
-	console.log('parseVNSubnets', JSON.stringify(vmiData));
+	console.log('parseVNSubnets');
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
