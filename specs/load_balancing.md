@@ -75,7 +75,7 @@ None
 #### 4.2.1 Create a new Load Balancer.
 Navigate to **Configure** workspace and under **Networking** section, you see **Load Balancer**
 * Click on “+”
-![Create](images/LBaas_Create_LB.png)
+![Create](images/LBaaS_Create_LB.png)
 
 **Create Load Balancer Wizard**
 ![Wizard](images/LBaaS_Create_Steps.png)
