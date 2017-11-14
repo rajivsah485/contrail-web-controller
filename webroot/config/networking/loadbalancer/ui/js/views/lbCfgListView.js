@@ -18,6 +18,8 @@ define([
             var viewConfig = this.attributes.viewConfig;
             self.floatingIp = {};
             self.floatingIp.list = [];
+            self.lb = {};
+            self.lb.list = [];
             var currentProject = viewConfig["projectSelectedValueData"];
             var listModelConfig = {
                     remote: {
@@ -30,13 +32,15 @@ define([
                 };
                 var contrailListModel = new ContrailListModel(listModelConfig);
                 self.renderView4Config(self.$el,
-                        contrailListModel, getLbCfgListViewConfig(viewConfig, self.floatingIp));
+                        contrailListModel, getLbCfgListViewConfig(viewConfig, self.floatingIp, self.lb));
         },
         parseLoadbalancersData : function(response){
              var lbList = getValueByJsonPath(response, "loadbalancers", []),
-             vmiList = [], fIpList = [];
+             vmiList = [], fIpList = [], loadBalancerList = [];
              _.each(lbList, function(obj) {
-                 var vmi = getValueByJsonPath(obj, "loadbalancer;virtual_machine_interface_refs", [])
+                 var vmi = getValueByJsonPath(obj, "loadbalancer;virtual_machine_interface_refs", []);
+                 var loadBalancer = getValueByJsonPath(obj, "loadbalancer", {});
+                 loadBalancerList.push({id: loadBalancer.uuid, text: loadBalancer.display_name, fqName:loadBalancer.fq_name });
                  vmiList = vmiList.concat(vmi);
              });
              _.each(vmiList, function(obj) {
@@ -46,10 +50,11 @@ define([
                  }
              });
              self.floatingIp.list = fIpList;
+             self.lb.list = loadBalancerList;
              return lbList;
         }
     });
-    var getLbCfgListViewConfig = function (viewConfig, floatingIp) {
+    var getLbCfgListViewConfig = function (viewConfig, floatingIp, lb) {
         return {
             elementId: cowu.formatElementId([ctwl.CFG_LB_LIST_ID]),
             view: "SectionView",
@@ -67,7 +72,8 @@ define([
                                 viewConfig: {
                                     selectedProjId:
                                       viewConfig.projectSelectedValueData.value,
-                                      floatingIp: floatingIp
+                                      floatingIp: floatingIp,
+                                      lb: lb
                                 }
                             }
                         ]
