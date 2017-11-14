@@ -350,7 +350,8 @@ function getLoadBalancerRefDetails(appData, lbs, callback){
 		async.waterfall([
 			async.apply(parseServiceInstanceDetailsfromLB, sviData, lbs),		
 			async.apply(parseInstanceIps, vmiData, appData),
-			async.apply(parseFloatingIps, vmiData, appData) ],
+			async.apply(parseFloatingIps, vmiData, appData),
+			async.apply(parseVNSubnets, vmiData, appData)],
 			function(error, results) {
 				callback(null, results);
 			});
@@ -668,19 +669,19 @@ function parseInstanceIps(vmiData, appData, lbs, callback) {
  * @param callback
  * @returns
  */
-function parseVNSubnets(lbs, vmiData, appData, callback) {
-	console.log('parseVNSubnets');
+function parseVNSubnets(vmiData, appData, lbs, callback) {
+	console.log('parseVNSubnets', JSON.stringify(vmiData));
 	var reqUrlfp = null;
 	var dataObjArr = [];
 	var i = 0, lisLength = 0;
-	var vrPoolRef = [];
+	var vrVMIRef = [];
 	for(i= 0;i < vmiData.length; i++){
 		vmi = vmiData[i];
 		if ('virtual_network_refs' in vmi['virtual-machine-interface']) {
-			vrPoolRef = vmi['virtual-machine-interface']['virtual_network_refs'];
+			vrVMIRef = vmi['virtual-machine-interface']['virtual_network_refs'];
 		}
 	}
-	_.each(vrPoolRef, function(vrObj) {
+	_.each(vrVMIRef, function(vrObj) {
 		reqUrl = '/virtual-network/' + vrObj['uuid'] + '?exclude_hrefs=true';
 		commonUtils.createReqObj(dataObjArr, reqUrl, global.HTTP_REQUEST_GET,
 				null, null, null, appData);
