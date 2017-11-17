@@ -9,13 +9,17 @@ function configlBaaSLoader() {
         var self = this, currMenuObj = globalObj.currMenuObj,
             hashParams = paramObject['hashParams'],
             rootDir = currMenuObj['resources']['resource'][1]['rootDir'],
-            pathView = rootDir + '/js/views/lbCfgView.js',
-            renderFn = paramObject['function'];
+            pathView = ctBaseDir + '/config/networking/loadbalancer/ui/js/views/lbCfgView.js',
+            renderFn = paramObject['function'],
+            loadingStartedDefObj = paramObject['loadingStartedDefObj'];
 
         if (self.lbCfgView == null) {
             requirejs([pathView], function (lbCfgView) {
                  self.lbCfgView = new lbCfgView();
                  self.renderView(renderFn, hashParams);
+                 if(contrail.checkIfExist(loadingStartedDefObj)) {
+                     loadingStartedDefObj.resolve();
+                 }
              });
         } else {
             self.renderView(renderFn, hashParams);
