@@ -28,6 +28,7 @@ define([
             'listener_protocol':'',
             'listener_port':'',
             'listener_admin_state': true,
+            'connection_limit': -1,
             'pool_name':'Pool 1',
             'pool_description':'',
             'pool_method':'',
@@ -108,6 +109,9 @@ define([
                 },
                 'listener_port': function(value, attr, data) {
                    var port = Number(value);
+                   if(port < 1 || port > 65535){
+                       return "The Port must be a number between 1 and 65535.";
+                   }
                    if(data.existing_port.length > 0){
                        if(data.existing_port.indexOf(port) !== -1){
                            return "The port must be unique among all listeners attached to this load balancer";
@@ -224,6 +228,7 @@ define([
             listener.loadbalancer_listener_properties['admin_state'] = model.listener_admin_state;
             listener.loadbalancer_listener_properties['protocol'] = model.listener_protocol;
             listener.loadbalancer_listener_properties['protocol_port'] = Number(model.listener_port);
+            listener.loadbalancer_listener_properties['connection_limit'] = Number(model.connection_limit);
             obj['loadbalancer-listener'] = listener;
             
             // Pool

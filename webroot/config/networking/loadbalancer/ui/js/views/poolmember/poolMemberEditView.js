@@ -47,7 +47,7 @@ define([
                 self.renderView4Config($("#" + modalId).find(formId),
                                        self.model,
                                        poolMemberViewConfig(allData),
-                                       "",
+                                       "poolListMemberValidation",
                                        null, null, function() {
                     self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
                     Knockback.applyBindings(self.model,
@@ -90,15 +90,14 @@ define([
                 self.renderView4Config($("#" + modalId).find(formId),
                         self.model,
                         poolMemberAddViewConfig(allData),
-                        "",
+                        "poolListMemberValidation",
                         null, null, function() {
                      self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
                      Knockback.applyBindings(self.model,
                                              document.getElementById(modalId));
                      kbValidation.bind(self,{collection:
                          self.model.model().attributes.pool_member});
-                     kbValidation.bind(self);
-                 });
+                 }, null, false);
             });
                 
         },
@@ -186,7 +185,7 @@ define([
                             label:"",
                             path: "pool_member",
                             class: 'col-xs-12',
-                            //validation: '',
+                            validation: 'poolMemberValidation',
                             templateId: cowc.TMPL_COLLECTION_HEADING_VIEW,
                             collection: "pool_member",
                             rows:[{
@@ -205,9 +204,9 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_name",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         label: '',
-                                        dataBindValue: "pool_name()",
-                                        width: 200,
+                                        dataBindValue: "pool_name()"
                                     }
                                 },
                                 {
@@ -217,10 +216,10 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_ip_address",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         placeholder : 'xxx.xxx.xxx.xxx',
                                         label: '',
-                                        dataBindValue: "pool_member_ip_address()",
-                                        width: 200,
+                                        dataBindValue: "pool_member_ip_address()"
                                     }
                                 },
                                 {
@@ -230,8 +229,8 @@ define([
                                     width: 300,
                                     viewConfig: {
                                         path : 'pool_member_subnet',
+                                        templateId: cowc.TMPL_EDITABLE_GRID_DROPDOWN_VIEW,
                                         label: '',
-                                        width: 300,
                                         dataBindValue :
                                             'pool_member_subnet()',
                                         elementConfig : {
@@ -247,12 +246,13 @@ define([
                                     view: "FormInputView",
                                     name: 'Port',
                                     width: 200,
+                                    class: "",
                                     viewConfig: {
                                         path: "pool_member_port",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         type:'number',
                                         label: '',
-                                        dataBindValue: "pool_member_port()",
-                                        width: 200
+                                        dataBindValue: "pool_member_port()"
                                     }
                                 },
                                 {
@@ -262,10 +262,10 @@ define([
                                     width: 200,
                                     viewConfig: {
                                         path: "pool_member_weight",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         type:'number',
                                         label: '',
-                                        dataBindValue: "pool_member_weight()",
-                                        width: 200
+                                        dataBindValue: "pool_member_weight()"
                                     }
                                 }]
                             }],

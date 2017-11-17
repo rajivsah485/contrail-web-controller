@@ -48,9 +48,10 @@ define([
                     if (!contrail.checkIfKnockoutBindingExist(modalId)) {
                         self.model.showErrorAttr(prefixId + cowc.FORM_SUFFIX_ID, false);
                         Knockback.applyBindings(self.model, document.getElementById(modalId));
-                        kbValidation.bind(self);
+                        kbValidation.bind(self,{collection:
+                            self.model.model().attributes.pool_member});
                     }
-               });
+               }, null, false);
             });
             $("#wizard_cancel").off('click').on('click', function(){
                  Knockback.release(self.model,
@@ -278,6 +279,16 @@ define([
                       {
                           columns: [
                               {
+                                  elementId: "connection_limit",
+                                  view: "FormInputView",
+                                  viewConfig: {
+                                      path: "connection_limit",
+                                      type:'number',
+                                      label: 'Connection Limit',
+                                      dataBindValue: "connection_limit",
+                                      class: "col-xs-6"
+                                  }
+                              },{
                                   elementId: 'listener_admin_state',
                                   view: "FormCheckboxView",
                                   viewConfig : {
@@ -555,7 +566,7 @@ define([
                             label:"",
                             path: "pool_member",
                             class: 'col-xs-12',
-                            //validation: '',
+                            validation: 'poolMemberValidation',
                             templateId: cowc.TMPL_COLLECTION_HEADING_VIEW,
                             collection: "pool_member",
                             rows:[{
@@ -571,36 +582,36 @@ define([
                                     elementId: "pool_name",
                                     view: "FormInputView",
                                     name: 'Name',
-                                    width: 200,
+                                    width: 100,
                                     viewConfig: {
                                         path: "pool_name",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         label: '',
                                         dataBindValue: "pool_name()",
-                                        width: 200,
                                     }
                                 },
                                 {
                                     elementId: "pool_member_ip_address",
                                     view: "FormInputView",
                                     name: 'IP Address',
-                                    width: 200,
+                                    width: 120,
                                     viewConfig: {
                                         path: "pool_member_ip_address",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         placeholder : 'xxx.xxx.xxx.xxx',
                                         label: '',
-                                        dataBindValue: "pool_member_ip_address()",
-                                        width: 200,
+                                        dataBindValue: "pool_member_ip_address()"
                                     }
                                 },
                                 {
                                     elementId: 'pool_member_subnet',
                                     view: "FormDropdownView",
                                     name: 'Subnet',
-                                    width: 300,
+                                    width: 200,
                                     viewConfig: {
                                         path : 'pool_member_subnet',
+                                        templateId: cowc.TMPL_EDITABLE_GRID_DROPDOWN_VIEW,
                                         label: '',
-                                        width: 300,
                                         dataBindValue :
                                             'pool_member_subnet()',
                                         elementConfig : {
@@ -615,26 +626,27 @@ define([
                                     elementId: "pool_member_port",
                                     view: "FormInputView",
                                     name: 'Port',
-                                    width: 200,
+                                    width: 100,
+                                    class: "",
                                     viewConfig: {
                                         path: "pool_member_port",
                                         type:'number',
                                         label: '',
                                         dataBindValue: "pool_member_port()",
-                                        width: 200
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW
                                     }
                                 },
                                 {
                                     elementId: "pool_member_weight",
                                     view: "FormInputView",
                                     name: 'Weight',
-                                    width: 200,
+                                    width: 100,
                                     viewConfig: {
                                         path: "pool_member_weight",
+                                        templateId: cowc.TMPL_EDITABLE_GRID_INPUT_VIEW,
                                         type:'number',
                                         label: '',
-                                        dataBindValue: "pool_member_weight()",
-                                        width: 200
+                                        dataBindValue: "pool_member_weight()"
                                     }
                                 }]
                             }],
@@ -671,10 +683,21 @@ define([
                         },
                         onNext: function(params) {
                             if(params.model.lb_subnet() !== '' && params.model.name() !== '' && params.model.lb_provider() !== ''){
-                                $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
-                                $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
-                                $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
-                                return true;
+                                if(params.model.ip_address() !== ''){
+                                    var value = params.model.ip_address();
+                                    var subnet = params.model.lb_subnet().split(';')[1];
+                                    if(isIPBoundToRange(subnet, value)){
+                                        $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
+                                        $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
+                                        $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
+                                        return true;
+                                    }
+                                }else{
+                                    $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
+                                    $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
+                                    $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
+                                    return true;
+                                }
                             }else{
                                 $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'block'});
                                 $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('Please enter the required field.');
@@ -712,19 +735,25 @@ define([
                         onNext: function(params) {
                             if(options.mode === 'loadbalancer'){
                                 if(params.model.listener_protocol() !== '' && params.model.listener_name() !== '' && params.model.listener_port() !== ''){
-                                    $('#loadbalancer_loadbalancer_wizard-p-1 .alert-error').css({'display': 'none'});
-                                    $('#loadbalancer_loadbalancer_wizard-p-1 > div > span').text('');
-                                    return true;
+                                    var port = Number(params.model.listener_port());
+                                    if(port >= 1 && port <= 65535){
+                                        $('#loadbalancer_loadbalancer_wizard-p-1 .alert-error').css({'display': 'none'});
+                                        $('#loadbalancer_loadbalancer_wizard-p-1 > div > span').text('');
+                                        return true;
+                                    }
                                 }else{
                                     $('#loadbalancer_loadbalancer_wizard-p-1 .alert-error').css({'display': 'block'});
                                     $('#loadbalancer_loadbalancer_wizard-p-1 > div > span').text('Please enter the required field.');
                                 }
                             }else{
                                 if(params.model.listener_protocol() !== '' && params.model.listener_name() !== '' && params.model.listener_port() !== ''){
-                                    $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
-                                    $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
-                                    $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
-                                    return true;
+                                    var port = Number(params.model.listener_port());
+                                    if(port >= 1 && port <= 65535){
+                                        $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a')[0].setAttribute('style','visibility: visible');
+                                        $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'none'});
+                                        $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('');
+                                        return true;
+                                    }
                                 }else{
                                     $('#loadbalancer_loadbalancer_wizard-p-0 .alert-error').css({'display': 'block'});
                                     $('#loadbalancer_loadbalancer_wizard-p-0 > div > span').text('Please enter the required field.');
@@ -792,6 +821,18 @@ define([
         return addPoolViewConfig;
     }
     
+    function checkPoolValidation(params){
+        var model = params.model.pool_member(), porNotValid = false;
+        for(var i = 0; i < model.length; i++){
+            var port = Number(model[i].model().attributes.pool_member_port());
+            if(port < 1 || port > 65535){
+                porNotValid = true;
+                break;
+            }
+        }
+        return porNotValid;
+    }
+
     function getCreatePoolMemberViewConfig(lbModel, options, allData) {
         var gridPrefix = "add-poolmember",
             addPoolViewConfig = {
@@ -814,10 +855,14 @@ define([
                         onNext: function(params) {
                             if(options.mode === 'loadbalancer'){
                                 $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').text('Create Load Balancer'); 
-                                return true;
+                                if(!checkPoolValidation(params)){
+                                    return true;
+                                }
                             }else{
                                 $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').text('Create Listener');
-                                return true;
+                                if(!checkPoolValidation(params)){
+                                    return true;
+                                }
                             }
                         },
                         onPrevious: function(params) {
@@ -828,6 +873,24 @@ define([
             }
         };
         return addPoolViewConfig;
+    }
+
+    function disbaleMonitorClick(){
+        $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').attr("disabled", "disabled");
+        $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a').attr("disabled", "disabled");
+        $('.modal-footer #cancelBtn').attr("disabled", "disabled");
+    }
+    function showErrorResponse(error, type){
+        $('#loadbalancer_loadbalancer_wizard .actions > ul li:nth-child(3) a').attr("disabled", false);
+        $('#loadbalancer_loadbalancer_wizard .actions > ul > li > a').attr("disabled", false);
+        $('.modal-footer #cancelBtn').attr("disabled", false);
+        if(type === 'lb'){
+            $('#loadbalancer_loadbalancer_wizard-p-4 .alert-error').css({'display': 'block'});
+            $('#loadbalancer_loadbalancer_wizard-p-4 > div > span').text(error.responseText);
+        }else{
+            $('#loadbalancer_loadbalancer_wizard-p-3 .alert-error').css({'display': 'block'});
+            $('#loadbalancer_loadbalancer_wizard-p-3 > div > span').text(error.responseText);
+        }
     }
     function getCreateMonitorViewConfig(lbModel, options, self, allData) {
         var gridPrefix = "add-monitor",
@@ -853,6 +916,8 @@ define([
                                 if(params.model.monitor_type() !== '' && params.model.health_check_interval() !== '' && params.model.retry_count() !== '' && params.model.timeout() !== ''){
                                     $('#loadbalancer_loadbalancer_wizard-p-4 .alert-error').css({'display': 'none'});
                                     $('#loadbalancer_loadbalancer_wizard-p-4 > div > span').text('');
+                                    //For disable the button
+                                    disbaleMonitorClick();
                                     return params.model.configureLoadBalancer({
                                         success: function () {
                                             if($("#" + modalId).find(".contrailWizard").data("contrailWizard")){
@@ -862,9 +927,8 @@ define([
                                             options['callback']();
                                         },
                                         error: function (error) {
-                                            //$('#applicationpolicyset_policy_wizard .alert-error span').text(error.responseText);
-                                            //$('#applicationpolicyset_policy_wizard .alert-error').show();
-                                        }
+                                            showErrorResponse(error, 'lb');
+                                       }
                                     }, options, allData, false);
                                 }else{
                                     $('#loadbalancer_loadbalancer_wizard-p-4 .alert-error').css({'display': 'block'});
@@ -874,6 +938,8 @@ define([
                                 if(params.model.monitor_type() !== '' && params.model.health_check_interval() !== '' && params.model.retry_count() !== '' && params.model.timeout() !== ''){
                                     $('#loadbalancer_loadbalancer_wizard-p-3 .alert-error').css({'display': 'none'});
                                     $('#loadbalancer_loadbalancer_wizard-p-3 > div > span').text('');
+                                  //For disable the button
+                                    disbaleMonitorClick();
                                     return params.model.configureLoadBalancer({
                                         success: function () {
                                             if($("#" + modalId).find(".contrailWizard").data("contrailWizard")){
@@ -883,8 +949,7 @@ define([
                                             options['callback']();
                                         },
                                         error: function (error) {
-                                            //$('#applicationpolicyset_policy_wizard .alert-error span').text(error.responseText);
-                                            //$('#applicationpolicyset_policy_wizard .alert-error').show();
+                                            showErrorResponse(error, 'listener');
                                         }
                                     }, options, allData, true);
                                 }else{

@@ -60,6 +60,17 @@ define([
             return modelConfig;
         },
         
+        validations: {
+            poolListMemberValidation: {
+                'port': function(value, attr, data) {
+                   var port = Number(value);
+                   if(port < 1 || port > 65535){
+                       return "The Port must be a number between 1 and 65535.";
+                   }
+                }
+             }
+        },
+
         addPoolMember: function() {
             var poolMember = this.model().attributes['pool_member'],
                 newPoolMember = new PoolMemberCollectionModel();
@@ -82,60 +93,73 @@ define([
             var ajaxConfig = {}, returnFlag = true;
             var self = this;
             var poolId = options.poolId;
-            var model = $.extend(true,{},this.model().attributes);
-            var poolMember = $.extend(true,{},model.pool_member).toJSON();
-            var obj = {};
-            if(poolMember.length > 0){
-                var poolStack = [];
-                _.each(poolMember, function(poolObj) {
-                    var obj = {};
-                    obj.name = poolObj.pool_name();
-                    obj.parent_type = "loadbalancer-pool";
-                    var memberfqName = [];
-                    memberfqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
-                    memberfqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
-                    memberfqName.push(poolObj.pool_name());
-                    obj.fq_name = memberfqName;
-                    obj.loadbalancer_member_properties = {};
-                    if(poolObj.pool_member_ip_address() !== ''){
-                        obj.loadbalancer_member_properties['address'] = poolObj.pool_member_ip_address();
-                    }
-                    if(poolObj.pool_member_port() !== ''){
-                        obj.loadbalancer_member_properties['protocol_port'] = Number(poolObj.pool_member_port());
-                    }
-                    if(poolObj.pool_member_weight() !== ''){
-                        obj.loadbalancer_member_properties['weight'] = Number(poolObj.pool_member_weight());
-                    }
-                    if(poolObj.pool_member_subnet() !== ''){
-                        obj.loadbalancer_member_properties['vip_subnet_id'] = poolObj.pool_member_subnet();
-                    }
-                    poolStack.push(obj);
-                });
-                obj['loadbalancer-member'] = poolStack;
-                ajaxConfig.url = '/api/tenants/config/lbaas/pool/' + poolId +'/member';
-                ajaxConfig.type  = 'POST';
-                ajaxConfig.data  = JSON.stringify(obj);
-                contrail.ajaxHandler(ajaxConfig, function () {
-                    if (contrail.checkIfFunction(callbackObj.init)) {
-                        callbackObj.init();
-                    }
-                }, function (response) {
-                    if (contrail.checkIfFunction(callbackObj.success)) {
-                        callbackObj.success();
-                    }
-                    returnFlag = true;
-                }, function (error) {
-                    if (contrail.checkIfFunction(callbackObj.error)) {
-                        callbackObj.error(error);
-                    }
-                    returnFlag = false;
-                });
-            }else{
-                var errorObj = {};
-                errorObj.responseText = 'Please add the row.'
-                callbackObj.error(errorObj);
+            var validations = [
+                {
+                    key : 'pool_member',
+                    type : cowc.OBJECT_TYPE_COLLECTION,
+                    getValidation : 'poolMemberValidation'
+                }
+            ];
+            if (this.isDeepValid(validations)) {
+                var model = $.extend(true,{},this.model().attributes);
+                var poolMember = $.extend(true,{},model.pool_member).toJSON();
+                var obj = {};
+                if(poolMember.length > 0){
+                    var poolStack = [];
+                    _.each(poolMember, function(poolObj) {
+                        var obj = {};
+                        obj.name = poolObj.pool_name();
+                        obj.parent_type = "loadbalancer-pool";
+                        var memberfqName = [];
+                        memberfqName.push(contrail.getCookie(cowc.COOKIE_DOMAIN));
+                        memberfqName.push(contrail.getCookie(cowc.COOKIE_PROJECT));
+                        memberfqName.push(poolObj.pool_name());
+                        obj.fq_name = memberfqName;
+                        obj.loadbalancer_member_properties = {};
+                        if(poolObj.pool_member_ip_address() !== ''){
+                            obj.loadbalancer_member_properties['address'] = poolObj.pool_member_ip_address();
+                        }
+                        if(poolObj.pool_member_port() !== ''){
+                            obj.loadbalancer_member_properties['protocol_port'] = Number(poolObj.pool_member_port());
+                        }
+                        if(poolObj.pool_member_weight() !== ''){
+                            obj.loadbalancer_member_properties['weight'] = Number(poolObj.pool_member_weight());
+                        }
+                        if(poolObj.pool_member_subnet() !== ''){
+                            obj.loadbalancer_member_properties['vip_subnet_id'] = poolObj.pool_member_subnet();
+                        }
+                        poolStack.push(obj);
+                    });
+                    obj['loadbalancer-member'] = poolStack;
+                    ajaxConfig.url = '/api/tenants/config/lbaas/pool/' + poolId +'/member';
+                    ajaxConfig.type  = 'POST';
+                    ajaxConfig.data  = JSON.stringify(obj);
+                    contrail.ajaxHandler(ajaxConfig, function () {
+                        if (contrail.checkIfFunction(callbackObj.init)) {
+                            callbackObj.init();
+                        }
+                    }, function (response) {
+                        if (contrail.checkIfFunction(callbackObj.success)) {
+                            callbackObj.success();
+                        }
+                        returnFlag = true;
+                    }, function (error) {
+                        if (contrail.checkIfFunction(callbackObj.error)) {
+                            callbackObj.error(error);
+                        }
+                        returnFlag = false;
+                    });
+                }else{
+                    var errorObj = {};
+                    errorObj.responseText = 'Please add the row.'
+                    callbackObj.error(errorObj);
+                }
+            }else {
+                if (contrail.checkIfFunction(callbackObj.error)) {
+                    callbackObj.error(this.getFormErrorText
+                                     (ctwc.CONFIG_LB_POOL_MEMBER_PREFIX_ID));
+                }
             }
-            
         },
         
         updateMember: function(callbackObj){

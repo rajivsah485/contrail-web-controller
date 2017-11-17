@@ -25,11 +25,10 @@ define([
             }
             modelConfig["admin_state"] = getValueByJsonPath(modelConfig,
                     "loadbalancer_listener_properties;admin_state", false);
-            var conLimit = getValueByJsonPath(modelConfig,
+
+            modelConfig["connection_limit"] = getValueByJsonPath(modelConfig,
                     "loadbalancer_listener_properties;connection_limit", '');
-            if(conLimit != ''){
-                modelConfig["connection_limit"] = conLimit;
-            }
+
             var port = getValueByJsonPath(modelConfig,
                     "loadbalancer_listener_properties;protocol_port", '');
             if(port != ''){

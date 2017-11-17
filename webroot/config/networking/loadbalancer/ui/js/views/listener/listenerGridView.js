@@ -353,6 +353,16 @@ define([
                                                     valueClass:'col-xs-9'
                                                 },
                                                 {
+                                                    label: 'Connection Limit',
+                                                    key: 'uuid',
+                                                    templateGeneratorConfig: {
+                                                        formatter: 'connectionLimit'
+                                                    },
+                                                    templateGenerator: 'TextGenerator',
+                                                    keyClass:'col-xs-3',
+                                                    valueClass:'col-xs-9'
+                                                },
+                                                {
                                                     label: 'Admin State',
                                                     key: 'uuid',
                                                     templateGeneratorConfig: {
@@ -389,6 +399,11 @@ define([
     this.listenerPoolCount = function (v, dc) {
         return lbCfgFormatters.listenerPoolCountFormatter(null,
                                         null, null, null, dc);
+    };
+
+    this.connectionLimit = function (v, dc) {
+        return lbCfgFormatters.listenerConnectionLimit(null,
+                null, null, null, dc);
     };
 
     this.listenerAdminState = function (v, dc){

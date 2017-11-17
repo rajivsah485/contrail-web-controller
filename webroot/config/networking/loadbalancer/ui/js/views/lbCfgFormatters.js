@@ -734,6 +734,10 @@ define([
             }
         };
         
+        this.listenerConnectionLimit = function(d, c, v, cd, dc){
+            return getValueByJsonPath(dc, 'loadbalancer_listener_properties;connection_limit', '');
+        };
+
         this.listenerAdminStateFormatter = function(d, c, v, cd, dc){
             var adminStatus = getValueByJsonPath(dc, 'loadbalancer_listener_properties;admin_state', false);
             if(adminStatus){
